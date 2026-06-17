@@ -1,0 +1,6 @@
+{
+  "extends": "@repro-v2/config/tsconfig.base.json",
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
+}
