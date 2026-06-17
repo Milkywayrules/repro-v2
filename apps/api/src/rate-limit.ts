@@ -32,7 +32,11 @@ export const globalRateLimit = rateLimit({
     }
 
     const { pathname } = new URL(request.url)
-    return pathname === '/' || pathname.startsWith('/api/auth')
+    return (
+      pathname === '/health' ||
+      pathname === '/ready' ||
+      pathname.startsWith('/api/auth')
+    )
   },
 })
 

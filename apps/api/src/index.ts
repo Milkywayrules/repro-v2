@@ -9,6 +9,7 @@ import {
 } from 'evlog/better-auth'
 import { evlog } from 'evlog/elysia'
 
+import { healthRoutes } from './health'
 import { authRateLimit, globalRateLimit } from './rate-limit'
 
 initLogger({
@@ -16,11 +17,12 @@ initLogger({
 })
 
 const identifyUser = createAuthMiddleware(auth as BetterAuthInstance, {
-  exclude: ['/api/auth/**'],
+  exclude: ['/api/auth/**', '/health', '/ready'],
   maskEmail: true,
 })
 
 new Elysia()
+  .use(healthRoutes)
   .use(evlog())
   .use(globalRateLimit)
   .derive(async ({ request, log }) => {
@@ -44,7 +46,6 @@ new Elysia()
       return status(405)
     }),
   )
-  .get('/', () => 'OK')
   .listen(Number(process.env.PORT) || 5000, () => {
     console.log(`Server is running on port ${process.env.PORT ?? 5000}`)
   })
