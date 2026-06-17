@@ -7,7 +7,7 @@
   "deploy": {
     "startCommand": "bun run --filter api start",
     "healthcheckPath": "/ready",
-    "preDeployCommand": ["bun run db:migrate"],
+    "preDeployCommand": ["bun run --filter @repro-v2/db db:migrate"],
     "restartPolicyType": "ON_FAILURE"
   }
 }
