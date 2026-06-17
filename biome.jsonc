@@ -105,6 +105,8 @@
       "!**/.source",
       "!**/convex/_generated",
 
+      "!**/migrations",
+
       "!**/.agents",
       "!**/.cursor",
       "!**/_bmad"
