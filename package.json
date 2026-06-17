@@ -24,6 +24,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "start:local": "turbo start:local",
     "check-types": "turbo check-types",
     "dev:console": "turbo -F console dev",
     "dev:api": "turbo -F api dev",

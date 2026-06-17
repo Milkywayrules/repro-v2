@@ -6,6 +6,7 @@
     "dev": "next dev --port 5001",
     "build": "next build",
     "start": "next start",
+    "start:local": "next start --port 5001",
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
