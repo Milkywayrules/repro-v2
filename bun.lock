@@ -78,6 +78,7 @@
       "devDependencies": {
         "@repro-v2/config": "workspace:*",
         "@tailwindcss/postcss": "^4.1.18",
+        "@types/bun": "catalog:",
         "@types/node": "^20",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",

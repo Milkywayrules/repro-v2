@@ -34,6 +34,7 @@
     "db:studio": "turbo -F @repro-v2/db db:studio",
     "db:generate": "turbo -F @repro-v2/db db:generate",
     "db:migrate": "turbo -F @repro-v2/db db:migrate",
+    "test": "bun run scripts/test-probes.ts",
     "check": "ultracite check",
     "fix": "ultracite fix"
   },
