@@ -46,6 +46,7 @@ new Elysia()
       return status(405)
     }),
   )
+  .get('/', () => 'OK')
   .listen(Number(process.env.PORT) || 5000, () => {
     console.log(`Server is running on port ${process.env.PORT ?? 5000}`)
   })
