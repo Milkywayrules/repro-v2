@@ -9,6 +9,8 @@ import {
 } from 'evlog/better-auth'
 import { evlog } from 'evlog/elysia'
 
+import { authRateLimit, globalRateLimit } from './rate-limit'
+
 initLogger({
   env: { service: 'repro-v2-api' },
 })
@@ -20,6 +22,7 @@ const identifyUser = createAuthMiddleware(auth as BetterAuthInstance, {
 
 new Elysia()
   .use(evlog())
+  .use(globalRateLimit)
   .derive(async ({ request, log }) => {
     await identifyUser(log, request.headers, new URL(request.url).pathname)
     return {}
@@ -32,13 +35,15 @@ new Elysia()
       credentials: true,
     }),
   )
-  .all('/api/auth/*', async context => {
-    const { request, status } = context
-    if (['POST', 'GET'].includes(request.method)) {
-      return await auth.handler(request)
-    }
-    return status(405)
-  })
+  .group('/api/auth', app =>
+    app.use(authRateLimit).all('/*', async context => {
+      const { request, status } = context
+      if (['POST', 'GET'].includes(request.method)) {
+        return await auth.handler(request)
+      }
+      return status(405)
+    }),
+  )
   .get('/', () => 'OK')
   .listen(5000, () => {
     console.log('Server is running on http://localhost:5000')
