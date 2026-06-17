@@ -1,10 +1,11 @@
-import { env } from "@repro-v2/env/server";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { env } from '@repro-v2/env/api'
+import { drizzle } from 'drizzle-orm/node-postgres'
 
-import * as schema from "./schema";
+// biome-ignore lint/performance/noNamespaceImport: we need this for drizzle
+import * as schema from './schema'
 
 export function createDb() {
-  return drizzle(env.DATABASE_URL, { schema });
+  return drizzle(env.DATABASE_URL, { schema })
 }
 
-export const db = createDb();
+export const db = createDb()

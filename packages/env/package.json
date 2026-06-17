@@ -3,8 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "exports": {
-    "./server": "./src/server.ts",
+    "./api": "./src/api.ts",
     "./web": "./src/web.ts"
   },
   "dependencies": {

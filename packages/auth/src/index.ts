@@ -1,17 +1,18 @@
-import { createDb } from "@repro-v2/db";
-import * as schema from "@repro-v2/db/schema/auth";
-import { env } from "@repro-v2/env/server";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createDb } from '@repro-v2/db'
+// biome-ignore lint/performance/noNamespaceImport: we need this for auth
+import * as schema from '@repro-v2/db/schema/auth'
+import { env } from '@repro-v2/env/api'
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
 export function createAuth() {
-  const db = createDb();
+  const db = createDb()
 
   return betterAuth({
     database: drizzleAdapter(db, {
-      provider: "pg",
+      provider: 'pg',
 
-      schema: schema,
+      schema,
     }),
     trustedOrigins: [env.CORS_ORIGIN],
     emailAndPassword: {
@@ -21,13 +22,13 @@ export function createAuth() {
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
       defaultCookieAttributes: {
-        sameSite: "none",
+        sameSite: 'none',
         secure: true,
         httpOnly: true,
       },
     },
     plugins: [],
-  });
+  })
 }
 
-export const auth = createAuth();
+export const auth = createAuth()
