@@ -1,6 +1,8 @@
 import { checkDatabaseConnection } from '@repro-v2/db'
 import { Elysia } from 'elysia'
 
+import { isDraining } from './lifecycle'
+
 const probeHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 } as const
@@ -11,6 +13,21 @@ export const healthRoutes = new Elysia()
     return { status: 'ok' as const }
   })
   .get('/ready', async ({ set }) => {
+    if (isDraining()) {
+      set.headers = probeHeaders
+      set.status = 503
+
+      return {
+        status: 'not_ready' as const,
+        checks: {
+          server: {
+            status: 'fail' as const,
+            error: 'Server is shutting down',
+          },
+        },
+      }
+    }
+
     const databaseResult = await checkDatabaseConnection()
     const ready = databaseResult.ok
 

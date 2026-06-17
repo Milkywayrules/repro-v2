@@ -1,12 +1,15 @@
 import { env } from '@repro-v2/env/api'
 import { sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
 // biome-ignore lint/performance/noNamespaceImport: we need this for drizzle
 import * as schema from './schema'
 
+const pool = new Pool({ connectionString: env.DATABASE_URL })
+
 export function createDb() {
-  return drizzle(env.DATABASE_URL, { schema })
+  return drizzle(pool, { schema })
 }
 
 export const db = createDb()
@@ -33,4 +36,8 @@ export async function checkDatabaseConnection(
       error: error instanceof Error ? error.message : 'Unknown error',
     }
   }
+}
+
+export async function closeDatabaseConnection(): Promise<void> {
+  await pool.end()
 }

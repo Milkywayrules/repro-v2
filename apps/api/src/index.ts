@@ -10,6 +10,7 @@ import {
 import { evlog } from 'evlog/elysia'
 
 import { healthRoutes } from './health'
+import { registerGracefulShutdown } from './lifecycle'
 import { authRateLimit, globalRateLimit } from './rate-limit'
 
 initLogger({
@@ -21,7 +22,7 @@ const identifyUser = createAuthMiddleware(auth as BetterAuthInstance, {
   maskEmail: true,
 })
 
-new Elysia()
+const app = new Elysia()
   .use(healthRoutes)
   .use(evlog())
   .use(globalRateLimit)
@@ -50,3 +51,5 @@ new Elysia()
   .listen(Number(process.env.PORT) || 5000, () => {
     console.log(`Server is running on port ${process.env.PORT ?? 5000}`)
   })
+
+registerGracefulShutdown(app)

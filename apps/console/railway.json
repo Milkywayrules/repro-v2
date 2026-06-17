@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "bun run --filter console start",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/api/ready",
     "restartPolicyType": "ON_FAILURE"
   }
 }
