@@ -1,0 +1,42 @@
+#!/usr/bin/env bun
+
+import dotenv from 'dotenv'
+
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const rootDir = resolve(import.meta.dir, '..')
+dotenv.config({ path: resolve(rootDir, 'apps/api/.env') })
+
+const generatedDir = resolve(rootDir, 'packages/api-types/src/generated')
+const specPath = resolve(generatedDir, 'openapi.json')
+const schemaPath = resolve(generatedDir, 'schema.ts')
+
+mkdirSync(generatedDir, { recursive: true })
+
+const { createApp } = await import('../apps/api/src/app.ts')
+const app = createApp()
+
+const response = await app.handle(new Request('http://localhost/openapi/json'))
+
+if (!response.ok) {
+  process.stderr.write(
+    `Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}\n`,
+  )
+  process.exit(1)
+}
+
+const spec = await response.json()
+writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`)
+
+const result = spawnSync(
+  'bunx',
+  ['openapi-typescript', specPath, '-o', schemaPath],
+  {
+    cwd: rootDir,
+    stdio: 'inherit',
+  },
+)
+
+process.exit(result.status ?? 1)

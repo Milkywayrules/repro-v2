@@ -104,6 +104,13 @@ export function parseOffsetPagination(searchParams: URLSearchParams) {
   })
 }
 
+export function safeParseOffsetPagination(searchParams: URLSearchParams) {
+  return offsetPaginationSchema.safeParse({
+    page: readQueryValue(searchParams, 'page'),
+    pageSize: readQueryValue(searchParams, 'pageSize'),
+  })
+}
+
 export function parseCursorPagination(searchParams: URLSearchParams) {
   return cursorPaginationSchema.parse({
     cursor: readQueryValue(searchParams, 'cursor'),

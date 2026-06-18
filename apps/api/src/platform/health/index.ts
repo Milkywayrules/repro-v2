@@ -2,15 +2,13 @@ import { checkDatabaseConnection } from '@repro-v2/db'
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
-import { http } from '../../libs/contract'
-import { isDraining } from '../../lifecycle'
+import { http } from '@/libs/contract'
+import { isDraining } from '@/lifecycle'
 
 const probeHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 } as const
 
-// Liveness/readiness probes: plain JSON, not the API success/error envelope.
-// /health — process is up; /ready — dependencies (DB) are reachable.
 export const healthRoutes = new Elysia()
   .get('/health', ({ set }) => {
     set.headers = probeHeaders

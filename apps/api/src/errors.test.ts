@@ -8,18 +8,8 @@ import { errorHandler } from './libs/contract/plugin'
 import { RateLimitExceededError, resolveError } from './libs/contract/resolve'
 import { fail } from './libs/contract/response'
 
-const jsonContentTypePattern = /^application\/json/
-
 const app = new Elysia()
   .use(errorHandler)
-  .get('/app-error', () => {
-    throw http.error({
-      code: 'ITEM_NOT_FOUND',
-      message: 'Item not found',
-      status: 404,
-      why: 'The requested item does not exist',
-    })
-  })
   .get('/server-error', () => {
     throw http.error({
       code: 'DB_FAILURE',
@@ -27,9 +17,6 @@ const app = new Elysia()
       status: 503,
       why: 'All connections are in use',
     })
-  })
-  .get('/unexpected', () => {
-    throw new Error('Something broke')
   })
   .post('/validate', ({ body }) => body, {
     body: z.object({
@@ -170,33 +157,6 @@ describe('resolveError', () => {
 })
 
 describe('error handler', () => {
-  test('returns structured JSON for application errors', async () => {
-    const response = await app.handle(new Request('http://localhost/app-error'))
-
-    expect(response.status).toBe(http.status.NOT_FOUND)
-    expect(await response.json()).toEqual({
-      error: {
-        code: 'ITEM_NOT_FOUND',
-        message: 'Item not found',
-        why: 'The requested item does not exist',
-      },
-    })
-  })
-
-  test('returns friendly NOT_FOUND for unknown routes', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/does-not-exist'),
-    )
-
-    expect(response.status).toBe(http.status.NOT_FOUND)
-    expect(await response.json()).toEqual({
-      error: {
-        code: http.codes.NOT_FOUND,
-        message: http.messages.NOT_FOUND,
-      },
-    })
-  })
-
   test('returns validation errors with details', async () => {
     const response = await app.handle(
       new Request('http://localhost/validate', {
@@ -238,20 +198,6 @@ describe('error handler', () => {
     })
   })
 
-  test('returns internal server error for unexpected failures', async () => {
-    const response = await app.handle(
-      new Request('http://localhost/unexpected'),
-    )
-
-    expect(response.status).toBe(http.status.INTERNAL_SERVER_ERROR)
-    expect(await response.json()).toEqual({
-      error: {
-        code: http.codes.INTERNAL_SERVER_ERROR,
-        message: 'Something broke',
-      },
-    })
-  })
-
   test('exposes server error details for EvlogError 5xx outside production', async () => {
     const response = await app.handle(
       new Request('http://localhost/server-error'),
@@ -265,26 +211,5 @@ describe('error handler', () => {
         why: 'All connections are in use',
       },
     })
-  })
-
-  test('returns rate limit errors with JSON content type', async () => {
-    const rateLimitedApp = new Elysia()
-      .use(errorHandler)
-      .get('/limited', () => {
-        throw new RateLimitExceededError()
-      })
-
-    const response = await rateLimitedApp.handle(
-      new Request('http://localhost/limited'),
-    )
-
-    expect(response.status).toBe(http.status.TOO_MANY_REQUESTS)
-    expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
-    expect(await response.json()).toEqual(
-      fail({
-        code: http.codes.RATE_LIMIT_EXCEEDED,
-        message: http.messages.RATE_LIMIT_EXCEEDED,
-      }),
-    )
   })
 })

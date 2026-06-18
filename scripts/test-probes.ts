@@ -1,10 +1,8 @@
 #!/usr/bin/env bun
 
 /**
- *
- * TODO: NOTE:
- * revisit this later when we have e2e.
- *
+ * Starts the API, then runs the monorepo test suite against it.
+ * Kept until e2e replaces this bootstrap-and-test flow.
  */
 
 import dotenv from 'dotenv'
@@ -42,7 +40,13 @@ try {
 
   const testProcess = spawn(
     'bun',
-    ['test', 'apps/api', 'apps/console', 'packages/db'],
+    [
+      'test',
+      'apps/api/src',
+      'apps/console',
+      'packages/db',
+      'packages/api-client',
+    ],
     {
       cwd: rootDir,
       env: process.env,

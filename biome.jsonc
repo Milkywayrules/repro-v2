@@ -1277,13 +1277,65 @@
       "includes": ["apps/browser-ext/**"],
       "javascript": {
         "globals": ["defineBackground", "defineContentScript", "browser"]
+      },
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useButtonType": "off"
+          },
+          "correctness": {
+            "useImageSize": "off"
+          },
+          "style": {
+            "noDefaultExport": "off",
+            "noNonNullAssertion": "off",
+            "useFilenamingConvention": "off"
+          }
+        }
       }
     },
     {
       "includes": [
         "apps/console/src/app/**/page.tsx",
-        "apps/marketing/src/app/**/page.tsx"
+        "apps/console/src/app/layout.tsx",
+        "apps/console/src/app/dashboard/dashboard.tsx",
+        "apps/console/next.config.ts",
+        "apps/console/postcss.config.mjs",
+        "apps/console/src/components/header.tsx",
+        "apps/console/src/components/loader.tsx",
+        "apps/console/src/components/providers.tsx",
+        "apps/console/src/components/sign-in-form.tsx",
+        "apps/console/src/components/sign-up-form.tsx",
+        "apps/console/src/components/user-menu.tsx",
+        "apps/marketing/src/app/**/page.tsx",
+        "apps/marketing/src/app/layout.tsx",
+        "apps/marketing/next.config.ts",
+        "apps/marketing/postcss.config.mjs",
+        "apps/marketing/src/components/providers.tsx"
       ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useAnchorContent": "off"
+          },
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/ui/src/components/label.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/ui/postcss.config.mjs"],
       "linter": {
         "rules": {
           "style": {

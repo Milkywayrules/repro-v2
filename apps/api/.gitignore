@@ -1,5 +1,6 @@
 # prod
 dist/
+dist-types/
 /build
 /out/
 

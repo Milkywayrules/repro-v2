@@ -7,7 +7,11 @@
   "deploy": {
     "startCommand": "bun run --filter api start",
     "healthcheckPath": "/ready",
-    "preDeployCommand": ["bun run --filter @repro-v2/db db:migrate"],
+    "preDeployCommand": [
+      "sh",
+      "-c",
+      "echo 'ACCEPTED: db:push is intentional pre-staging — switch to db:migrate after staging hardening' && bun run --filter @repro-v2/db db:push"
+    ],
     "restartPolicyType": "ON_FAILURE"
   }
 }

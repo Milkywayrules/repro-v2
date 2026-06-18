@@ -1,4 +1,6 @@
-import { describe, expect, spyOn, test } from 'bun:test'
+import { describe, expect, mock, spyOn, test } from 'bun:test'
+
+import { env } from '@repro-v2/env/api'
 
 import { http } from './libs/contract'
 
@@ -7,7 +9,7 @@ const jsonContentTypePattern = /^application\/json/
 
 describe('full app wiring', () => {
   test('GET / returns success envelope with X-Request-Id', async () => {
-    const { createApp } = await import('./index')
+    const { createApp } = await import('./app')
     const app = createApp()
 
     const response = await app.handle(new Request('http://localhost/'))
@@ -19,38 +21,69 @@ describe('full app wiring', () => {
     })
   })
 
-  test('GET /api/v1/ includes apiVersion meta', async () => {
-    const { createApp } = await import('./index')
+  test('GET /api/v1/ requires authentication', async () => {
+    const { createApp } = await import('./app')
     const app = createApp()
 
     const response = await app.handle(new Request('http://localhost/api/v1/'))
 
-    expect(response.status).toBe(http.status.OK)
-    expect(await response.json()).toEqual({
-      data: { status: 'ok' },
-      meta: { apiVersion: http.api.VERSION },
-    })
-  })
-
-  test('unknown routes return 404 with X-Request-Id', async () => {
-    const { createApp } = await import('./index')
-    const app = createApp()
-
-    const response = await app.handle(
-      new Request('http://localhost/does-not-exist'),
-    )
-
-    expect(response.status).toBe(http.status.NOT_FOUND)
-    expect(response.headers.get(requestIdHeader)).toBeString()
+    expect(response.status).toBe(http.status.UNAUTHORIZED)
     expect(await response.json()).toEqual({
       error: {
-        code: http.codes.NOT_FOUND,
-        message: http.messages.NOT_FOUND,
+        code: http.codes.UNAUTHORIZED,
+        message: http.messages.UNAUTHORIZED,
       },
     })
   })
 
-  test('uses same generated X-Request-Id on 404 without incoming header', async () => {
+  test('GET /openapi/json documents v1 task routes', async () => {
+    const { createApp } = await import('./app')
+    const app = createApp()
+
+    const response = await app.handle(
+      new Request('http://localhost/openapi/json'),
+    )
+
+    expect(response.status).toBe(http.status.OK)
+    const spec = (await response.json()) as {
+      paths: Record<string, unknown>
+      components?: {
+        securitySchemes?: Record<string, unknown>
+      }
+      security?: unknown[]
+    }
+    expect(spec.paths).toHaveProperty('/api/v1/task-lists/')
+    expect(spec.paths).toHaveProperty('/api/v1/tasks/')
+    expect(spec.paths).not.toHaveProperty('/health')
+    expect(spec.paths).not.toHaveProperty('/ready')
+    expect(spec.components?.securitySchemes).toHaveProperty('sessionCookie')
+    expect(spec.security).toEqual([{ sessionCookie: [] }])
+  })
+
+  test('openapi is disabled in production when OPENAPI_ENABLED is false', async () => {
+    mock.module('@repro-v2/env/api', () => ({
+      env: {
+        ...env,
+        NODE_ENV: 'production' as const,
+        OPENAPI_ENABLED: false,
+      },
+    }))
+
+    try {
+      const { createApp: createProductionApp } = await import('./app')
+      const app = createProductionApp()
+
+      const response = await app.handle(
+        new Request('http://localhost/openapi/json'),
+      )
+
+      expect(response.status).toBe(http.status.NOT_FOUND)
+    } finally {
+      mock.restore()
+    }
+  })
+
+  test('unknown routes return 404 with X-Request-Id', async () => {
     const generatedRequestId =
       '00000000-0000-4000-8000-000000000789' as `${string}-${string}-${string}-${string}-${string}`
     const randomUUIDSpy = spyOn(crypto, 'randomUUID').mockReturnValue(
@@ -58,7 +91,7 @@ describe('full app wiring', () => {
     )
 
     try {
-      const { createApp } = await import('./index')
+      const { createApp } = await import('./app')
       const app = createApp()
 
       const response = await app.handle(
@@ -73,7 +106,7 @@ describe('full app wiring', () => {
   })
 
   test('DELETE /api/auth/session returns 405 with X-Request-Id', async () => {
-    const { createApp } = await import('./index')
+    const { createApp } = await import('./app')
     const app = createApp()
 
     const response = await app.handle(
@@ -94,7 +127,7 @@ describe('full app wiring', () => {
   })
 
   test('preserves incoming X-Request-Id on success responses', async () => {
-    const { createApp } = await import('./index')
+    const { createApp } = await import('./app')
     const app = createApp()
     const incomingRequestId = 'incoming-request-id-123'
 
@@ -109,7 +142,7 @@ describe('full app wiring', () => {
   })
 
   test('preserves incoming X-Request-Id on error responses', async () => {
-    const { createApp } = await import('./index')
+    const { createApp } = await import('./app')
     const app = createApp()
     const incomingRequestId = 'incoming-request-id-456'
 
@@ -128,6 +161,9 @@ describe('full app wiring', () => {
     const { rateLimit } = await import('elysia-rate-limit')
     const { http } = await import('./libs/contract')
     const { requestId } = await import('./libs/middleware')
+    const { proxyAwareClientKey } = await import(
+      './libs/middleware/client-address'
+    )
     const { RateLimitExceededError } = await import('./libs/contract/resolve')
 
     const app = new Elysia()
@@ -139,6 +175,7 @@ describe('full app wiring', () => {
           max: 1,
           errorResponse: new RateLimitExceededError(),
           countFailedRequest: false,
+          generator: proxyAwareClientKey,
         }),
       )
       .get('/', () => http.ok({ status: 'ok' }))

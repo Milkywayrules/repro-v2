@@ -1,10 +1,11 @@
-import { afterAll, describe, expect, mock, test } from 'bun:test'
+import { afterAll, afterEach, describe, expect, mock, test } from 'bun:test'
 
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
-import { http } from '../../libs/contract'
-import { healthRoutes } from './index'
+import { http } from '@/libs/contract'
+import { setDrainingForTests } from '@/lifecycle'
+import { healthRoutes } from '@/platform/health'
 
 const probeApp = new Elysia().use(healthRoutes)
 
@@ -51,7 +52,9 @@ describe('health probes', () => {
       }),
     }))
 
-    const { healthRoutes: productionHealthRoutes } = await import('./index')
+    const { healthRoutes: productionHealthRoutes } = await import(
+      '@/platform/health'
+    )
     const productionProbeApp = new Elysia().use(productionHealthRoutes)
 
     const response = await productionProbeApp.handle(
@@ -71,6 +74,33 @@ describe('health probes', () => {
 
     mock.restore()
   })
+
+  test('GET /ready returns 503 when server is draining', async () => {
+    setDrainingForTests(true)
+
+    try {
+      const response = await probeApp.handle(
+        new Request('http://localhost/ready'),
+      )
+
+      expect(response.status).toBe(http.status.SERVICE_UNAVAILABLE)
+      expect(await response.json()).toEqual({
+        status: 'not_ready',
+        checks: {
+          server: {
+            status: 'fail',
+            error: 'Server is shutting down',
+          },
+        },
+      })
+    } finally {
+      setDrainingForTests(false)
+    }
+  })
+})
+
+afterEach(() => {
+  setDrainingForTests(false)
 })
 
 afterAll(() => {

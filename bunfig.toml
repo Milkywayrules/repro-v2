@@ -2,4 +2,5 @@
 linker = "isolated"
 
 [test]
-preload = ["./apps/api/test-preload.ts"]
+preload = ["./apps/api/test-preload.ts", "./apps/console/test-preload.ts"]
+pathIgnorePatterns = ["**/dist-types/**"]

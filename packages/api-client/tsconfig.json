@@ -1,0 +1,8 @@
+{
+  "extends": "@repro-v2/config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"],
+  "references": [{ "path": "../../apps/api" }]
+}

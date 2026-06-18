@@ -14,13 +14,16 @@ export const httpStatus = {
   TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
+  FORBIDDEN: 403,
 } as const
 
 export const errorCodes = {
+  FORBIDDEN: 'FORBIDDEN',
   INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
   INVALID_COOKIE: 'INVALID_COOKIE',
   METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
   NOT_FOUND: 'NOT_FOUND',
+  UNAUTHORIZED: 'UNAUTHORIZED',
   PARSE_ERROR: 'PARSE_ERROR',
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
@@ -29,7 +32,9 @@ export const errorCodes = {
 
 export const errorMessages = {
   DATABASE_UNAVAILABLE: 'Database unavailable',
+  FORBIDDEN: 'Forbidden',
   INTERNAL_SERVER_ERROR: 'Internal server error',
+  UNAUTHORIZED: 'Authentication required',
   INVALID_COOKIE: 'Invalid or tampered session cookie',
   METHOD_NOT_ALLOWED: 'Method not allowed',
   NOT_FOUND: 'Resource not found',

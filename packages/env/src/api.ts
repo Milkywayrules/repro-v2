@@ -11,6 +11,16 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(['development', 'production', 'test'])
       .default('development'),
+    OPENAPI_ENABLED: z
+      .enum(['true', 'false'])
+      .optional()
+      .default('false')
+      .transform(value => value === 'true'),
+    ALLOW_SEED: z
+      .enum(['true', 'false'])
+      .optional()
+      .default('false')
+      .transform(value => value === 'true'),
     RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(15),
     RATE_LIMIT_AUTH_DURATION_MS: z.coerce
       .number()

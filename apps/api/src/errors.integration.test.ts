@@ -11,6 +11,7 @@ import { http } from './libs/contract'
 import { errorHandler } from './libs/contract/plugin'
 import { RateLimitExceededError } from './libs/contract/resolve'
 import { requestId } from './libs/middleware'
+import { proxyAwareClientKey } from './libs/middleware/client-address'
 
 const jsonContentTypePattern = /^application\/json/
 
@@ -68,6 +69,19 @@ const app = new Elysia()
   })
 
 describe('error handler with evlog', () => {
+  beforeAll(() => {
+    mock.module('@repro-v2/env/api', () => ({
+      env: {
+        ...env,
+        NODE_ENV: 'development' as const,
+      },
+    }))
+  })
+
+  afterAll(() => {
+    mock.restore()
+  })
+
   test('returns structured JSON while evlog handles logging', async () => {
     const response = await app.handle(new Request('http://localhost/app-error'))
 
@@ -195,6 +209,7 @@ describe('rate limit with evlog and cors', () => {
         max: 1,
         errorResponse: rateLimitExceededError,
         countFailedRequest: false,
+        generator: proxyAwareClientKey,
       }),
     )
     .get('/limited', () => 'ok')

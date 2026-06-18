@@ -4,13 +4,19 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 // biome-ignore lint/performance/noNamespaceImport: we need this for drizzle
-import * as schema from './schema/auth'
+import * as authSchema from './schema/auth'
+// biome-ignore lint/performance/noNamespaceImport: we need this for drizzle
+import * as tasksSchema from './schema/tasks'
+
+const schema = { ...authSchema, ...tasksSchema }
 
 const pool = new Pool({ connectionString: env.DATABASE_URL })
 
 export function createDb() {
   return drizzle(pool, { schema })
 }
+
+export type Db = ReturnType<typeof createDb>
 
 export const db = createDb()
 

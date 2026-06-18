@@ -1,0 +1,22 @@
+{
+  "name": "@repro-v2/api-types",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./contract": {
+      "default": "./src/contract.ts"
+    },
+    "./generated/*": {
+      "default": "./src/generated/*"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repro-v2/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

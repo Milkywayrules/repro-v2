@@ -53,8 +53,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Migrate database
-        run: bun run db:migrate
+      - name: Push database schema
+        # TODO: switch to db:migrate once migration workflow is finalized
+        run: bun run db:push
 
       - name: Typecheck
         run: bun run check-types
@@ -65,6 +66,11 @@ jobs:
       - name: Test
         run: bun run test
 
+      - name: Verify generated API types
+        run: |
+          bun run generate:api-types
+          git diff --exit-code packages/api-types/src/generated
+
       - name: Build
         run: bun run build
 
@@ -73,4 +79,4 @@ jobs:
         run: bun audit
 
       - name: Build Firefox extension zip
-        run: bun run --filter browser-extension zip:firefox
+        run: bun run --filter browser-ext zip:firefox

@@ -1,0 +1,22 @@
+{
+  "name": "@repro-v2/api-client",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "@elysiajs/eden": "^1.4.8",
+    "@repro-v2/api-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@repro-v2/config": "workspace:*",
+    "api": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

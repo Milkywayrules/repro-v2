@@ -2,11 +2,15 @@
   "extends": "@repro-v2/config/tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist-types",
+    "rootDir": "src",
     "paths": {
       "@/*": ["./src/*"]
     },
     "jsx": "react-jsx",
     "strictNullChecks": true
-  }
+  },
+  "include": ["src"]
 }

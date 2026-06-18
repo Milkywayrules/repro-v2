@@ -13,6 +13,11 @@ export function isDraining(): boolean {
   return isShuttingDown
 }
 
+/** @internal Test-only hook to simulate drain state. */
+export function setDrainingForTests(value: boolean): void {
+  isShuttingDown = value
+}
+
 export function registerGracefulShutdown(app: StoppableServer): void {
   const shutdown = async (signal: string) => {
     if (isShuttingDown) {

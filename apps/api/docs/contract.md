@@ -8,7 +8,7 @@ Import from `libs/contract` (barrel re-exports `http`):
 
 ```ts
 import { http } from '@/libs/contract'
-// or relative from src/index.ts: import { http } from './libs/contract'
+// or relative from src/app.ts: import { http } from './libs/contract'
 // adjust path depth from your module
 ```
 
@@ -42,7 +42,7 @@ import { http } from '@/libs/contract'
 
 | Route                       | Shape                                 |
 | --------------------------- | ------------------------------------- |
-| `GET /health`, `GET /ready` | Plain JSON probes (`features/health`) |
+| `GET /health`, `GET /ready` | Plain JSON probes (`platform/health`) |
 | `POST/GET /api/auth/*`      | better-auth native responses          |
 
 ## Versioned routes: `okV1`
@@ -88,16 +88,17 @@ Internal helpers live in `libs/contract/list.ts`; route code uses `http.paginati
 
 ## Plugin order
 
-From `index.ts` — order matters:
+From `app.ts` — order matters:
 
-1. Health probes (`features/health`)
+1. Platform probes (`routes/platform` → `platform/health`)
 2. Request ID (`libs/middleware/request-id`)
 3. Evlog logging
 4. Error handler (`http.plugin()`)
 5. Global rate limit
-6. Auth context derive
-7. CORS
-8. Routes (auth group, `/api/v1`, …)
+6. Auth identify derive (evlog)
+7. CORS (`exposedHeaders: ['X-Request-Id']`)
+8. OpenAPI
+9. Auth routes, v1 routes, root `GET /`
 
 CORS `onRequest` runs before handlers; error responses set `set.status` so CORS headers still apply.
 
