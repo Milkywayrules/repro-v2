@@ -1,7 +1,9 @@
+import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { healthRoutes } from './health'
-import { describe, expect, test } from 'bun:test'
+import { DATABASE_UNAVAILABLE_MESSAGE } from './http/constants'
+import { afterAll, describe, expect, mock, test } from 'bun:test'
 
 const probeApp = new Elysia().use(healthRoutes)
 
@@ -33,4 +35,49 @@ describe('health probes', () => {
       },
     })
   })
+
+  test('GET /ready sanitizes database errors in production', async () => {
+    mock.module('@repro-v2/env/api', () => ({
+      env: {
+        ...env,
+        NODE_ENV: 'production' as const,
+      },
+    }))
+    mock.module('@repro-v2/db', () => ({
+      checkDatabaseConnection: async () => ({
+        ok: false as const,
+        error: 'Connection refused: internal pool details',
+      }),
+    }))
+
+    const { healthRoutes: productionHealthRoutes } = await import('./health')
+    const productionProbeApp = new Elysia().use(productionHealthRoutes)
+
+    const response = await productionProbeApp.handle(
+      new Request('http://localhost/ready'),
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      status: 'not_ready',
+      checks: {
+        database: {
+          status: 'fail',
+          error: DATABASE_UNAVAILABLE_MESSAGE,
+        },
+      },
+    })
+
+    mock.restore()
+  })
+})
+
+afterAll(() => {
+  mock.restore()
+  mock.module('@repro-v2/env/api', () => ({
+    env: {
+      ...env,
+      NODE_ENV: 'development' as const,
+    },
+  }))
 })
