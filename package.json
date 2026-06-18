@@ -22,6 +22,7 @@
   },
   "type": "module",
   "scripts": {
+    "kill-ports": "for port in 5000 5001 5002 5009 5555 4983; do fuser -k $port/tcp 2>/dev/null && echo \"Killed $port\" || echo \"Port $port: free\"; done",
     "dev": "turbo dev",
     "build": "turbo build",
     "start:local": "turbo start:local",
