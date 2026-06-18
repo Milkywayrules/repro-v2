@@ -1291,6 +1291,33 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": {
+              "level": "on",
+              "options": {
+                "groups": [
+                  "bun:test",
+                  ":BLANK_LINE:",
+                  "react",
+                  "next",
+                  "next/*",
+                  ":BLANK_LINE:",
+                  ":PACKAGE:",
+                  ":BLANK_LINE:",
+                  ":ALIAS:",
+                  ":BLANK_LINE:",
+                  ":PATH:"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   ],
   /** @default null - List of plugins to load */

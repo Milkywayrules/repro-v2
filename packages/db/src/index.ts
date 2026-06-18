@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 // biome-ignore lint/performance/noNamespaceImport: we need this for drizzle
-import * as schema from './schema'
+import * as schema from './schema/auth'
 
 const pool = new Pool({ connectionString: env.DATABASE_URL })
 

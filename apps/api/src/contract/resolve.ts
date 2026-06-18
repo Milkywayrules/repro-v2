@@ -1,9 +1,15 @@
 import { env } from '@repro-v2/env/api'
-import { Elysia, ValidationError } from 'elysia'
+import { ValidationError } from 'elysia'
 import { EvlogError } from 'evlog'
 
-import { ERROR_CODES, ERROR_MESSAGES, HTTP_STATUS } from './constants'
-import { type ErrorEnvelope, fail } from './response'
+import {
+  elysiaErrorCodes,
+  errorCodes,
+  errorMessages,
+  httpStatus,
+} from './constants'
+import type { ErrorEnvelope } from './meta'
+import { fail } from './response'
 
 interface ResolvedError {
   body: ErrorEnvelope
@@ -11,10 +17,10 @@ interface ResolvedError {
 }
 
 export class RateLimitExceededError extends Error {
-  readonly status = HTTP_STATUS.TOO_MANY_REQUESTS
+  readonly status = httpStatus.TOO_MANY_REQUESTS
 
   constructor() {
-    super(ERROR_MESSAGES.RATE_LIMIT_EXCEEDED)
+    super(errorMessages.RATE_LIMIT_EXCEEDED)
     this.name = 'RateLimitExceededError'
   }
 }
@@ -37,10 +43,10 @@ function getValidationDetails(error: ValidationError, production: boolean) {
 
 function resolveRateLimitError(): ResolvedError {
   return {
-    status: HTTP_STATUS.TOO_MANY_REQUESTS,
+    status: httpStatus.TOO_MANY_REQUESTS,
     body: fail({
-      code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
-      message: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
+      code: errorCodes.RATE_LIMIT_EXCEEDED,
+      message: errorMessages.RATE_LIMIT_EXCEEDED,
     }),
   }
 }
@@ -49,15 +55,15 @@ function resolveEvlogError(
   error: EvlogError,
   production: boolean,
 ): ResolvedError {
-  const isServerError = error.status >= HTTP_STATUS.INTERNAL_SERVER_ERROR
+  const isServerError = error.status >= httpStatus.INTERNAL_SERVER_ERROR
 
   if (isServerError && production) {
     return {
       status: error.status,
       body: {
         error: {
-          code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-          message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+          code: errorCodes.INTERNAL_SERVER_ERROR,
+          message: errorMessages.INTERNAL_SERVER_ERROR,
         },
       },
     }
@@ -68,7 +74,7 @@ function resolveEvlogError(
     body: {
       error: {
         ...error.data,
-        code: error.code ?? ERROR_CODES.UNKNOWN_ERROR,
+        code: error.code ?? errorCodes.UNKNOWN_ERROR,
         message: error.message,
       },
     },
@@ -76,11 +82,11 @@ function resolveEvlogError(
 }
 
 function resolveNotFoundMessage(error: unknown): string {
-  if (error instanceof Error && error.message !== 'NOT_FOUND') {
+  if (error instanceof Error && error.message !== elysiaErrorCodes.NOT_FOUND) {
     return error.message
   }
 
-  return ERROR_MESSAGES.NOT_FOUND
+  return errorMessages.NOT_FOUND
 }
 
 export function resolveError(
@@ -99,28 +105,28 @@ export function resolveError(
   }
 
   switch (String(code)) {
-    case 'NOT_FOUND':
+    case elysiaErrorCodes.NOT_FOUND:
       return {
-        status: HTTP_STATUS.NOT_FOUND,
+        status: httpStatus.NOT_FOUND,
         body: {
           error: {
-            code: ERROR_CODES.NOT_FOUND,
+            code: errorCodes.NOT_FOUND,
             message: production
-              ? ERROR_MESSAGES.NOT_FOUND
+              ? errorMessages.NOT_FOUND
               : resolveNotFoundMessage(error),
           },
         },
       }
 
-    case 'VALIDATION':
+    case elysiaErrorCodes.VALIDATION:
       if (error instanceof ValidationError) {
         const details = getValidationDetails(error, production)
 
         return {
-          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          status: httpStatus.UNPROCESSABLE_ENTITY,
           body: {
             error: {
-              code: ERROR_CODES.VALIDATION_ERROR,
+              code: errorCodes.VALIDATION_ERROR,
               message: getValidationMessage(error),
               ...(details ? { details } : {}),
             },
@@ -129,24 +135,24 @@ export function resolveError(
       }
       break
 
-    case 'PARSE':
+    case elysiaErrorCodes.PARSE:
       return {
-        status: HTTP_STATUS.BAD_REQUEST,
+        status: httpStatus.BAD_REQUEST,
         body: {
           error: {
-            code: ERROR_CODES.PARSE_ERROR,
-            message: ERROR_MESSAGES.PARSE_ERROR,
+            code: errorCodes.PARSE_ERROR,
+            message: errorMessages.PARSE_ERROR,
           },
         },
       }
 
-    case 'INVALID_COOKIE_SIGNATURE':
+    case elysiaErrorCodes.INVALID_COOKIE_SIGNATURE:
       return {
-        status: HTTP_STATUS.UNAUTHORIZED,
+        status: httpStatus.UNAUTHORIZED,
         body: {
           error: {
-            code: ERROR_CODES.INVALID_COOKIE,
-            message: ERROR_MESSAGES.INVALID_COOKIE,
+            code: errorCodes.INVALID_COOKIE,
+            message: errorMessages.INVALID_COOKIE,
           },
         },
       }
@@ -156,33 +162,15 @@ export function resolveError(
   }
 
   const message =
-    error instanceof Error
-      ? error.message
-      : ERROR_MESSAGES.INTERNAL_SERVER_ERROR
+    error instanceof Error ? error.message : errorMessages.INTERNAL_SERVER_ERROR
 
   return {
-    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    status: httpStatus.INTERNAL_SERVER_ERROR,
     body: {
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-        message: production ? ERROR_MESSAGES.INTERNAL_SERVER_ERROR : message,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
+        message: production ? errorMessages.INTERNAL_SERVER_ERROR : message,
       },
     },
   }
-}
-
-export const errorHandler = new Elysia({ name: 'error-handler' }).onError(
-  { as: 'global' },
-  ({ code, error, status }) => {
-    const { status: statusCode, body } = resolveError(code, error)
-
-    return status(statusCode, body)
-  },
-)
-
-export function methodNotAllowedResponse() {
-  return fail({
-    code: ERROR_CODES.METHOD_NOT_ALLOWED,
-    message: ERROR_MESSAGES.METHOD_NOT_ALLOWED,
-  })
 }

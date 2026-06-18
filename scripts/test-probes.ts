@@ -40,11 +40,15 @@ process.on('SIGTERM', shutdown)
 try {
   await sleep(2000)
 
-  const testProcess = spawn('bun', ['test', 'apps/api', 'apps/console'], {
-    cwd: rootDir,
-    env: process.env,
-    stdio: 'inherit',
-  })
+  const testProcess = spawn(
+    'bun',
+    ['test', 'apps/api', 'apps/console', 'packages/db'],
+    {
+      cwd: rootDir,
+      env: process.env,
+      stdio: 'inherit',
+    },
+  )
 
   const exitCode = await new Promise<number>((resolveExit, reject) => {
     testProcess.on('error', reject)

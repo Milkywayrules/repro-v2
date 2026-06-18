@@ -1,10 +1,13 @@
-import { Elysia } from 'elysia'
-
-import { errorHandler } from './http/errors'
-import { ok } from './http/response'
 import { describe, expect, test } from 'bun:test'
 
-const app = new Elysia().use(errorHandler).get('/', () => ok({ status: 'ok' }))
+import { Elysia } from 'elysia'
+
+import { http } from './contract/http'
+import { errorHandler } from './contract/plugin'
+
+const app = new Elysia()
+  .use(errorHandler)
+  .get('/', () => http.ok({ status: 'ok' }))
 
 describe('GET /', () => {
   test('returns success envelope', async () => {

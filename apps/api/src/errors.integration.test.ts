@@ -1,13 +1,17 @@
+import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test'
+
 import { cors } from '@elysiajs/cors'
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 import { rateLimit } from 'elysia-rate-limit'
-import { createError, type DrainContext, initLogger } from 'evlog'
+import { type DrainContext, initLogger } from 'evlog'
 import { evlog } from 'evlog/elysia'
 
-import { ERROR_CODES, ERROR_MESSAGES } from './http/constants'
-import { errorHandler, RateLimitExceededError } from './http/errors'
-import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test'
+import { errorCodes, errorMessages } from './contract/constants'
+import { http } from './contract/http'
+import { errorHandler } from './contract/plugin'
+import { requestId } from './contract/request-id'
+import { RateLimitExceededError } from './contract/resolve'
 
 const jsonContentTypePattern = /^application\/json/
 
@@ -29,7 +33,7 @@ function createProductionErrorRoutes() {
     .use(evlog({ drain: captureDrain }))
     .use(errorHandler)
     .get('/app-error', () => {
-      throw createError({
+      throw http.error({
         code: 'ITEM_NOT_FOUND',
         message: 'Item not found',
         status: 404,
@@ -37,7 +41,7 @@ function createProductionErrorRoutes() {
       })
     })
     .get('/server-error', () => {
-      throw createError({
+      throw http.error({
         code: 'DB_FAILURE',
         message: 'Connection pool exhausted',
         status: 503,
@@ -53,7 +57,7 @@ const app = new Elysia()
   .use(evlog({ drain: captureDrain }))
   .use(errorHandler)
   .get('/app-error', () => {
-    throw createError({
+    throw http.error({
       code: 'ITEM_NOT_FOUND',
       message: 'Item not found',
       status: 404,
@@ -86,8 +90,8 @@ describe('error handler with evlog', () => {
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.NOT_FOUND,
-        message: ERROR_MESSAGES.NOT_FOUND,
+        code: errorCodes.NOT_FOUND,
+        message: errorMessages.NOT_FOUND,
       },
     })
   })
@@ -100,7 +104,7 @@ describe('error handler with evlog', () => {
     expect(response.status).toBe(500)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
         message: 'Something broke',
       },
     })
@@ -138,8 +142,8 @@ describe('production error handler with evlog', () => {
     expect(response.status).toBe(503)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-        message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
+        message: errorMessages.INTERNAL_SERVER_ERROR,
       },
     })
   })
@@ -152,8 +156,8 @@ describe('production error handler with evlog', () => {
     expect(response.status).toBe(500)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-        message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
+        message: errorMessages.INTERNAL_SERVER_ERROR,
       },
     })
   })
@@ -166,8 +170,8 @@ describe('production error handler with evlog', () => {
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.NOT_FOUND,
-        message: ERROR_MESSAGES.NOT_FOUND,
+        code: errorCodes.NOT_FOUND,
+        message: errorMessages.NOT_FOUND,
       },
     })
   })
@@ -176,6 +180,7 @@ describe('production error handler with evlog', () => {
 describe('rate limit with evlog and cors', () => {
   const rateLimitExceededError = new RateLimitExceededError()
   const rateLimitedApp = new Elysia()
+    .use(requestId)
     .use(evlog({ drain: captureDrain }))
     .use(errorHandler)
     .use(
@@ -213,14 +218,15 @@ describe('rate limit with evlog and cors', () => {
     )
 
     expect(response.status).toBe(429)
+    expect(response.headers.get('X-Request-Id')).toBeString()
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(response.headers.get('access-control-allow-origin')).toBe(
       env.CORS_ORIGIN,
     )
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
-        message: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
+        code: errorCodes.RATE_LIMIT_EXCEEDED,
+        message: errorMessages.RATE_LIMIT_EXCEEDED,
       },
     })
 

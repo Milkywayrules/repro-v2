@@ -1,4 +1,5 @@
 import { closeDatabaseConnection } from '@repro-v2/db'
+import { log, parseError } from 'evlog'
 
 const SHUTDOWN_TIMEOUT_MS = 30_000
 
@@ -19,20 +20,24 @@ export function registerGracefulShutdown(app: StoppableServer): void {
     }
 
     isShuttingDown = true
-    console.log(`Received ${signal}, starting graceful shutdown`)
+    log.info({ action: 'lifecycle.shutdown', signal, phase: 'start' })
 
     const forceExitTimer = setTimeout(() => {
-      console.error('Graceful shutdown timed out, forcing exit')
+      log.error({ action: 'lifecycle.shutdown', phase: 'timeout' })
       process.exit(1)
     }, SHUTDOWN_TIMEOUT_MS)
 
     try {
       await app.stop()
       await closeDatabaseConnection()
-      console.log('Graceful shutdown complete')
+      log.info({ action: 'lifecycle.shutdown', phase: 'complete' })
       process.exit(0)
     } catch (error) {
-      console.error('Error during graceful shutdown', error)
+      log.error({
+        action: 'lifecycle.shutdown',
+        phase: 'error',
+        error: parseError(error),
+      })
       process.exit(1)
     } finally {
       clearTimeout(forceExitTimer)
@@ -42,7 +47,11 @@ export function registerGracefulShutdown(app: StoppableServer): void {
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.on(signal, () => {
       shutdown(signal).catch(error => {
-        console.error('Unhandled shutdown error', error)
+        log.error({
+          action: 'lifecycle.shutdown',
+          phase: 'unhandled',
+          error: parseError(error),
+        })
         process.exit(1)
       })
     })

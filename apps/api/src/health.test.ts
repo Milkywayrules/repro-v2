@@ -1,9 +1,10 @@
+import { afterAll, describe, expect, mock, test } from 'bun:test'
+
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
+import { errorMessages } from './contract/constants'
 import { healthRoutes } from './health'
-import { DATABASE_UNAVAILABLE_MESSAGE } from './http/constants'
-import { afterAll, describe, expect, mock, test } from 'bun:test'
 
 const probeApp = new Elysia().use(healthRoutes)
 
@@ -63,7 +64,7 @@ describe('health probes', () => {
       checks: {
         database: {
           status: 'fail',
-          error: DATABASE_UNAVAILABLE_MESSAGE,
+          error: errorMessages.DATABASE_UNAVAILABLE,
         },
       },
     })

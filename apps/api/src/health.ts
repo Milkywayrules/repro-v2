@@ -2,7 +2,7 @@ import { checkDatabaseConnection } from '@repro-v2/db'
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
-import { DATABASE_UNAVAILABLE_MESSAGE } from './http/constants'
+import { http } from './contract/http'
 import { isDraining } from './lifecycle'
 
 const probeHeaders = {
@@ -47,7 +47,7 @@ export const healthRoutes = new Elysia()
               status: 'fail' as const,
               error:
                 env.NODE_ENV === 'production'
-                  ? DATABASE_UNAVAILABLE_MESSAGE
+                  ? http.messages.DATABASE_UNAVAILABLE
                   : databaseResult.error,
             },
       },

@@ -7,7 +7,7 @@ dotenv.config({
 
 // biome-ignore lint/style/noDefaultExport: we need this for drizzle
 export default defineConfig({
-  schema: './src/schema',
+  schema: './src/schema/auth.ts',
   out: './src/migrations',
   dialect: 'postgresql',
   dbCredentials: {

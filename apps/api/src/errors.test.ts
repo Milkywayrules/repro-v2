@@ -1,22 +1,20 @@
-import { Elysia, t } from 'elysia'
-import { createError } from 'evlog'
-
-import { ERROR_CODES, ERROR_MESSAGES } from './http/constants'
-import {
-  errorHandler,
-  methodNotAllowedResponse,
-  RateLimitExceededError,
-  resolveError,
-} from './http/errors'
-import { fail } from './http/response'
 import { describe, expect, test } from 'bun:test'
+
+import { Elysia } from 'elysia'
+import { z } from 'zod'
+
+import { errorCodes, errorMessages } from './contract/constants'
+import { http } from './contract/http'
+import { errorHandler } from './contract/plugin'
+import { RateLimitExceededError, resolveError } from './contract/resolve'
+import { fail } from './contract/response'
 
 const jsonContentTypePattern = /^application\/json/
 
 const app = new Elysia()
   .use(errorHandler)
   .get('/app-error', () => {
-    throw createError({
+    throw http.error({
       code: 'ITEM_NOT_FOUND',
       message: 'Item not found',
       status: 404,
@@ -24,7 +22,7 @@ const app = new Elysia()
     })
   })
   .get('/server-error', () => {
-    throw createError({
+    throw http.error({
       code: 'DB_FAILURE',
       message: 'Connection pool exhausted',
       status: 503,
@@ -35,15 +33,15 @@ const app = new Elysia()
     throw new Error('Something broke')
   })
   .post('/validate', ({ body }) => body, {
-    body: t.Object({
-      name: t.String(),
+    body: z.object({
+      name: z.string(),
     }),
   })
   .post('/parse', ({ body }) => body)
 
 describe('resolveError', () => {
   test('redacts EvlogError messages for 5xx in production', () => {
-    const error = createError({
+    const error = http.error({
       code: 'DB_FAILURE',
       message: 'Connection pool exhausted',
       status: 503,
@@ -55,14 +53,14 @@ describe('resolveError', () => {
     expect(resolved.status).toBe(503)
     expect(resolved.body).toEqual({
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
-        message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
+        message: errorMessages.INTERNAL_SERVER_ERROR,
       },
     })
   })
 
   test('preserves EvlogError details for sub-500 in production', () => {
-    const error = createError({
+    const error = http.error({
       code: 'ITEM_NOT_FOUND',
       message: 'Item not found',
       status: 404,
@@ -89,8 +87,8 @@ describe('resolveError', () => {
 
     expect(resolved.body).toEqual({
       error: {
-        code: ERROR_CODES.NOT_FOUND,
-        message: ERROR_MESSAGES.NOT_FOUND,
+        code: errorCodes.NOT_FOUND,
+        message: errorMessages.NOT_FOUND,
       },
     })
   })
@@ -105,7 +103,7 @@ describe('resolveError', () => {
         return status(statusCode, body)
       })
       .post('/validate', ({ body }) => body, {
-        body: t.Object({ name: t.String() }),
+        body: z.object({ name: z.string() }),
       })
 
     const response = await validationApp.handle(
@@ -128,8 +126,8 @@ describe('resolveError', () => {
     expect(resolved.status).toBe(400)
     expect(resolved.body).toEqual({
       error: {
-        code: ERROR_CODES.PARSE_ERROR,
-        message: ERROR_MESSAGES.PARSE_ERROR,
+        code: errorCodes.PARSE_ERROR,
+        message: errorMessages.PARSE_ERROR,
       },
     })
   })
@@ -143,8 +141,8 @@ describe('resolveError', () => {
     expect(resolved.status).toBe(401)
     expect(resolved.body).toEqual({
       error: {
-        code: ERROR_CODES.INVALID_COOKIE,
-        message: ERROR_MESSAGES.INVALID_COOKIE,
+        code: errorCodes.INVALID_COOKIE,
+        message: errorMessages.INVALID_COOKIE,
       },
     })
   })
@@ -156,7 +154,7 @@ describe('resolveError', () => {
     )
 
     expect(resolved.status).toBe(500)
-    expect(resolved.body.error.code).toBe(ERROR_CODES.INTERNAL_SERVER_ERROR)
+    expect(resolved.body.error.code).toBe(errorCodes.INTERNAL_SERVER_ERROR)
   })
 
   test('maps RateLimitExceededError to structured 429 JSON', () => {
@@ -165,19 +163,8 @@ describe('resolveError', () => {
     expect(resolved.status).toBe(429)
     expect(resolved.body).toEqual(
       fail({
-        code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
-        message: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
-      }),
-    )
-  })
-})
-
-describe('response helpers', () => {
-  test('methodNotAllowedResponse returns structured 405 body', () => {
-    expect(methodNotAllowedResponse()).toEqual(
-      fail({
-        code: ERROR_CODES.METHOD_NOT_ALLOWED,
-        message: ERROR_MESSAGES.METHOD_NOT_ALLOWED,
+        code: errorCodes.RATE_LIMIT_EXCEEDED,
+        message: errorMessages.RATE_LIMIT_EXCEEDED,
       }),
     )
   })
@@ -205,8 +192,8 @@ describe('error handler', () => {
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.NOT_FOUND,
-        message: ERROR_MESSAGES.NOT_FOUND,
+        code: errorCodes.NOT_FOUND,
+        message: errorMessages.NOT_FOUND,
       },
     })
   })
@@ -229,7 +216,7 @@ describe('error handler', () => {
         details?: unknown[]
       }
     }
-    expect(body.error.code).toBe(ERROR_CODES.VALIDATION_ERROR)
+    expect(body.error.code).toBe(errorCodes.VALIDATION_ERROR)
     expect(body.error.message).toBeString()
     expect(body.error.details).toBeArray()
   })
@@ -246,8 +233,8 @@ describe('error handler', () => {
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.PARSE_ERROR,
-        message: ERROR_MESSAGES.PARSE_ERROR,
+        code: errorCodes.PARSE_ERROR,
+        message: errorMessages.PARSE_ERROR,
       },
     })
   })
@@ -260,7 +247,7 @@ describe('error handler', () => {
     expect(response.status).toBe(500)
     expect(await response.json()).toEqual({
       error: {
-        code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+        code: errorCodes.INTERNAL_SERVER_ERROR,
         message: 'Something broke',
       },
     })
@@ -296,8 +283,8 @@ describe('error handler', () => {
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(await response.json()).toEqual(
       fail({
-        code: ERROR_CODES.RATE_LIMIT_EXCEEDED,
-        message: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,
+        code: errorCodes.RATE_LIMIT_EXCEEDED,
+        message: errorMessages.RATE_LIMIT_EXCEEDED,
       }),
     )
   })

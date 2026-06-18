@@ -1,4 +1,5 @@
 import { createDb } from '@repro-v2/db'
+import { createId } from '@repro-v2/db/id'
 // biome-ignore lint/performance/noNamespaceImport: we need this for auth
 import * as schema from '@repro-v2/db/schema/auth'
 import { env } from '@repro-v2/env/api'
@@ -21,6 +22,7 @@ export function createAuth() {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
+      database: { generateId: () => createId() },
       defaultCookieAttributes: {
         sameSite: 'none',
         secure: true,
