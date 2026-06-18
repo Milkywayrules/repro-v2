@@ -16,20 +16,35 @@ import {
   parseSort,
   toSqlOffset,
 } from './list'
+import type { ApiMeta } from './meta'
 import { errorHandler } from './plugin'
 import { ok } from './response'
 
+function okV1<T>(data: T, meta?: ApiMeta) {
+  return ok(data, { ...meta, apiVersion: api.VERSION })
+}
+
 const pagination = {
-  buildCursorPaginationMeta,
-  buildOffsetPaginationMeta,
-  defaultPage: paginationConstants.defaultPage,
-  defaultPageSize: paginationConstants.defaultPageSize,
-  maxPageSize: paginationConstants.maxPageSize,
-  parseCursorPagination,
-  parseFilters,
-  parseOffsetPagination,
-  parseSort,
-  toSqlOffset,
+  defaults: {
+    page: paginationConstants.defaultPage,
+    pageSize: paginationConstants.defaultPageSize,
+    maxPageSize: paginationConstants.maxPageSize,
+  },
+  offset: {
+    parse: parseOffsetPagination,
+    buildMeta: buildOffsetPaginationMeta,
+    toSql: toSqlOffset,
+  },
+  cursor: {
+    parse: parseCursorPagination,
+    buildMeta: buildCursorPaginationMeta,
+  },
+  filters: {
+    parse: parseFilters,
+  },
+  sort: {
+    parse: parseSort,
+  },
 }
 
 export const http = {
@@ -38,6 +53,7 @@ export const http = {
   error: createError,
   messages: errorMessages,
   ok,
+  okV1,
   pagination,
   plugin: () => errorHandler,
   status: httpStatus,

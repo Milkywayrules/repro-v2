@@ -1,7 +1,8 @@
+import { beforeAll, describe, expect, test } from 'bun:test'
+
 import { env } from '@repro-v2/env/web'
 
 import { GET } from './route'
-import { beforeAll, describe, expect, test } from 'bun:test'
 
 let apiRunning = false
 

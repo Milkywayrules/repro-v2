@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { pagination } from './constants'
+import { http } from './http'
 import {
   buildCursorPaginationMeta,
   buildOffsetPaginationMeta,
@@ -67,8 +67,8 @@ describe('buildCursorPaginationMeta', () => {
 describe('parseOffsetPagination', () => {
   test('applies defaults when params are missing', () => {
     expect(parseOffsetPagination(new URLSearchParams())).toEqual({
-      page: pagination.defaultPage,
-      pageSize: pagination.defaultPageSize,
+      page: http.pagination.defaults.page,
+      pageSize: http.pagination.defaults.pageSize,
     })
   })
 
@@ -83,7 +83,7 @@ describe('parseOffsetPagination', () => {
 
   test('rejects pageSize above maxPageSize', () => {
     const params = new URLSearchParams({
-      pageSize: String(pagination.maxPageSize + 1),
+      pageSize: String(http.pagination.defaults.maxPageSize + 1),
     })
 
     expect(() => parseOffsetPagination(params)).toThrow()
@@ -100,7 +100,7 @@ describe('parseCursorPagination', () => {
   test('applies defaults when params are missing', () => {
     expect(parseCursorPagination(new URLSearchParams())).toEqual({
       cursor: undefined,
-      limit: pagination.defaultPageSize,
+      limit: http.pagination.defaults.pageSize,
     })
   })
 
@@ -118,7 +118,7 @@ describe('parseCursorPagination', () => {
 
     expect(parseCursorPagination(params)).toEqual({
       cursor: undefined,
-      limit: pagination.defaultPageSize,
+      limit: http.pagination.defaults.pageSize,
     })
   })
 })
@@ -192,6 +192,22 @@ describe('parseFilters', () => {
 
     expect(parseFilters(params)).toEqual({
       status: ['active', 'pending'],
+    })
+  })
+})
+
+describe('http.pagination facade', () => {
+  test('offset.parse delegates to parseOffsetPagination', () => {
+    expect(http.pagination.offset.parse(new URLSearchParams())).toEqual({
+      page: http.pagination.defaults.page,
+      pageSize: http.pagination.defaults.pageSize,
+    })
+  })
+
+  test('cursor.parse delegates to parseCursorPagination', () => {
+    expect(http.pagination.cursor.parse(new URLSearchParams())).toEqual({
+      cursor: undefined,
+      limit: http.pagination.defaults.pageSize,
     })
   })
 })

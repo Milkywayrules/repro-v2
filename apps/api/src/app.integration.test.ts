@@ -1,7 +1,6 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
-import { errorCodes, errorMessages } from './contract/constants'
-import { http } from './contract/http'
+import { http } from './libs/contract'
 
 const requestIdHeader = 'X-Request-Id'
 const jsonContentTypePattern = /^application\/json/
@@ -13,7 +12,7 @@ describe('full app wiring', () => {
 
     const response = await app.handle(new Request('http://localhost/'))
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(http.status.OK)
     expect(response.headers.get(requestIdHeader)).toBeString()
     expect(await response.json()).toEqual({
       data: { status: 'ok' },
@@ -26,7 +25,7 @@ describe('full app wiring', () => {
 
     const response = await app.handle(new Request('http://localhost/api/v1/'))
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(http.status.OK)
     expect(await response.json()).toEqual({
       data: { status: 'ok' },
       meta: { apiVersion: http.api.VERSION },
@@ -41,12 +40,12 @@ describe('full app wiring', () => {
       new Request('http://localhost/does-not-exist'),
     )
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(response.headers.get(requestIdHeader)).toBeString()
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.NOT_FOUND,
-        message: errorMessages.NOT_FOUND,
+        code: http.codes.NOT_FOUND,
+        message: http.messages.NOT_FOUND,
       },
     })
   })
@@ -66,7 +65,7 @@ describe('full app wiring', () => {
         new Request('http://localhost/does-not-exist'),
       )
 
-      expect(response.status).toBe(404)
+      expect(response.status).toBe(http.status.NOT_FOUND)
       expect(response.headers.get(requestIdHeader)).toBe(generatedRequestId)
     } finally {
       randomUUIDSpy.mockRestore()
@@ -83,13 +82,13 @@ describe('full app wiring', () => {
       }),
     )
 
-    expect(response.status).toBe(405)
+    expect(response.status).toBe(http.status.METHOD_NOT_ALLOWED)
     expect(response.headers.get(requestIdHeader)).toBeString()
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.METHOD_NOT_ALLOWED,
-        message: errorMessages.METHOD_NOT_ALLOWED,
+        code: http.codes.METHOD_NOT_ALLOWED,
+        message: http.messages.METHOD_NOT_ALLOWED,
       },
     })
   })
@@ -105,7 +104,7 @@ describe('full app wiring', () => {
       }),
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(http.status.OK)
     expect(response.headers.get(requestIdHeader)).toBe(incomingRequestId)
   })
 
@@ -120,16 +119,16 @@ describe('full app wiring', () => {
       }),
     )
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(response.headers.get(requestIdHeader)).toBe(incomingRequestId)
   })
 
   test('returns 429 with X-Request-Id when global rate limit is exceeded', async () => {
     const { Elysia } = await import('elysia')
     const { rateLimit } = await import('elysia-rate-limit')
-    const { requestId } = await import('./contract/request-id')
-    const { http } = await import('./contract/http')
-    const { RateLimitExceededError } = await import('./contract/resolve')
+    const { http } = await import('./libs/contract')
+    const { requestId } = await import('./libs/middleware')
+    const { RateLimitExceededError } = await import('./libs/contract/resolve')
 
     const app = new Elysia()
       .use(requestId)
@@ -148,12 +147,12 @@ describe('full app wiring', () => {
 
     const response = await app.handle(new Request('http://localhost/'))
 
-    expect(response.status).toBe(429)
+    expect(response.status).toBe(http.status.TOO_MANY_REQUESTS)
     expect(response.headers.get(requestIdHeader)).toBeString()
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.RATE_LIMIT_EXCEEDED,
-        message: errorMessages.RATE_LIMIT_EXCEEDED,
+        code: http.codes.RATE_LIMIT_EXCEEDED,
+        message: http.messages.RATE_LIMIT_EXCEEDED,
       },
     })
   })

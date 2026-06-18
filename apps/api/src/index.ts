@@ -9,11 +9,10 @@ import {
 } from 'evlog/better-auth'
 import { evlog } from 'evlog/elysia'
 
-import { http } from './contract/http'
-import { requestId } from './contract/request-id'
-import { healthRoutes } from './health'
+import { healthRoutes } from './features/health'
+import { http } from './libs/contract'
+import { authRateLimit, globalRateLimit, requestId } from './libs/middleware'
 import { registerGracefulShutdown } from './lifecycle'
-import { authRateLimit, globalRateLimit } from './rate-limit'
 
 initLogger({
   env: { service: 'repro-v2-api' },
@@ -60,11 +59,7 @@ export function createApp() {
           })
         }),
       )
-      .group('/api/v1', app =>
-        app.get('/', () =>
-          http.ok({ status: 'ok' }, { apiVersion: http.api.VERSION }),
-        ),
-      )
+      .group('/api/v1', app => app.get('/', () => http.okV1({ status: 'ok' })))
       .get('/', () => http.ok({ status: 'ok' }))
   )
 }

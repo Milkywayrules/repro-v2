@@ -2,7 +2,7 @@ import { env } from '@repro-v2/env/api'
 import { rateLimit } from 'elysia-rate-limit'
 
 // RateLimitExceededError is resolved by contract/resolve; kept internal to avoid http ↔ resolve cycles.
-import { RateLimitExceededError } from './contract/resolve'
+import { RateLimitExceededError } from '../contract/resolve'
 
 const rateLimitExceededError = new RateLimitExceededError()
 

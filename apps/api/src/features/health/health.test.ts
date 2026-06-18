@@ -3,8 +3,8 @@ import { afterAll, describe, expect, mock, test } from 'bun:test'
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
-import { errorMessages } from './contract/constants'
-import { healthRoutes } from './health'
+import { http } from '../../libs/contract'
+import { healthRoutes } from './index'
 
 const probeApp = new Elysia().use(healthRoutes)
 
@@ -14,7 +14,7 @@ describe('health probes', () => {
       new Request('http://localhost/health'),
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(http.status.OK)
     expect(await response.json()).toEqual({ status: 'ok' })
     expect(response.headers.get('cache-control')).toBe(
       'no-store, no-cache, must-revalidate',
@@ -26,7 +26,7 @@ describe('health probes', () => {
       new Request('http://localhost/ready'),
     )
 
-    expect(response.status).toBe(200)
+    expect(response.status).toBe(http.status.OK)
 
     const body = await response.json()
     expect(body).toEqual({
@@ -51,20 +51,20 @@ describe('health probes', () => {
       }),
     }))
 
-    const { healthRoutes: productionHealthRoutes } = await import('./health')
+    const { healthRoutes: productionHealthRoutes } = await import('./index')
     const productionProbeApp = new Elysia().use(productionHealthRoutes)
 
     const response = await productionProbeApp.handle(
       new Request('http://localhost/ready'),
     )
 
-    expect(response.status).toBe(503)
+    expect(response.status).toBe(http.status.SERVICE_UNAVAILABLE)
     expect(await response.json()).toEqual({
       status: 'not_ready',
       checks: {
         database: {
           status: 'fail',
-          error: errorMessages.DATABASE_UNAVAILABLE,
+          error: http.messages.DATABASE_UNAVAILABLE,
         },
       },
     })

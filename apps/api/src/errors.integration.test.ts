@@ -7,11 +7,10 @@ import { rateLimit } from 'elysia-rate-limit'
 import { type DrainContext, initLogger } from 'evlog'
 import { evlog } from 'evlog/elysia'
 
-import { errorCodes, errorMessages } from './contract/constants'
-import { http } from './contract/http'
-import { errorHandler } from './contract/plugin'
-import { requestId } from './contract/request-id'
-import { RateLimitExceededError } from './contract/resolve'
+import { http } from './libs/contract'
+import { errorHandler } from './libs/contract/plugin'
+import { RateLimitExceededError } from './libs/contract/resolve'
+import { requestId } from './libs/middleware'
 
 const jsonContentTypePattern = /^application\/json/
 
@@ -72,7 +71,7 @@ describe('error handler with evlog', () => {
   test('returns structured JSON while evlog handles logging', async () => {
     const response = await app.handle(new Request('http://localhost/app-error'))
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(await response.json()).toEqual({
       error: {
         code: 'ITEM_NOT_FOUND',
@@ -87,11 +86,11 @@ describe('error handler with evlog', () => {
       new Request('http://localhost/does-not-exist'),
     )
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.NOT_FOUND,
-        message: errorMessages.NOT_FOUND,
+        code: http.codes.NOT_FOUND,
+        message: http.messages.NOT_FOUND,
       },
     })
   })
@@ -101,10 +100,10 @@ describe('error handler with evlog', () => {
       new Request('http://localhost/unexpected'),
     )
 
-    expect(response.status).toBe(500)
+    expect(response.status).toBe(http.status.INTERNAL_SERVER_ERROR)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.INTERNAL_SERVER_ERROR,
+        code: http.codes.INTERNAL_SERVER_ERROR,
         message: 'Something broke',
       },
     })
@@ -139,11 +138,11 @@ describe('production error handler with evlog', () => {
       new Request('http://localhost/server-error'),
     )
 
-    expect(response.status).toBe(503)
+    expect(response.status).toBe(http.status.SERVICE_UNAVAILABLE)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.INTERNAL_SERVER_ERROR,
-        message: errorMessages.INTERNAL_SERVER_ERROR,
+        code: http.codes.INTERNAL_SERVER_ERROR,
+        message: http.messages.INTERNAL_SERVER_ERROR,
       },
     })
   })
@@ -153,11 +152,11 @@ describe('production error handler with evlog', () => {
       new Request('http://localhost/unexpected'),
     )
 
-    expect(response.status).toBe(500)
+    expect(response.status).toBe(http.status.INTERNAL_SERVER_ERROR)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.INTERNAL_SERVER_ERROR,
-        message: errorMessages.INTERNAL_SERVER_ERROR,
+        code: http.codes.INTERNAL_SERVER_ERROR,
+        message: http.messages.INTERNAL_SERVER_ERROR,
       },
     })
   })
@@ -167,11 +166,11 @@ describe('production error handler with evlog', () => {
       new Request('http://localhost/missing'),
     )
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.NOT_FOUND,
-        message: errorMessages.NOT_FOUND,
+        code: http.codes.NOT_FOUND,
+        message: http.messages.NOT_FOUND,
       },
     })
   })
@@ -217,7 +216,7 @@ describe('rate limit with evlog and cors', () => {
       new Request('http://localhost/limited', requestInit),
     )
 
-    expect(response.status).toBe(429)
+    expect(response.status).toBe(http.status.TOO_MANY_REQUESTS)
     expect(response.headers.get('X-Request-Id')).toBeString()
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(response.headers.get('access-control-allow-origin')).toBe(
@@ -225,14 +224,14 @@ describe('rate limit with evlog and cors', () => {
     )
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.RATE_LIMIT_EXCEEDED,
-        message: errorMessages.RATE_LIMIT_EXCEEDED,
+        code: http.codes.RATE_LIMIT_EXCEEDED,
+        message: http.messages.RATE_LIMIT_EXCEEDED,
       },
     })
 
     const rateLimitDrain = drainedEvents.find(
-      event => event.event.status === 429,
+      event => event.event.status === http.status.TOO_MANY_REQUESTS,
     )
-    expect(rateLimitDrain?.event.status).toBe(429)
+    expect(rateLimitDrain?.event.status).toBe(http.status.TOO_MANY_REQUESTS)
   })
 })

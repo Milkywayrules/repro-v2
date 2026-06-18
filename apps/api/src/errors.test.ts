@@ -3,11 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import { Elysia } from 'elysia'
 import { z } from 'zod'
 
-import { errorCodes, errorMessages } from './contract/constants'
-import { http } from './contract/http'
-import { errorHandler } from './contract/plugin'
-import { RateLimitExceededError, resolveError } from './contract/resolve'
-import { fail } from './contract/response'
+import { http } from './libs/contract'
+import { errorHandler } from './libs/contract/plugin'
+import { RateLimitExceededError, resolveError } from './libs/contract/resolve'
+import { fail } from './libs/contract/response'
 
 const jsonContentTypePattern = /^application\/json/
 
@@ -50,11 +49,11 @@ describe('resolveError', () => {
 
     const resolved = resolveError('UNKNOWN', error, { isProduction: true })
 
-    expect(resolved.status).toBe(503)
+    expect(resolved.status).toBe(http.status.SERVICE_UNAVAILABLE)
     expect(resolved.body).toEqual({
       error: {
-        code: errorCodes.INTERNAL_SERVER_ERROR,
-        message: errorMessages.INTERNAL_SERVER_ERROR,
+        code: http.codes.INTERNAL_SERVER_ERROR,
+        message: http.messages.INTERNAL_SERVER_ERROR,
       },
     })
   })
@@ -87,8 +86,8 @@ describe('resolveError', () => {
 
     expect(resolved.body).toEqual({
       error: {
-        code: errorCodes.NOT_FOUND,
-        message: errorMessages.NOT_FOUND,
+        code: http.codes.NOT_FOUND,
+        message: http.messages.NOT_FOUND,
       },
     })
   })
@@ -123,11 +122,11 @@ describe('resolveError', () => {
   test('maps PARSE to a structured 400 response', () => {
     const resolved = resolveError('PARSE', new Error('Unexpected token'))
 
-    expect(resolved.status).toBe(400)
+    expect(resolved.status).toBe(http.status.BAD_REQUEST)
     expect(resolved.body).toEqual({
       error: {
-        code: errorCodes.PARSE_ERROR,
-        message: errorMessages.PARSE_ERROR,
+        code: http.codes.PARSE_ERROR,
+        message: http.messages.PARSE_ERROR,
       },
     })
   })
@@ -138,11 +137,11 @@ describe('resolveError', () => {
       new Error('bad cookie'),
     )
 
-    expect(resolved.status).toBe(401)
+    expect(resolved.status).toBe(http.status.UNAUTHORIZED)
     expect(resolved.body).toEqual({
       error: {
-        code: errorCodes.INVALID_COOKIE,
-        message: errorMessages.INVALID_COOKIE,
+        code: http.codes.INVALID_COOKIE,
+        message: http.messages.INVALID_COOKIE,
       },
     })
   })
@@ -153,18 +152,18 @@ describe('resolveError', () => {
       new Error('not a validation error'),
     )
 
-    expect(resolved.status).toBe(500)
-    expect(resolved.body.error.code).toBe(errorCodes.INTERNAL_SERVER_ERROR)
+    expect(resolved.status).toBe(http.status.INTERNAL_SERVER_ERROR)
+    expect(resolved.body.error.code).toBe(http.codes.INTERNAL_SERVER_ERROR)
   })
 
   test('maps RateLimitExceededError to structured 429 JSON', () => {
     const resolved = resolveError('UNKNOWN', new RateLimitExceededError())
 
-    expect(resolved.status).toBe(429)
+    expect(resolved.status).toBe(http.status.TOO_MANY_REQUESTS)
     expect(resolved.body).toEqual(
       fail({
-        code: errorCodes.RATE_LIMIT_EXCEEDED,
-        message: errorMessages.RATE_LIMIT_EXCEEDED,
+        code: http.codes.RATE_LIMIT_EXCEEDED,
+        message: http.messages.RATE_LIMIT_EXCEEDED,
       }),
     )
   })
@@ -174,7 +173,7 @@ describe('error handler', () => {
   test('returns structured JSON for application errors', async () => {
     const response = await app.handle(new Request('http://localhost/app-error'))
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(await response.json()).toEqual({
       error: {
         code: 'ITEM_NOT_FOUND',
@@ -189,11 +188,11 @@ describe('error handler', () => {
       new Request('http://localhost/does-not-exist'),
     )
 
-    expect(response.status).toBe(404)
+    expect(response.status).toBe(http.status.NOT_FOUND)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.NOT_FOUND,
-        message: errorMessages.NOT_FOUND,
+        code: http.codes.NOT_FOUND,
+        message: http.messages.NOT_FOUND,
       },
     })
   })
@@ -207,7 +206,7 @@ describe('error handler', () => {
       }),
     )
 
-    expect(response.status).toBe(422)
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
 
     const body = (await response.json()) as {
       error: {
@@ -216,7 +215,7 @@ describe('error handler', () => {
         details?: unknown[]
       }
     }
-    expect(body.error.code).toBe(errorCodes.VALIDATION_ERROR)
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
     expect(body.error.message).toBeString()
     expect(body.error.details).toBeArray()
   })
@@ -230,11 +229,11 @@ describe('error handler', () => {
       }),
     )
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(http.status.BAD_REQUEST)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.PARSE_ERROR,
-        message: errorMessages.PARSE_ERROR,
+        code: http.codes.PARSE_ERROR,
+        message: http.messages.PARSE_ERROR,
       },
     })
   })
@@ -244,10 +243,10 @@ describe('error handler', () => {
       new Request('http://localhost/unexpected'),
     )
 
-    expect(response.status).toBe(500)
+    expect(response.status).toBe(http.status.INTERNAL_SERVER_ERROR)
     expect(await response.json()).toEqual({
       error: {
-        code: errorCodes.INTERNAL_SERVER_ERROR,
+        code: http.codes.INTERNAL_SERVER_ERROR,
         message: 'Something broke',
       },
     })
@@ -258,7 +257,7 @@ describe('error handler', () => {
       new Request('http://localhost/server-error'),
     )
 
-    expect(response.status).toBe(503)
+    expect(response.status).toBe(http.status.SERVICE_UNAVAILABLE)
     expect(await response.json()).toEqual({
       error: {
         code: 'DB_FAILURE',
@@ -279,12 +278,12 @@ describe('error handler', () => {
       new Request('http://localhost/limited'),
     )
 
-    expect(response.status).toBe(429)
+    expect(response.status).toBe(http.status.TOO_MANY_REQUESTS)
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(await response.json()).toEqual(
       fail({
-        code: errorCodes.RATE_LIMIT_EXCEEDED,
-        message: errorMessages.RATE_LIMIT_EXCEEDED,
+        code: http.codes.RATE_LIMIT_EXCEEDED,
+        message: http.messages.RATE_LIMIT_EXCEEDED,
       }),
     )
   })

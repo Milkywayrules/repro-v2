@@ -2,8 +2,8 @@ import { checkDatabaseConnection } from '@repro-v2/db'
 import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
-import { http } from './contract/http'
-import { isDraining } from './lifecycle'
+import { http } from '../../libs/contract'
+import { isDraining } from '../../lifecycle'
 
 const probeHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',

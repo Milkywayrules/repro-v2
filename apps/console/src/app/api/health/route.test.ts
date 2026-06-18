@@ -1,5 +1,6 @@
-import { GET } from './route'
 import { describe, expect, test } from 'bun:test'
+
+import { GET } from './route'
 
 describe('GET /api/health', () => {
   test('returns 200 with ok status', async () => {
