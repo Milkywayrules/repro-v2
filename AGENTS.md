@@ -1,3 +1,24 @@
+# Personal behavior & Coding principles (MUST FOLLOW)
+
+- the goal is to make production-level industry-standard batle-proven apps for a busy traffic product.
+- dont overengineering.
+- YAGNI, DRY, KISS.
+- composition over inheritance.
+- cohesion over coupling.
+- Boy Scout Rule. dont leave any unimportant stubs, traces, and leftovers that can be a tech debt in the future.
+- agent-first code.
+- focus on make the code working -> optimize for security, performance, size, maintainability -> simplify code.
+- be responsible, be professional, be curious, dont prefer assumptions, dont overstepped — proceed when requirements and docs are clear.
+- fuck off if you `do too much → realize it → long apology`.
+- you are allowed to contradict. dont always agree with me.
+- when there are questions that not yet answered by me, confirm again, maybe i forgot.
+- on **critical or ambiguous** items (e.g. scope, deletes, auth, merge targets, product intent, refactors): MUST **ask or confirm using question picker with me first** — do not guess.
+- **chat proposals are not implementation approval** — answer first; code only when requirements are clear or I explicitly say go.
+- **one question batch at a time with the picker**; use a structured format: single pick, multi pick, or short essay — not a wall of mixed questions. Dependant question should be on a different question batch.
+- if docs conflict or stakes are high, stop and ask before implementing.
+
+---
+
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
@@ -100,6 +121,18 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 **Solid/Svelte/Vue/Qwik:**
 
 - Use `class` and `for` attributes (not `className` or `htmlFor`)
+
+## Validation — Zod repo-wide
+
+Use **Zod** for env, request bodies, query params, and form validation across the monorepo.
+
+- **Do** use Zod for env, request bodies, query params, forms.
+- **Do** use Elysia + Zod via Standard Schema when route validation is needed.
+- **Do not** use Elysia TypeBox in app or package code.
+- **Do** use `zod` schemas and `safeParse` / `parse` patterns (see `@repro/env`, console auth forms).
+- **Do** use Elysia with Zod via Standard Schema (e.g. `zodToStandardSchema` / `@standard-schema/zod`) when route validation is needed.
+- **Do not** use Elysia TypeBox (`Elysia.t`, `@sinclair/typebox`) in app or package code.
+- **Do not** add TypeBox-based validation because `.agents/skills/elysiajs/` examples use it — those are reference only.
 
 ---
 
