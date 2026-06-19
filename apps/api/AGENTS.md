@@ -67,7 +67,8 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 
 - `@elysiajs/openapi` registered in `app.ts`; exclude `/health`, `/ready`, `/api/auth/*`.
 - `mapJsonSchema: { zod: z.toJSONSchema }` for Zod 4.
-- Spec at `/openapi/json`; regenerate via root `bun run generate:openapi`.
+- Scalar UI at `/openapi/`; spec at `/openapi/json` (absolute URL in Scalar config).
+- Regenerate committed spec via root `bun run generate:openapi`.
 
 ## Plugin order (app.ts)
 

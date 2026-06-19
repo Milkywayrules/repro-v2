@@ -7,9 +7,6 @@
     },
     "./react": {
       "default": "./src/react.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
     }
   },
   "scripts": {

@@ -17,9 +17,9 @@ import { http } from '@/libs/contract'
 | `http.ok(data, meta?)`                       | Success envelope `{ data, meta? }`                                |
 | `http.okV1(data, meta?)`                     | Same as `ok`, merges `{ apiVersion: http.api.VERSION }` into meta |
 | `http.error({ code, message, status, ... })` | Evlog application error (via `createError`)                       |
-| `http.codes`                                 | Stable error code strings                                         |
-| `http.messages`                              | Default user-facing messages                                      |
-| `http.status`                                | HTTP status constants                                             |
+| `http.codes`                                 | Stable error code strings (`@repro-v2/api-types/constants`)       |
+| `http.messages`                              | Default user-facing messages (`@repro-v2/api-types/constants`)    |
+| `http.status`                                | HTTP status constants (re-exported from `@repro-v2/api-types/constants`) |
 | `http.api`                                   | API metadata (`VERSION`, `CONTENT_TYPE_JSON`)                     |
 | `http.pagination`                            | Query parsing and meta builders (see below)                       |
 | `http.plugin()`                              | Global error handler Elysia plugin                                |

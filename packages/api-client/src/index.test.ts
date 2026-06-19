@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { httpStatus } from '@repro-v2/api-types/constants'
+
 import {
   createApiClient,
   formatTreatyError,
@@ -56,12 +58,12 @@ describe('formatTreatyError', () => {
 
 describe('isTreatyUnauthorized', () => {
   test('detects unauthorized from treaty status', () => {
-    expect(isTreatyUnauthorized({ status: 401 })).toBe(true)
+    expect(isTreatyUnauthorized({ status: httpStatus.UNAUTHORIZED })).toBe(true)
   })
 
   test('detects unauthorized from envelope code in value wrapper', () => {
     const error = {
-      status: 401,
+      status: httpStatus.UNAUTHORIZED,
       value: {
         error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
       },
