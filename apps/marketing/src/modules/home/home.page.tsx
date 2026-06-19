@@ -1,7 +1,7 @@
 import { env } from '@repro-v2/env/marketing'
 import { Button } from '@repro-v2/ui/components/button'
 
-import { ApiHealthBadge } from '@/components/api-health-badge'
+import { ApiHealthBadge } from './api-health-badge'
 
 export function HomePage() {
   return (

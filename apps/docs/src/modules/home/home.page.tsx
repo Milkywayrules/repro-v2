@@ -1,7 +1,7 @@
 import { env } from "@repro-v2/env/docs";
 import Link from "next/link";
 
-import { ApiRootWidget } from "@/components/api-root-widget";
+import { ApiRootWidget } from "./api-root-widget";
 
 export function HomePage() {
   const showInternalApiLink = env.NEXT_PUBLIC_SHOW_INTERNAL_API_LINK;

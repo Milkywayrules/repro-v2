@@ -3,7 +3,7 @@ import { queryOptions } from '@tanstack/react-query'
 import type { ApiClient } from '../index'
 import { unwrapTreatyResponse } from './treaty'
 
-const PROBE_STALE_TIME_MS = 30_000
+const PROBE_STALE_TIME_MS = 30_000 // matches QUERY_STALE_TIME_MS in @repro-v2/ui
 
 export const platformKeys = {
   all: ['platform'] as const,
