@@ -101,4 +101,4 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 - **`@repro-v2/api-client`** is the sole consumer: `import type { App } from 'api/app'`.
 - **No app→app imports** (console must not import from `apps/api/src/*`).
 - **No tsconfig path cheats** to reach sibling app source (no `"../api/src/*"` in console paths).
-- Frontends use `@repro-v2/api-client` and `@repro-v2/auth/client`; contract types from `@repro-v2/api-types/contract`.
+- Frontends use `@repro-v2/api-client` and `@repro-v2/auth/react`; contract types from `@repro-v2/api-types/contract`.

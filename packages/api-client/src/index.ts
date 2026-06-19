@@ -1,5 +1,6 @@
 import { treaty } from '@elysiajs/eden'
 import type { ErrorEnvelope } from '@repro-v2/api-types'
+import { errorCodes, httpStatus } from '@repro-v2/api-types/constants'
 import type { App } from 'api/app'
 
 export function createApiClient(baseUrl: string) {
@@ -27,9 +28,6 @@ export type TaskListResponse = TreatySuccess<
 >
 export type Task = TaskListResponse['data'][number]
 
-const UNAUTHORIZED_CODE = 'UNAUTHORIZED'
-const UNAUTHORIZED_STATUS = 401
-
 function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return (
     typeof value === 'object' &&
@@ -51,19 +49,22 @@ export function isTreatyUnauthorized(error: unknown): boolean {
 
   if (
     'status' in error &&
-    (error as { status?: number }).status === UNAUTHORIZED_STATUS
+    (error as { status?: number }).status === httpStatus.UNAUTHORIZED
   ) {
     return true
   }
 
   if ('value' in error) {
     const { value } = error as { value?: unknown }
-    if (isErrorEnvelope(value) && value.error.code === UNAUTHORIZED_CODE) {
+    if (
+      isErrorEnvelope(value) &&
+      value.error.code === errorCodes.UNAUTHORIZED
+    ) {
       return true
     }
   }
 
-  return isErrorEnvelope(error) && error.error.code === UNAUTHORIZED_CODE
+  return isErrorEnvelope(error) && error.error.code === errorCodes.UNAUTHORIZED
 }
 
 export function formatTreatyError(error: unknown, fallback: string): string {

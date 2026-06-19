@@ -60,6 +60,18 @@ describe('full app wiring', () => {
     expect(spec.security).toEqual([{ sessionCookie: [] }])
   })
 
+  test('GET /openapi/ HTML references absolute OpenAPI spec URL', async () => {
+    const { createApp } = await import('./app')
+    const app = createApp()
+
+    const response = await app.handle(new Request('http://localhost/openapi/'))
+
+    expect(response.status).toBe(http.status.OK)
+    const html = await response.text()
+    expect(html).toContain('"/openapi/json"')
+    expect(html).not.toContain('"/openapi/openapi/json"')
+  })
+
   test('openapi is disabled in production when OPENAPI_ENABLED is false', async () => {
     mock.module('@repro-v2/env/api', () => ({
       env: {

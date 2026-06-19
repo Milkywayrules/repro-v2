@@ -8,6 +8,9 @@
     "./contract": {
       "default": "./src/contract.ts"
     },
+    "./constants": {
+      "default": "./src/constants.ts"
+    },
     "./generated/*": {
       "default": "./src/generated/*"
     }

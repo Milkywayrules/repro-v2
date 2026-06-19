@@ -5,8 +5,8 @@
     ".": {
       "default": "./src/index.ts"
     },
-    "./client": {
-      "default": "./src/client.ts"
+    "./react": {
+      "default": "./src/react.ts"
     },
     "./*": {
       "default": "./src/*.ts"

@@ -179,9 +179,16 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 
 ## App boundary (monorepo)
 
+| Package / app | Owns |
+| --- | --- |
+| `@repro-v2/api-schemas` | Zod request/input schemas |
+| `@repro-v2/api-types` | Contract types, HTTP constants, generated OpenAPI JSON |
+| `@repro-v2/api-client` | Eden Treaty client + route response types |
+| `apps/api` | Server implementation (`createApp`, modules, services) |
+
 - **`apps/api/src/app.ts` exports `type App`** — the only cross-app type surface from the API app.
 - **`@repro-v2/api-client`** is the sole package that may `import type { App } from 'api/app'`.
-- **No app→app imports**; frontends use `@repro-v2/api-client`, `@repro-v2/auth/client`, and `@repro-v2/api-types/contract`.
+- **No app→app imports**; frontends use `@repro-v2/api-client`, `@repro-v2/auth/react`, and `@repro-v2/api-types/contract`.
 - **No tsconfig path cheats** to sibling app source (e.g. console must not map `@/*` to `../api/src/*`).
 - Zod request schemas live in `@repro-v2/api-schemas`; OpenAPI spec drift-check via `bun run generate:openapi`.
 - **`apps/api` emits `dist-types/`** via `prepare` and `check-types` (`tsc -b`) before dependents such as `@repro-v2/api-client` typecheck. Turbo `^check-types` enforces build order on `bun run check-types`.

@@ -47,6 +47,10 @@ function createOpenApiPlugin() {
     mapJsonSchema: {
       zod: z.toJSONSchema,
     },
+    scalar: {
+      // Absolute path — relative `openapi/json` resolves to /openapi/openapi/json from /openapi/
+      url: '/openapi/json',
+    },
   })
 }
 
