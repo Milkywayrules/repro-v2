@@ -1,4 +1,4 @@
-import { env } from '@repro-v2/env/api'
+import { corsOrigins } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -8,7 +8,7 @@ const AJAX_REQUEST_HEADER = 'x-requested-with'
 const AJAX_REQUEST_VALUE = 'xmlhttprequest'
 
 function isAllowedOrigin(origin: string): boolean {
-  return origin === env.CORS_ORIGIN
+  return corsOrigins.includes(origin)
 }
 
 function refererOrigin(referer: string): string | null {

@@ -2,7 +2,7 @@ import type { Db } from '@repro-v2/db'
 import { createId } from '@repro-v2/db/id'
 // biome-ignore lint/performance/noNamespaceImport: we need this for auth
 import * as schema from '@repro-v2/db/schema/auth'
-import { env } from '@repro-v2/env/api'
+import { corsOrigins, env } from '@repro-v2/env/api'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
@@ -13,7 +13,7 @@ export function createAuth(db: Db) {
 
       schema,
     }),
-    trustedOrigins: [env.CORS_ORIGIN],
+    trustedOrigins: [...corsOrigins],
     emailAndPassword: {
       enabled: true,
     },

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, mock, test } from 'bun:test'
 
 import { cors } from '@elysiajs/cors'
-import { env } from '@repro-v2/env/api'
+import { corsOrigins, env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 import { rateLimit } from 'elysia-rate-limit'
 import { type DrainContext, initLogger } from 'evlog'
@@ -198,7 +198,7 @@ describe('rate limit with evlog and cors', () => {
     .use(errorHandler)
     .use(
       cors({
-        origin: env.CORS_ORIGIN,
+        origin: corsOrigins,
         methods: ['GET'],
         credentials: true,
       }),
@@ -219,7 +219,7 @@ describe('rate limit with evlog and cors', () => {
 
     const requestInit = {
       headers: {
-        Origin: env.CORS_ORIGIN,
+        Origin: env.CORS_ORIGIN[0],
       },
     } as const
 
@@ -235,7 +235,7 @@ describe('rate limit with evlog and cors', () => {
     expect(response.headers.get('X-Request-Id')).toBeString()
     expect(response.headers.get('content-type')).toMatch(jsonContentTypePattern)
     expect(response.headers.get('access-control-allow-origin')).toBe(
-      env.CORS_ORIGIN,
+      env.CORS_ORIGIN[0],
     )
     expect(await response.json()).toEqual({
       error: {

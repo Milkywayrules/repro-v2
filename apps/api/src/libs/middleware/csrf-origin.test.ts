@@ -56,7 +56,7 @@ describe('csrf origin validation', () => {
       new Request('http://localhost/api/v1/task-lists', {
         method: 'POST',
         headers: {
-          Referer: `${env.CORS_ORIGIN}/tasks`,
+          Referer: `${env.CORS_ORIGIN[0]}/tasks`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: 'Allowed referer' }),
@@ -71,7 +71,7 @@ describe('csrf origin validation', () => {
       new Request('http://localhost/api/v1/task-lists', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: 'Allowed origin' }),

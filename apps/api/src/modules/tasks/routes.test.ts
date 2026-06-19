@@ -168,7 +168,7 @@ describe('tasks routes', () => {
       new Request('http://localhost/api/v1/tasks', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -195,7 +195,7 @@ describe('tasks routes', () => {
       new Request('http://localhost/api/v1/tasks', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -217,7 +217,7 @@ describe('tasks routes', () => {
       new Request('http://localhost/api/v1/tasks', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -236,7 +236,7 @@ describe('tasks routes', () => {
       new Request('http://localhost/api/v1/tasks', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -259,7 +259,7 @@ describe('tasks routes', () => {
       new Request('http://localhost/api/v1/tasks', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -308,7 +308,7 @@ describe('tasks routes', () => {
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`, {
         method: 'PATCH',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ completed: true }),
@@ -330,7 +330,7 @@ describe('tasks routes', () => {
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`, {
         method: 'PATCH',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -357,7 +357,7 @@ describe('tasks routes', () => {
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`, {
         method: 'DELETE',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
         },
       }),
     )

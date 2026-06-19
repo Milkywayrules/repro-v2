@@ -2,6 +2,15 @@ import 'dotenv/config'
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
+function parseCorsOrigins(value: string): [string, ...string[]] {
+  const origins = value
+    .split(',')
+    .map(part => part.trim())
+    .filter(part => part.length > 0)
+
+  return z.array(z.url()).min(1).parse(origins) as [string, ...string[]]
+}
+
 export const env = createEnv({
   server: {
     // database
@@ -10,7 +19,8 @@ export const env = createEnv({
     // better-auth
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
-    CORS_ORIGIN: z.url(),
+    /** Comma-separated allowed browser origins (console, marketing, docs, …). */
+    CORS_ORIGIN: z.string().min(1).transform(parseCorsOrigins),
 
     // node environment
     NODE_ENV: z
@@ -50,3 +60,6 @@ export const env = createEnv({
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
 })
+
+/** Parsed from {@link env.CORS_ORIGIN} — use for CORS and CSRF origin checks. */
+export const corsOrigins = env.CORS_ORIGIN

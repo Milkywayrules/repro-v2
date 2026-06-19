@@ -1,6 +1,6 @@
 import { cors } from '@elysiajs/cors'
 import { openapi } from '@elysiajs/openapi'
-import { env } from '@repro-v2/env/api'
+import { corsOrigins, env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 import { initLogger } from 'evlog'
 import { identifyUser as identifyUserForLog } from 'evlog/better-auth'
@@ -76,7 +76,7 @@ export function createApp() {
     })
     .use(
       cors({
-        origin: env.CORS_ORIGIN,
+        origin: corsOrigins,
         methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         exposeHeaders: ['X-Request-Id'],

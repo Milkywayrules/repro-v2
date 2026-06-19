@@ -1,6 +1,9 @@
 "use client";
 
-import { rootQueryOptions } from "@repro-v2/api-client/queries";
+import {
+  formatTreatyError,
+  rootQueryOptions,
+} from "@repro-v2/api-client/queries";
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api-client";
@@ -16,10 +19,10 @@ export function ApiRootWidget() {
       {isPending ? <p className="text-muted-foreground">Fetching…</p> : null}
       {isError ? (
         <p className="text-destructive">
-          {error instanceof Error ? error.message : "Request failed"}
+          {formatTreatyError(error, "Request failed")}
         </p>
       ) : null}
-      {data ? (
+      {data && !isError ? (
         <pre className="overflow-x-auto rounded bg-muted p-2 text-xs">
           {JSON.stringify(data, null, 2)}
         </pre>

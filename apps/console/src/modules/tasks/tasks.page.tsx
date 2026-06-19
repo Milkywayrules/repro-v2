@@ -118,8 +118,6 @@ export function TasksPage() {
   })
 
   const activeError =
-    listsQuery.error ??
-    tasksQuery.error ??
     createListMutation.error ??
     createTaskMutation.error ??
     patchTaskMutation.error ??
@@ -127,6 +125,14 @@ export function TasksPage() {
 
   const error = activeError
     ? formatTreatyError(activeError, 'Something went wrong')
+    : null
+
+  const listsError = listsQuery.isError
+    ? formatTreatyError(listsQuery.error, 'Failed to load lists')
+    : null
+
+  const tasksError = tasksQuery.isError
+    ? formatTreatyError(tasksQuery.error, 'Failed to load tasks')
     : null
 
   const isMutating =
@@ -188,6 +194,9 @@ export function TasksPage() {
         {listsQuery.isPending ? (
           <p className="text-muted-foreground text-sm">Loading lists…</p>
         ) : null}
+        {listsError ? (
+          <p className="text-destructive text-sm">{listsError}</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {lists.map(list => (
             <Button
@@ -213,7 +222,7 @@ export function TasksPage() {
           </div>
           <Button
             className="self-end"
-            disabled={isMutating}
+            disabled={isMutating || listsQuery.isError}
             onClick={handleCreateList}
           >
             Add list
@@ -225,6 +234,9 @@ export function TasksPage() {
         <h2 className="font-medium text-lg">Tasks</h2>
         {tasksQuery.isPending && listId ? (
           <p className="text-muted-foreground text-sm">Loading tasks…</p>
+        ) : null}
+        {tasksError ? (
+          <p className="text-destructive text-sm">{tasksError}</p>
         ) : null}
         <ul className="flex flex-col gap-2">
           {tasks.map(task => (
@@ -268,7 +280,7 @@ export function TasksPage() {
           </div>
           <Button
             className="self-end"
-            disabled={isMutating || !listId}
+            disabled={isMutating || !listId || tasksQuery.isError}
             onClick={handleCreateTask}
           >
             Add task

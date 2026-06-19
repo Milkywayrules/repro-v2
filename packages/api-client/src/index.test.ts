@@ -21,6 +21,14 @@ describe('createApiClient', () => {
     expect(client.api.v1.tasks).toBeDefined()
     expect(client.api.v1['task-lists']).toBeDefined()
   })
+
+  test('exposes platform probe routes', () => {
+    const client = createApiClient('http://localhost:5000')
+
+    expect(client.get).toBeDefined()
+    expect(client.health).toBeDefined()
+    expect(client.ready).toBeDefined()
+  })
 })
 
 describe('formatTreatyError', () => {

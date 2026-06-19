@@ -14,7 +14,8 @@ export interface SuccessEnvelope<T> {
 }
 
 export interface ErrorBody {
-  code: ErrorCode
+  /** Stable codes from errorCodes; Evlog application errors may use custom strings. */
+  code: ErrorCode | (string & {})
   details?: unknown
   fix?: string
   link?: string

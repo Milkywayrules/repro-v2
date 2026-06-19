@@ -1,8 +1,8 @@
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 
-export const QUERY_STALE_TIME_MS = 30_000
-export const QUERY_GC_TIME_MS = 300_000
-export const QUERY_MAX_RETRIES = 3
+const QUERY_STALE_TIME_MS = 30_000
+const QUERY_GC_TIME_MS = 300_000
+const QUERY_MAX_RETRIES = 3
 
 export interface CreateAppQueryClientOptions {
   isUnauthorized?: (error: unknown) => boolean

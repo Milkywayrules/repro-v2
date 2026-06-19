@@ -143,7 +143,7 @@ describe('task-lists routes', () => {
       new Request('http://localhost/api/v1/task-lists', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: 'New list' }),
@@ -167,7 +167,7 @@ describe('task-lists routes', () => {
       new Request('http://localhost/api/v1/task-lists', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: '   ' }),
@@ -186,7 +186,7 @@ describe('task-lists routes', () => {
       new Request('http://localhost/api/v1/task-lists', {
         method: 'POST',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -209,7 +209,7 @@ describe('task-lists routes', () => {
       new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
         method: 'PATCH',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: 'Renamed list' }),
@@ -231,7 +231,7 @@ describe('task-lists routes', () => {
       new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
         method: 'PATCH',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({}),
@@ -257,7 +257,7 @@ describe('task-lists routes', () => {
       new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
         method: 'DELETE',
         headers: {
-          Origin: env.CORS_ORIGIN,
+          Origin: env.CORS_ORIGIN[0],
         },
       }),
     )
