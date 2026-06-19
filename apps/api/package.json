@@ -17,7 +17,8 @@
     "start:tsdown": "bun run dist/index.mjs",
     "dev": "bun run --hot src/index.ts",
     "build": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile ./dist/api ./src/index.ts",
-    "start": "./dist/api"
+    "start": "./dist/api",
+    "start:local": "./dist/api"
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.1",
