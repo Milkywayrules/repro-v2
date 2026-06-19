@@ -1,3 +1,5 @@
+import type { ErrorCode } from './constants'
+
 export interface ApiMeta {
   apiVersion?: string
   filters?: Record<string, string[]>
@@ -12,7 +14,7 @@ export interface SuccessEnvelope<T> {
 }
 
 export interface ErrorBody {
-  code: string
+  code: ErrorCode
   details?: unknown
   fix?: string
   link?: string

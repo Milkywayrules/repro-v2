@@ -2,7 +2,7 @@
 
 Elysia HTTP API for repro-v2. Entry: `src/index.ts` listens; `src/app.ts` exports `createApp()` and `type App`.
 
-- Contract envelope + errors: `src/libs/contract/` — see [docs/contract.md](src/docs/contract.md)
+- Contract envelope + errors: `src/libs/contract/` — see [docs/contract.md](docs/contract.md)
 - OpenAPI: `/openapi/` (Scalar), spec at `/openapi/json`
 - Agent rules: [AGENTS.md](AGENTS.md); monorepo map in root [AGENTS.md](../../AGENTS.md)
 

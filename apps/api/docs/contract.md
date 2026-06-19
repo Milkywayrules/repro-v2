@@ -20,7 +20,7 @@ import { http } from '@/libs/contract'
 | `http.codes`                                 | Stable error code strings (`@repro-v2/api-types/constants`)       |
 | `http.messages`                              | Default user-facing messages (`@repro-v2/api-types/constants`)    |
 | `http.status`                                | HTTP status constants (re-exported from `@repro-v2/api-types/constants`) |
-| `http.api`                                   | API metadata (`VERSION`, `CONTENT_TYPE_JSON`)                     |
+| `http.api`                                   | API metadata (`VERSION`)                                          |
 | `http.pagination`                            | Query parsing and meta builders (see below)                       |
 | `http.plugin()`                              | Global error handler Elysia plugin                                |
 

@@ -8,8 +8,7 @@ import { resolve } from 'node:path'
 const rootDir = resolve(import.meta.dir, '..')
 dotenv.config({ path: resolve(rootDir, 'apps/api/.env') })
 
-// Force OpenAPI on so prod .env (NODE_ENV=production, OPENAPI_ENABLED=false) does not break generation.
-process.env.NODE_ENV = 'test'
+// Force OpenAPI on so prod .env (OPENAPI_ENABLED=false) does not break generation.
 process.env.OPENAPI_ENABLED = 'true'
 
 const generatedDir = resolve(rootDir, 'packages/api-types/src/generated')

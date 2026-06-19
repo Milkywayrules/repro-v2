@@ -36,7 +36,8 @@ export const errorMessages = {
   RATE_LIMIT_EXCEEDED: 'Rate limit exceeded. Please try again later.',
 } as const
 
+export type ErrorCode = (typeof errorCodes)[keyof typeof errorCodes]
+
 export const api = {
-  CONTENT_TYPE_JSON: 'application/json; charset=utf-8',
   VERSION: '1',
 } as const

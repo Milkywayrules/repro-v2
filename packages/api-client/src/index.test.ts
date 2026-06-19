@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { httpStatus } from '@repro-v2/api-types/constants'
+import {
+  errorCodes,
+  errorMessages,
+  httpStatus,
+} from '@repro-v2/api-types/constants'
 
 import {
   createApiClient,
@@ -23,7 +27,10 @@ describe('formatTreatyError', () => {
   test('returns envelope message from treaty value wrapper', () => {
     const error = {
       value: {
-        error: { code: 'VALIDATION_ERROR', message: 'Name is required' },
+        error: {
+          code: errorCodes.VALIDATION_ERROR,
+          message: 'Name is required',
+        },
       },
     }
 
@@ -32,7 +39,10 @@ describe('formatTreatyError', () => {
 
   test('returns envelope message from direct error envelope', () => {
     const error = {
-      error: { code: 'NOT_FOUND', message: 'Resource not found' },
+      error: {
+        code: errorCodes.NOT_FOUND,
+        message: errorMessages.NOT_FOUND,
+      },
     }
 
     expect(formatTreatyError(error, 'Fallback')).toBe('Resource not found')
@@ -41,7 +51,10 @@ describe('formatTreatyError', () => {
   test('uses fallback for empty envelope message', () => {
     const error = {
       value: {
-        error: { code: 'INTERNAL_SERVER_ERROR', message: '   ' },
+        error: {
+          code: errorCodes.INTERNAL_SERVER_ERROR,
+          message: '   ',
+        },
       },
     }
 
@@ -65,7 +78,10 @@ describe('isTreatyUnauthorized', () => {
     const error = {
       status: httpStatus.UNAUTHORIZED,
       value: {
-        error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+        error: {
+          code: errorCodes.UNAUTHORIZED,
+          message: errorMessages.UNAUTHORIZED,
+        },
       },
     }
 
@@ -74,7 +90,10 @@ describe('isTreatyUnauthorized', () => {
 
   test('detects unauthorized from direct envelope', () => {
     const error = {
-      error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+      error: {
+        code: errorCodes.UNAUTHORIZED,
+        message: errorMessages.UNAUTHORIZED,
+      },
     }
 
     expect(isTreatyUnauthorized(error)).toBe(true)
@@ -84,7 +103,10 @@ describe('isTreatyUnauthorized', () => {
     expect(
       isTreatyUnauthorized({
         value: {
-          error: { code: 'NOT_FOUND', message: 'Resource not found' },
+          error: {
+            code: errorCodes.NOT_FOUND,
+            message: errorMessages.NOT_FOUND,
+          },
         },
       }),
     ).toBe(false)

@@ -42,37 +42,43 @@ function messageFromEnvelope(envelope: ErrorEnvelope): string | null {
   return message.length > 0 ? message : null
 }
 
-export function isTreatyUnauthorized(error: unknown): boolean {
-  if (!(error && typeof error === 'object')) {
-    return false
+function treatyPayload(error: unknown): unknown {
+  if (typeof error === 'object' && error !== null && 'value' in error) {
+    return (error as { value?: unknown }).value
   }
 
-  if (
-    'status' in error &&
-    (error as { status?: number }).status === httpStatus.UNAUTHORIZED
-  ) {
+  return error
+}
+
+function treatyStatus(error: unknown): number | undefined {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    return (error as { status?: number }).status
+  }
+
+  return
+}
+
+export function isTreatyUnauthorized(error: unknown): boolean {
+  const status = treatyStatus(error)
+  if (status === httpStatus.UNAUTHORIZED) {
     return true
   }
 
-  if ('value' in error) {
-    const { value } = error as { value?: unknown }
-    if (
-      isErrorEnvelope(value) &&
-      value.error.code === errorCodes.UNAUTHORIZED
-    ) {
-      return true
-    }
+  const payload = treatyPayload(error)
+  if (
+    isErrorEnvelope(payload) &&
+    payload.error.code === errorCodes.UNAUTHORIZED
+  ) {
+    return true
   }
 
   return isErrorEnvelope(error) && error.error.code === errorCodes.UNAUTHORIZED
 }
 
 export function formatTreatyError(error: unknown, fallback: string): string {
-  if (error && typeof error === 'object' && 'value' in error) {
-    const { value } = error as { value?: unknown }
-    if (isErrorEnvelope(value)) {
-      return messageFromEnvelope(value) ?? fallback
-    }
+  const payload = treatyPayload(error)
+  if (isErrorEnvelope(payload)) {
+    return messageFromEnvelope(payload) ?? fallback
   }
 
   if (isErrorEnvelope(error)) {
