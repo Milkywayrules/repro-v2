@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type {
-  SuccessEnvelope,
-  TaskListResource,
-  TaskResource,
-} from '@repro-v2/api-types'
+  Task,
+  TaskList,
+  TaskListListResponse,
+  TaskListResponse,
+} from '@repro-v2/api-client'
+import { formatTreatyError } from '@repro-v2/api-client'
 import { Button } from '@repro-v2/ui/components/button'
 import { Checkbox } from '@repro-v2/ui/components/checkbox'
 import { Input } from '@repro-v2/ui/components/input'
@@ -15,16 +17,12 @@ import { Label } from '@repro-v2/ui/components/label'
 
 import { apiClient } from '@/lib/api-client'
 import { authClient } from '@/lib/auth-client'
-import { formatTreatyError } from '@/lib/treaty-error'
-
-type TaskListListResponse = SuccessEnvelope<TaskListResource[]>
-type TaskListResponse = SuccessEnvelope<TaskResource[]>
 
 export default function TasksPage() {
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
-  const [lists, setLists] = useState<TaskListResource[]>([])
-  const [tasks, setTasks] = useState<TaskResource[]>([])
+  const [lists, setLists] = useState<TaskList[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [selectedListId, setSelectedListId] = useState<string | null>(null)
   const [newListName, setNewListName] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -134,7 +132,7 @@ export default function TasksPage() {
     await loadTasks(selectedListId)
   }
 
-  async function handleToggleTask(task: TaskResource) {
+  async function handleToggleTask(task: Task) {
     const response = await apiClient.api.v1.tasks({ id: task.id }).patch({
       completed: !task.completed,
     })

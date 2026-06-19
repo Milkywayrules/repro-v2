@@ -1,4 +1,9 @@
-import type { ApiMeta, ErrorBody, ErrorEnvelope, SuccessEnvelope } from './meta'
+import type {
+  ApiMeta,
+  ErrorBody,
+  ErrorEnvelope,
+  SuccessEnvelope,
+} from '@repro-v2/api-types/contract'
 
 export function ok<T>(data: T, meta?: ApiMeta): SuccessEnvelope<T> {
   if (meta === undefined) {

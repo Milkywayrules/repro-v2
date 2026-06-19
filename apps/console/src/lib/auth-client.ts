@@ -1,6 +1,4 @@
+import { createWebAuthClient } from '@repro-v2/auth/client'
 import { env } from '@repro-v2/env/web'
-import { createAuthClient } from 'better-auth/react'
 
-export const authClient = createAuthClient({
-  baseURL: env.NEXT_PUBLIC_API_URL,
-})
+export const authClient = createWebAuthClient(env.NEXT_PUBLIC_API_URL)

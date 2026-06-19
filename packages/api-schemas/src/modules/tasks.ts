@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { idParams } from '@/libs/schemas/id-params'
+import { idParams } from '../shared/id'
 
 export const taskListFilterQuery = z.object({
   listId: z.uuid().optional(),

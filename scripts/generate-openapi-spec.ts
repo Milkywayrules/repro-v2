@@ -2,7 +2,6 @@
 
 import dotenv from 'dotenv'
 
-import { spawnSync } from 'node:child_process'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -11,7 +10,6 @@ dotenv.config({ path: resolve(rootDir, 'apps/api/.env') })
 
 const generatedDir = resolve(rootDir, 'packages/api-types/src/generated')
 const specPath = resolve(generatedDir, 'openapi.json')
-const schemaPath = resolve(generatedDir, 'schema.ts')
 
 mkdirSync(generatedDir, { recursive: true })
 
@@ -29,14 +27,3 @@ if (!response.ok) {
 
 const spec = await response.json()
 writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`)
-
-const result = spawnSync(
-  'bunx',
-  ['openapi-typescript', specPath, '-o', schemaPath],
-  {
-    cwd: rootDir,
-    stdio: 'inherit',
-  },
-)
-
-process.exit(result.status ?? 1)

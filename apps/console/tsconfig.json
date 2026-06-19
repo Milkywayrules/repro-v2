@@ -20,9 +20,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*", "../api/src/*"],
-      "@repro-v2/ui/*": ["../../packages/ui/src/*"],
-      "api/app": ["../api/src/app.ts"]
+      "@/*": ["./src/*"],
+      "@repro-v2/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [

@@ -1,7 +1,11 @@
+import type {
+  CursorPagination,
+  OffsetPagination,
+  SortField,
+} from '@repro-v2/api-types/contract'
 import { z } from 'zod'
 
 import { pagination as paginationConstants } from './constants'
-import type { CursorPagination, OffsetPagination, SortField } from './meta'
 
 const RESERVED_QUERY_KEYS = new Set([
   'cursor',

@@ -1,14 +1,14 @@
+import {
+  createTaskListBody,
+  taskListIdParams,
+  updateTaskListBody,
+} from '@repro-v2/api-schemas/modules/task-lists'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { paginatedList } from '@/libs/queries/paginated-list'
 import { requireAuth } from '@/modules/auth/routes'
 
-import {
-  createTaskListBody,
-  taskListIdParams,
-  updateTaskListBody,
-} from './schemas'
 import { taskListsService } from './service'
 
 export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })

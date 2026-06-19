@@ -1,6 +1,7 @@
+import type { SortField } from '@repro-v2/api-types/contract'
+
 import { http } from '@/libs/contract'
 import { safeParseOffsetPagination } from '@/libs/contract/list'
-import type { SortField } from '@/libs/contract/meta'
 
 export async function paginatedList<T>({
   searchParams,

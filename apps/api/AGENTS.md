@@ -12,14 +12,15 @@ src/
   platform/health/      # liveness/readiness probes (plain JSON, no envelope)
   modules/
     auth/               # routes.ts (better-auth mount + requireAuth), service.ts
-    task-lists/         # reference CRUD — routes.ts, service.ts, schemas.ts
-    tasks/              # reference CRUD — routes.ts, service.ts, schemas.ts; soft delete via deletedAt
+    task-lists/         # reference CRUD — routes.ts, service.ts
+    tasks/              # reference CRUD — routes.ts, service.ts; soft delete via deletedAt
   routes/
     platform/index.ts   # .use(healthRoutes)
     auth/index.ts       # .use(authModuleRoutes) at /api/auth
     v1/index.ts         # requireAuth + task-lists + tasks + GET / okV1
   libs/
-    contract/           # response contract; public API is http
+    contract/           # response contract + errors; public API is http
+    helpers/            # serialize-audit and other small utilities
     middleware/         # rate-limit, request-id
     queries/            # paginatedList glue (parse → db → buildMeta)
   docs/                 # API conventions (contract.md)
@@ -44,6 +45,7 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 ## Validation & tests
 
 - **Zod** for env, bodies, query params — not Elysia TypeBox.
+- Request validation schemas live in `@repro-v2/api-schemas` (`modules/*`, `shared/id`); routes import from there.
 - Pass Zod schemas directly to Elysia route config (Standard Schema).
 - **`bun:test`** first for unit and integration tests in this app.
 
@@ -65,7 +67,7 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 
 - `@elysiajs/openapi` registered in `app.ts`; exclude `/health`, `/ready`, `/api/auth/*`.
 - `mapJsonSchema: { zod: z.toJSONSchema }` for Zod 4.
-- Spec at `/openapi/json`; regenerate types via root `bun run generate:api-types`.
+- Spec at `/openapi/json`; regenerate via root `bun run generate:openapi`.
 
 ## Plugin order (app.ts)
 
@@ -92,3 +94,11 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 ## Rate limiting (proxy)
 
 - `globalRateLimit` / `authRateLimit` use `proxyAwareClientKey` (`X-Forwarded-For` first, then `server.requestIP`) for Railway/reverse-proxy client identity.
+
+## App boundary (type-only exception)
+
+- **`apps/api/src/app.ts` exports `type App`** — the only app source other apps may reference for types.
+- **`@repro-v2/api-client`** is the sole consumer: `import type { App } from 'api/app'`.
+- **No app→app imports** (console must not import from `apps/api/src/*`).
+- **No tsconfig path cheats** to reach sibling app source (no `"../api/src/*"` in console paths).
+- Frontends use `@repro-v2/api-client` and `@repro-v2/auth/client`; contract types from `@repro-v2/api-types/contract`.

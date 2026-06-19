@@ -1,0 +1,25 @@
+{
+  "name": "@repro-v2/api-schemas",
+  "type": "module",
+  "exports": {
+    "./modules/task-lists": {
+      "default": "./src/modules/task-lists.ts"
+    },
+    "./modules/tasks": {
+      "default": "./src/modules/tasks.ts"
+    },
+    "./shared/id": {
+      "default": "./src/shared/id.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@repro-v2/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

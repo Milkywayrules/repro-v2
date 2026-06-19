@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@repro-v2/api-client": "workspace:*",
+    "@repro-v2/auth": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
     "@tanstack/react-form": "^1.28.0",
@@ -28,7 +29,6 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@repro-v2/api-types": "workspace:*",
     "@repro-v2/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20",

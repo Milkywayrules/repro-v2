@@ -1,6 +1,5 @@
+import type { SortField } from '@repro-v2/api-types/contract'
 import { asc, type Column, desc, type SQL } from '@repro-v2/db/drizzle'
-
-import type { SortField } from '@/libs/contract/meta'
 
 export function buildSortOrderBy(
   sort: SortField[],

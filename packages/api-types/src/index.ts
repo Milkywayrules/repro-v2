@@ -8,5 +8,3 @@ export type {
   SortField,
   SuccessEnvelope,
 } from './contract'
-export type { components, operations, paths } from './generated/schema'
-export type { TaskListResource, TaskResource } from './resources'

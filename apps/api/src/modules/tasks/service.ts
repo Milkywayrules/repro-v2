@@ -1,12 +1,12 @@
+import type { SortField } from '@repro-v2/api-types/contract'
 import { db } from '@repro-v2/db'
 import { and, desc, eq, inArray, isNull } from '@repro-v2/db/drizzle'
 import { listWithOffset } from '@repro-v2/db/list'
 import { taskLists, tasks } from '@repro-v2/db/schema/tasks'
 
-import type { SortField } from '@/libs/contract/meta'
-import { internalServerError, notFoundError } from '@/libs/errors'
+import { internalServerError, notFoundError } from '@/libs/contract/errors'
+import { serializeAuditTimestamps } from '@/libs/helpers/serialize-audit'
 import { buildSortOrderBy } from '@/libs/queries/sort-order'
-import { serializeAuditTimestamps } from '@/libs/serialize-audit'
 import { taskListsService } from '@/modules/task-lists/service'
 
 function toResponse(row: {

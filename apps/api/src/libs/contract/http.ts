@@ -1,3 +1,4 @@
+import type { ApiMeta } from '@repro-v2/api-types/contract'
 import { createError } from 'evlog'
 
 import {
@@ -16,7 +17,6 @@ import {
   parseSort,
   toSqlOffset,
 } from './list'
-import type { ApiMeta } from './meta'
 import { errorHandler } from './plugin'
 import { ok } from './response'
 

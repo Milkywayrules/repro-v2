@@ -4,7 +4,7 @@ import { env } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
-import { notFoundError } from '@/libs/errors'
+import { notFoundError } from '@/libs/contract/errors'
 import { authService } from '@/modules/auth/service'
 import { v1Routes } from '@/routes/v1'
 

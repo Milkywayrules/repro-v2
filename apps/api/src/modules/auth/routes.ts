@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
-import { unauthorizedError } from '@/libs/errors'
+import { unauthorizedError } from '@/libs/contract/errors'
 import { authRateLimit } from '@/libs/middleware'
 
 import { auth } from './auth'

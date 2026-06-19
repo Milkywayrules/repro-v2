@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { idParams } from '@/libs/schemas/id-params'
+import { idParams } from '../shared/id'
 
 export const createTaskListBody = z.object({
   name: z.string().trim().min(1).max(255),

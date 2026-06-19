@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@elysiajs/eden": "^1.4.8",
-    "@repro-v2/api-types": "workspace:*"
+    "@repro-v2/api-types": "workspace:*",
+    "api": "workspace:*"
   },
   "devDependencies": {
     "@repro-v2/config": "workspace:*",
-    "api": "workspace:*",
     "typescript": "catalog:"
   }
 }

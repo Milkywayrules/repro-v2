@@ -173,3 +173,13 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+
+---
+
+## App boundary (monorepo)
+
+- **`apps/api/src/app.ts` exports `type App`** — the only cross-app type surface from the API app.
+- **`@repro-v2/api-client`** is the sole package that may `import type { App } from 'api/app'`.
+- **No app→app imports**; frontends use `@repro-v2/api-client`, `@repro-v2/auth/client`, and `@repro-v2/api-types/contract`.
+- **No tsconfig path cheats** to sibling app source (e.g. console must not map `@/*` to `../api/src/*`).
+- Zod request schemas live in `@repro-v2/api-schemas`; OpenAPI spec drift-check via `bun run generate:openapi`.

@@ -21,6 +21,7 @@
   "dependencies": {
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/openapi": "^1.4.14",
+    "@repro-v2/api-schemas": "workspace:*",
     "@repro-v2/api-types": "workspace:*",
     "@repro-v2/auth": "workspace:*",
     "@repro-v2/db": "workspace:*",

@@ -1,3 +1,4 @@
+import type { ErrorEnvelope } from '@repro-v2/api-types/contract'
 import { env } from '@repro-v2/env/api'
 import { ValidationError } from 'elysia'
 import { EvlogError } from 'evlog'
@@ -8,7 +9,6 @@ import {
   errorMessages,
   httpStatus,
 } from './constants'
-import type { ErrorEnvelope } from './meta'
 import { fail } from './response'
 
 interface ResolvedError {
