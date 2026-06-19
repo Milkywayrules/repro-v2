@@ -4,7 +4,13 @@
   "exports": {
     ".": {
       "default": "./src/index.ts"
+    },
+    "./queries": {
+      "default": "./src/queries/index.ts"
     }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "catalog:"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -17,6 +23,7 @@
   },
   "devDependencies": {
     "@repro-v2/config": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "typescript": "catalog:"
   }
 }

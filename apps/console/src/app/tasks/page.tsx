@@ -1,187 +1,175 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import type { Task } from '@repro-v2/api-client'
 import {
+  createTask,
+  createTaskList,
+  deleteTask,
   formatTreatyError,
-  isTreatyUnauthorized,
-  type Task,
-  type TaskList,
-  type TaskListListResponse,
-  type TaskListResponse,
-} from '@repro-v2/api-client'
+  patchTask,
+  taskKeys,
+  taskListKeys,
+  taskListQueryOptions,
+  tasksByListQueryOptions,
+} from '@repro-v2/api-client/queries'
 import { Button } from '@repro-v2/ui/components/button'
 import { Checkbox } from '@repro-v2/ui/components/checkbox'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryState } from 'nuqs'
 
 import { apiClient } from '@/lib/api-client'
 import { authClient } from '@/lib/auth-client'
 
 export default function TasksPage() {
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
-  const [lists, setLists] = useState<TaskList[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [selectedListId, setSelectedListId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const { data: session, isPending: sessionPending } = authClient.useSession()
+  const [listId, setListId] = useQueryState('listId')
   const [newListName, setNewListName] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  const handleApiError = useCallback(
-    (apiError: unknown, fallback: string) => {
-      if (isTreatyUnauthorized(apiError)) {
-        router.replace('/login')
-        return true
-      }
+  const listsQuery = useQuery(taskListQueryOptions(apiClient))
+  const lists = listsQuery.data?.data ?? []
 
-      setError(formatTreatyError(apiError, fallback))
-      return false
-    },
-    [router],
-  )
-
-  const loadLists = useCallback(async () => {
-    try {
-      const response = await apiClient.api.v1['task-lists'].get()
-      if (response.error) {
-        handleApiError(response.error, 'Failed to load lists')
-        return
-      }
-
-      const body = response.data as TaskListListResponse | null
-      if (body && Array.isArray(body.data)) {
-        setLists(body.data)
-        setSelectedListId(current => current ?? body.data[0]?.id ?? null)
-      }
-    } catch (error) {
-      handleApiError(error, 'Failed to load task lists')
-    }
-  }, [handleApiError])
-
-  const loadTasks = useCallback(
-    async (listId: string) => {
-      try {
-        const response = await apiClient.api.v1.tasks.get({
-          query: { listId },
-        })
-
-        if (response.error) {
-          handleApiError(response.error, 'Failed to load tasks')
-          return
-        }
-
-        const body = response.data as TaskListResponse | null
-        if (body && Array.isArray(body.data)) {
-          setTasks(body.data)
-        }
-      } catch (error) {
-        handleApiError(error, 'Failed to load tasks')
-      }
-    },
-    [handleApiError],
-  )
+  const tasksQuery = useQuery({
+    ...tasksByListQueryOptions(apiClient, listId ?? ''),
+    enabled: listId !== null && listId.length > 0,
+  })
+  const tasks = tasksQuery.data?.data ?? []
 
   useEffect(() => {
-    if (isPending) {
+    if (sessionPending) {
       return
     }
 
     if (!session?.user) {
       router.replace('/login')
-      return
     }
-
-    loadLists()
-  }, [isPending, session?.user, router, loadLists])
+  }, [sessionPending, session?.user, router])
 
   useEffect(() => {
-    if (!selectedListId) {
-      setTasks([])
+    if (listId !== null || lists.length === 0) {
       return
     }
 
-    loadTasks(selectedListId)
-  }, [selectedListId, loadTasks])
+    const firstListId = lists[0]?.id
+    if (firstListId) {
+      setListId(firstListId).then(() => undefined)
+    }
+  }, [listId, lists, setListId])
 
-  async function handleCreateList() {
-    if (!newListName.trim()) {
+  const createListMutation = useMutation({
+    mutationFn: (name: string) => createTaskList(apiClient, { name }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: taskListKeys.all })
+      setNewListName('')
+    },
+  })
+
+  const createTaskMutation = useMutation({
+    mutationFn: (input: { title: string; listId: string }) =>
+      createTask(apiClient, input),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: taskKeys.list(variables.listId),
+      })
+      setNewTaskTitle('')
+    },
+  })
+
+  const patchTaskMutation = useMutation({
+    mutationFn: (input: { id: string; completed: boolean; listId: string }) =>
+      patchTask(apiClient, input.id, { completed: input.completed }),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: taskKeys.list(variables.listId),
+      })
+    },
+  })
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (input: { id: string; listId: string }) =>
+      deleteTask(apiClient, input.id),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: taskKeys.list(variables.listId),
+      })
+    },
+  })
+
+  const error = useMemo(() => {
+    const activeError =
+      listsQuery.error ??
+      tasksQuery.error ??
+      createListMutation.error ??
+      createTaskMutation.error ??
+      patchTaskMutation.error ??
+      deleteTaskMutation.error
+
+    if (!activeError) {
+      return null
+    }
+
+    return formatTreatyError(activeError, 'Something went wrong')
+  }, [
+    listsQuery.error,
+    tasksQuery.error,
+    createListMutation.error,
+    createTaskMutation.error,
+    patchTaskMutation.error,
+    deleteTaskMutation.error,
+  ])
+
+  const isMutating =
+    createListMutation.isPending ||
+    createTaskMutation.isPending ||
+    patchTaskMutation.isPending ||
+    deleteTaskMutation.isPending
+
+  function handleCreateList() {
+    const name = newListName.trim()
+    if (!name) {
       return
     }
 
-    setLoading(true)
-    setError(null)
-
-    const response = await apiClient.api.v1['task-lists'].post({
-      name: newListName.trim(),
-    })
-
-    setLoading(false)
-
-    if (response.error) {
-      handleApiError(response.error, 'Failed to create list')
-      return
-    }
-
-    setNewListName('')
-    await loadLists()
+    createListMutation.mutate(name)
   }
 
-  async function handleCreateTask() {
-    if (!(selectedListId && newTaskTitle.trim())) {
+  function handleCreateTask() {
+    const title = newTaskTitle.trim()
+    if (!(listId && title)) {
       return
     }
 
-    setLoading(true)
-    setError(null)
-
-    const response = await apiClient.api.v1.tasks.post({
-      title: newTaskTitle.trim(),
-      listId: selectedListId,
-    })
-
-    setLoading(false)
-
-    if (response.error) {
-      handleApiError(response.error, 'Failed to create task')
-      return
-    }
-
-    setNewTaskTitle('')
-    await loadTasks(selectedListId)
+    createTaskMutation.mutate({ title, listId })
   }
 
-  async function handleToggleTask(task: Task) {
-    const response = await apiClient.api.v1.tasks({ id: task.id }).patch({
+  function handleToggleTask(task: Task) {
+    if (!listId) {
+      return
+    }
+
+    patchTaskMutation.mutate({
+      id: task.id,
       completed: !task.completed,
+      listId,
     })
+  }
 
-    if (response.error) {
-      handleApiError(response.error, 'Failed to update task')
+  function handleDeleteTask(taskId: string) {
+    if (!listId) {
       return
     }
 
-    if (selectedListId) {
-      await loadTasks(selectedListId)
-    }
+    deleteTaskMutation.mutate({ id: taskId, listId })
   }
 
-  async function handleDeleteTask(taskId: string) {
-    const response = await apiClient.api.v1.tasks({ id: taskId }).delete()
-
-    if (response.error) {
-      handleApiError(response.error, 'Failed to delete task')
-      return
-    }
-
-    if (selectedListId) {
-      await loadTasks(selectedListId)
-    }
-  }
-
-  if (isPending || !session?.user) {
+  if (sessionPending || !session?.user) {
     return <p className="p-4">Loading…</p>
   }
 
@@ -193,12 +181,17 @@ export default function TasksPage() {
 
       <section className="flex flex-col gap-2">
         <h2 className="font-medium text-lg">Lists</h2>
+        {listsQuery.isPending ? (
+          <p className="text-muted-foreground text-sm">Loading lists…</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {lists.map(list => (
             <Button
               key={list.id}
-              onClick={() => setSelectedListId(list.id)}
-              variant={selectedListId === list.id ? 'default' : 'outline'}
+              onClick={() => {
+                setListId(list.id).then(() => undefined)
+              }}
+              variant={listId === list.id ? 'default' : 'outline'}
             >
               {list.name}
             </Button>
@@ -216,7 +209,7 @@ export default function TasksPage() {
           </div>
           <Button
             className="self-end"
-            disabled={loading}
+            disabled={isMutating}
             onClick={handleCreateList}
           >
             Add list
@@ -226,6 +219,9 @@ export default function TasksPage() {
 
       <section className="flex flex-col gap-2">
         <h2 className="font-medium text-lg">Tasks</h2>
+        {tasksQuery.isPending && listId ? (
+          <p className="text-muted-foreground text-sm">Loading tasks…</p>
+        ) : null}
         <ul className="flex flex-col gap-2">
           {tasks.map(task => (
             <li
@@ -258,7 +254,7 @@ export default function TasksPage() {
           <div className="flex flex-1 flex-col gap-2">
             <Label htmlFor="new-task-title">New task title</Label>
             <Input
-              disabled={!selectedListId}
+              disabled={!listId}
               id="new-task-title"
               onChange={event => setNewTaskTitle(event.target.value)}
               placeholder="New task title"
@@ -267,7 +263,7 @@ export default function TasksPage() {
           </div>
           <Button
             className="self-end"
-            disabled={loading || !selectedListId}
+            disabled={isMutating || !listId}
             onClick={handleCreateTask}
           >
             Add task

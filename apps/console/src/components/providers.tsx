@@ -1,19 +1,20 @@
 'use client'
 
-import { Toaster } from '@repro-v2/ui/components/sonner'
+import { useRouter } from 'next/navigation'
 
-import { ThemeProvider } from './theme-provider'
+import { AppProviders } from '@repro-v2/ui/providers/app-providers'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      disableTransitionOnChange
-      enableSystem
+    <AppProviders
+      nuqs="next-app"
+      onUnauthorized={() => {
+        router.replace('/login')
+      }}
     >
       {children}
-      <Toaster richColors />
-    </ThemeProvider>
+    </AppProviders>
   )
 }

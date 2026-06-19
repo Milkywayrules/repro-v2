@@ -1,16 +1,7 @@
 'use client'
 
-import { ThemeProvider } from './theme-provider'
+import { AppProviders } from '@repro-v2/ui/providers/app-providers'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      disableTransitionOnChange
-      enableSystem
-    >
-      {children}
-    </ThemeProvider>
-  )
+  return <AppProviders nuqs="next-app">{children}</AppProviders>
 }

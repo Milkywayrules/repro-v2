@@ -8,13 +8,19 @@
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
+    "./providers/app-providers": "./src/providers/app-providers.tsx",
+    "./providers/create-app-query-client": "./src/providers/create-app-query-client.ts",
     "./postcss.config": "./postcss.config.mjs"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@repro-v2/api-client": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-query-devtools": "catalog:",
     "@base-ui/react": "^1.0.0",
+    "nuqs": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "catalog:",
@@ -31,6 +37,15 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "tailwindcss": "catalog:",
+    "next": "^16.2.0",
     "typescript": "catalog:"
+  },
+  "peerDependencies": {
+    "next": ">=14.2.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   }
 }
