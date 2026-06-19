@@ -183,7 +183,7 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 | --- | --- |
 | `@repro-v2/api-schemas` | Zod request/input schemas |
 | `@repro-v2/api-types` | Contract types, HTTP constants, generated OpenAPI JSON |
-| `@repro-v2/api-client` | Eden Treaty client + route response types |
+| `@repro-v2/api-client` | Eden Treaty client, route response types, TanStack Query helpers (`./queries`) |
 | `apps/api` | Server implementation (`createApp`, modules, services) |
 
 - **`apps/api/src/app.ts` exports `type App`** — the only cross-app type surface from the API app.

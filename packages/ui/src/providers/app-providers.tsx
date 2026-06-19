@@ -1,7 +1,7 @@
 'use client'
 
 import type * as React from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -43,9 +43,20 @@ function NuqsWrapper({
 export function AppProviders({
   children,
   onUnauthorized,
+  isUnauthorized,
   nuqs = false,
 }: AppProvidersProps) {
-  const [queryClient] = useState(() => createAppQueryClient({ onUnauthorized }))
+  const onUnauthorizedRef = useRef(onUnauthorized)
+  onUnauthorizedRef.current = onUnauthorized
+
+  const [queryClient] = useState(() =>
+    createAppQueryClient({
+      isUnauthorized,
+      onUnauthorized: () => {
+        onUnauthorizedRef.current?.()
+      },
+    }),
+  )
 
   return (
     <ThemeProvider

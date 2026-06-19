@@ -12,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '@repro-v2/ui/components/dropdown-menu'
 import { Skeleton } from '@repro-v2/ui/components/skeleton'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { authClient } from '@/lib/auth-client'
 
 export default function UserMenu() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { data: session, isPending } = authClient.useSession()
 
   if (isPending) {
@@ -46,6 +48,7 @@ export default function UserMenu() {
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
+                    queryClient.clear()
                     router.push('/')
                   },
                 },

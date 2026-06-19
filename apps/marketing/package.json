@@ -12,13 +12,11 @@
   "dependencies": {
     "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
-    "@tanstack/react-query": "catalog:",
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv": "catalog:",
     "lucide-react": "catalog:",
     "next": "^16.2.0",
     "next-themes": "catalog:",
-    "nuqs": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },

@@ -1,37 +1,47 @@
-import { isTreatyUnauthorized } from '@repro-v2/api-client'
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 
 export interface CreateAppQueryClientOptions {
+  isUnauthorized?: (error: unknown) => boolean
   onUnauthorized?: () => void
 }
 
-function createUnauthorizedErrorHandler(onUnauthorized?: () => void) {
-  return (error: unknown) => {
-    if (isTreatyUnauthorized(error) && onUnauthorized) {
-      onUnauthorized()
-    }
+function defaultIsUnauthorized(error: unknown): boolean {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    return (error as { status?: number }).status === 401
   }
+
+  return false
 }
 
 export function createAppQueryClient(
   options: CreateAppQueryClientOptions = {},
 ): QueryClient {
-  const onError = createUnauthorizedErrorHandler(options.onUnauthorized)
+  const isUnauthorized = options.isUnauthorized ?? defaultIsUnauthorized
+  let queryClient!: QueryClient
 
-  return new QueryClient({
+  const onError = (error: unknown) => {
+    if (isUnauthorized(error)) {
+      queryClient.clear()
+      options.onUnauthorized?.()
+    }
+  }
+
+  queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: true,
         retry: (failureCount, error) =>
-          !isTreatyUnauthorized(error) && failureCount < 3,
+          !isUnauthorized(error) && failureCount < 3,
       },
       mutations: {
-        retry: (_failureCount, error) => !isTreatyUnauthorized(error),
+        retry: (_failureCount, error) => !isUnauthorized(error),
       },
     },
     queryCache: new QueryCache({ onError }),
     mutationCache: new MutationCache({ onError }),
   })
+
+  return queryClient
 }

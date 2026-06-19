@@ -46,6 +46,7 @@ try {
       'apps/console',
       'packages/db',
       'packages/api-client',
+      'packages/ui',
     ],
     {
       cwd: rootDir,
