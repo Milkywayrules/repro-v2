@@ -21,17 +21,3 @@ export async function createTaskList(
   const response = await client.api.v1['task-lists'].post(body)
   return unwrapTreatyResponse(response)
 }
-
-export async function deleteTaskList(client: ApiClient, id: string) {
-  const response = await client.api.v1['task-lists']({ id }).delete()
-  return unwrapTreatyResponse(response)
-}
-
-export async function patchTaskList(
-  client: ApiClient,
-  id: string,
-  body: { name: string },
-) {
-  const response = await client.api.v1['task-lists']({ id }).patch(body)
-  return unwrapTreatyResponse(response)
-}

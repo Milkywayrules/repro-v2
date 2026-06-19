@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type { Task } from '@repro-v2/api-client'
@@ -40,12 +40,9 @@ export function TasksContent() {
   })
   const lists = listsQuery.data?.data ?? []
 
-  const validListId =
-    listId !== null && lists.some(list => list.id === listId) ? listId : null
-
   const tasksQuery = useQuery({
-    ...tasksByListQueryOptions(apiClient, validListId ?? ''),
-    enabled: Boolean(session?.user && validListId),
+    ...tasksByListQueryOptions(apiClient, listId ?? ''),
+    enabled: Boolean(session?.user && listId),
   })
   const tasks = tasksQuery.data?.data ?? []
 
@@ -60,27 +57,35 @@ export function TasksContent() {
   }, [sessionPending, session?.user, router])
 
   useEffect(() => {
-    if (listsQuery.isPending || lists.length === 0) {
+    if (listsQuery.isPending) {
       return
     }
 
-    const isStaleListId =
-      listId !== null && !lists.some(list => list.id === listId)
-
-    if (listId === null || isStaleListId) {
-      const firstListId = lists[0]?.id
-      if (firstListId) {
-        setListId(firstListId).then(() => undefined)
-      } else if (listId !== null) {
+    if (lists.length === 0) {
+      if (listId !== null) {
         setListId(null).then(() => undefined)
       }
+      return
     }
+
+    if (listId !== null && lists.some(list => list.id === listId)) {
+      return
+    }
+
+    setListId(lists[0]?.id ?? null).then(() => undefined)
   }, [listId, lists, listsQuery.isPending, setListId])
+
+  async function invalidateTaskList(taskListId: string) {
+    await queryClient.invalidateQueries({
+      queryKey: taskKeys.list(taskListId),
+    })
+  }
 
   const createListMutation = useMutation({
     mutationFn: (name: string) => createTaskList(apiClient, { name }),
-    onSuccess: async () => {
+    onSuccess: async created => {
       await queryClient.invalidateQueries({ queryKey: taskListKeys.all })
+      setListId(created.data.id).then(() => undefined)
       setNewListName('')
     },
   })
@@ -89,9 +94,7 @@ export function TasksContent() {
     mutationFn: (input: { title: string; listId: string }) =>
       createTask(apiClient, input),
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: taskKeys.list(variables.listId),
-      })
+      await invalidateTaskList(variables.listId)
       setNewTaskTitle('')
     },
   })
@@ -100,9 +103,7 @@ export function TasksContent() {
     mutationFn: (input: { id: string; completed: boolean; listId: string }) =>
       patchTask(apiClient, input.id, { completed: input.completed }),
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: taskKeys.list(variables.listId),
-      })
+      await invalidateTaskList(variables.listId)
     },
   })
 
@@ -110,34 +111,21 @@ export function TasksContent() {
     mutationFn: (input: { id: string; listId: string }) =>
       deleteTask(apiClient, input.id),
     onSuccess: async (_data, variables) => {
-      await queryClient.invalidateQueries({
-        queryKey: taskKeys.list(variables.listId),
-      })
+      await invalidateTaskList(variables.listId)
     },
   })
 
-  const error = useMemo(() => {
-    const activeError =
-      listsQuery.error ??
-      tasksQuery.error ??
-      createListMutation.error ??
-      createTaskMutation.error ??
-      patchTaskMutation.error ??
-      deleteTaskMutation.error
+  const activeError =
+    listsQuery.error ??
+    tasksQuery.error ??
+    createListMutation.error ??
+    createTaskMutation.error ??
+    patchTaskMutation.error ??
+    deleteTaskMutation.error
 
-    if (!activeError) {
-      return null
-    }
-
-    return formatTreatyError(activeError, 'Something went wrong')
-  }, [
-    listsQuery.error,
-    tasksQuery.error,
-    createListMutation.error,
-    createTaskMutation.error,
-    patchTaskMutation.error,
-    deleteTaskMutation.error,
-  ])
+  const error = activeError
+    ? formatTreatyError(activeError, 'Something went wrong')
+    : null
 
   const isMutating =
     createListMutation.isPending ||
@@ -156,31 +144,31 @@ export function TasksContent() {
 
   function handleCreateTask() {
     const title = newTaskTitle.trim()
-    if (!(validListId && title)) {
+    if (!(listId && title)) {
       return
     }
 
-    createTaskMutation.mutate({ title, listId: validListId })
+    createTaskMutation.mutate({ title, listId })
   }
 
   function handleToggleTask(task: Task) {
-    if (!validListId) {
+    if (!listId) {
       return
     }
 
     patchTaskMutation.mutate({
       id: task.id,
       completed: !task.completed,
-      listId: validListId,
+      listId,
     })
   }
 
   function handleDeleteTask(taskId: string) {
-    if (!validListId) {
+    if (!listId) {
       return
     }
 
-    deleteTaskMutation.mutate({ id: taskId, listId: validListId })
+    deleteTaskMutation.mutate({ id: taskId, listId })
   }
 
   if (sessionPending || !session?.user) {
@@ -205,7 +193,7 @@ export function TasksContent() {
               onClick={() => {
                 setListId(list.id).then(() => undefined)
               }}
-              variant={validListId === list.id ? 'default' : 'outline'}
+              variant={listId === list.id ? 'default' : 'outline'}
             >
               {list.name}
             </Button>
@@ -233,7 +221,7 @@ export function TasksContent() {
 
       <section className="flex flex-col gap-2">
         <h2 className="font-medium text-lg">Tasks</h2>
-        {tasksQuery.isPending && validListId ? (
+        {tasksQuery.isPending && listId ? (
           <p className="text-muted-foreground text-sm">Loading tasks…</p>
         ) : null}
         <ul className="flex flex-col gap-2">
@@ -269,7 +257,7 @@ export function TasksContent() {
           <div className="flex flex-1 flex-col gap-2">
             <Label htmlFor="new-task-title">New task title</Label>
             <Input
-              disabled={!validListId}
+              disabled={!listId}
               id="new-task-title"
               onChange={event => setNewTaskTitle(event.target.value)}
               placeholder="New task title"
@@ -278,7 +266,7 @@ export function TasksContent() {
           </div>
           <Button
             className="self-end"
-            disabled={isMutating || !validListId}
+            disabled={isMutating || !listId}
             onClick={handleCreateTask}
           >
             Add task

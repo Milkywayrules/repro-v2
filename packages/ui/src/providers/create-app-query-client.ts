@@ -36,7 +36,7 @@ export function createAppQueryClient(
           !isUnauthorized(error) && failureCount < 3,
       },
       mutations: {
-        retry: (_failureCount, error) => !isUnauthorized(error),
+        retry: false,
       },
     },
     queryCache: new QueryCache({ onError }),
