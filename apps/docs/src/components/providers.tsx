@@ -7,5 +7,5 @@ export default function DocsAppProviders({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppProviders nuqs="next-app">{children}</AppProviders>;
+  return <AppProviders>{children}</AppProviders>;
 }

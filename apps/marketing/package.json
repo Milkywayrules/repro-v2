@@ -10,8 +10,10 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@repro-v2/api-client": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "babel-plugin-react-compiler": "^1.0.0",
     "dotenv": "catalog:",
     "lucide-react": "catalog:",

@@ -47,7 +47,10 @@
       "name": "browser-ext",
       "version": "0.0.0",
       "dependencies": {
+        "@repro-v2/api-client": "workspace:*",
+        "@repro-v2/env": "workspace:*",
         "@repro-v2/ui": "workspace:*",
+        "@tanstack/react-query": "catalog:",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
       },
@@ -96,7 +99,10 @@
       "name": "docs",
       "version": "0.0.0",
       "dependencies": {
+        "@repro-v2/api-client": "workspace:*",
+        "@repro-v2/env": "workspace:*",
         "@repro-v2/ui": "workspace:*",
+        "@tanstack/react-query": "catalog:",
         "fumadocs-core": "16.10.3",
         "fumadocs-mdx": "15.0.12",
         "fumadocs-ui": "16.10.3",
@@ -122,8 +128,10 @@
       "name": "marketing",
       "version": "0.1.0",
       "dependencies": {
+        "@repro-v2/api-client": "workspace:*",
         "@repro-v2/env": "workspace:*",
         "@repro-v2/ui": "workspace:*",
+        "@tanstack/react-query": "catalog:",
         "babel-plugin-react-compiler": "^1.0.0",
         "dotenv": "catalog:",
         "lucide-react": "catalog:",

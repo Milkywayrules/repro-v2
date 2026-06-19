@@ -192,3 +192,4 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 - **No tsconfig path cheats** to sibling app source (e.g. console must not map `@/*` to `../api/src/*`).
 - Zod request schemas live in `@repro-v2/api-schemas`; OpenAPI spec drift-check via `bun run generate:openapi`.
 - **`apps/api` emits `dist-types/`** via `prepare` and `check-types` (`tsc -b`) before dependents such as `@repro-v2/api-client` typecheck. Turbo `^check-types` enforces build order on `bun run check-types`.
+- **Page convention:** domain UI lives in `modules/<domain>/*.page.tsx` exporting a `*Page` component; `app/**/page.tsx` stays a thin route shell (Suspense, metadata).

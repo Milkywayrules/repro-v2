@@ -1,10 +1,15 @@
 import { env } from '@repro-v2/env/marketing'
 import { Button } from '@repro-v2/ui/components/button'
 
+import { ApiHealthBadge } from '@/components/api-health-badge'
+
 export default function Home() {
   return (
     <main className="flex min-h-svh flex-col items-center justify-center px-4">
       <div className="mx-auto max-w-2xl text-center">
+        <div className="mb-4 flex justify-center">
+          <ApiHealthBadge />
+        </div>
         <h1 className="font-bold text-4xl tracking-tight sm:text-5xl">
           Build faster with repro-v2
         </h1>

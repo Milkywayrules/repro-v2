@@ -25,12 +25,14 @@ import { useQueryState } from 'nuqs'
 import { apiClient } from '@/lib/api-client'
 import { authClient } from '@/lib/auth-client'
 import { parseAsListId } from '@/lib/list-id-parser'
+import { routes } from '@/lib/routes'
+import { searchParams } from '@/lib/search-params'
 
-export function TasksContent() {
+export function TasksPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data: session, isPending: sessionPending } = authClient.useSession()
-  const [listId, setListId] = useQueryState('listId', parseAsListId)
+  const [listId, setListId] = useQueryState(searchParams.listId, parseAsListId)
   const [newListName, setNewListName] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
@@ -52,7 +54,7 @@ export function TasksContent() {
     }
 
     if (!session?.user) {
-      router.replace('/login')
+      router.replace(routes.login)
     }
   }, [sessionPending, session?.user, router])
 

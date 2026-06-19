@@ -16,8 +16,10 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@repro-v2/api-client": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
+    "@tanstack/react-query": "catalog:",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
