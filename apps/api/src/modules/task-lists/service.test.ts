@@ -4,7 +4,7 @@ import { db } from '@repro-v2/db'
 
 import { http } from '@/libs/contract'
 
-import { deleteTaskList } from './service'
+import { taskListsService } from './service'
 
 const userId = '00000000-0000-7000-8000-000000000001'
 const listId = '00000000-0000-7000-8000-000000000002'
@@ -64,7 +64,7 @@ describe('task-lists soft delete', () => {
       return callback(tx as never)
     })
 
-    await deleteTaskList(userId, listId)
+    await taskListsService.delete(userId, listId)
 
     expect(updateCount).toBe(2)
   })
@@ -105,9 +105,11 @@ describe('task-lists soft delete', () => {
       return callback(tx as never)
     })
 
-    await expect(deleteTaskList(userId, listId)).rejects.toMatchObject({
-      status: http.status.NOT_FOUND,
-    })
+    await expect(taskListsService.delete(userId, listId)).rejects.toMatchObject(
+      {
+        status: http.status.NOT_FOUND,
+      },
+    )
 
     expect(updateCount).toBe(2)
   })

@@ -1,5 +1,9 @@
 import { auth } from './auth'
 
-export function getSession(headers: Headers) {
+function getSession(headers: Headers) {
   return auth.api.getSession({ headers })
+}
+
+export const authService = {
+  getSession,
 }

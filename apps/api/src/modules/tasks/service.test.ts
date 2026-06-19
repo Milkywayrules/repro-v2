@@ -4,7 +4,7 @@ import { db } from '@repro-v2/db'
 
 import { http } from '@/libs/contract'
 
-import { deleteTask, getTaskForUser } from './service'
+import { tasksService } from './service'
 
 const userId = '00000000-0000-7000-8000-000000000002'
 const taskId = '00000000-0000-7000-8000-000000000003'
@@ -71,14 +71,16 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    const deleted = await deleteTask(userId, taskId)
+    const deleted = await tasksService.delete(userId, taskId)
 
     expect(deleted.deletedAt).toBeInstanceOf(Date)
     expect(deleted.deletedById).toBe(userId)
 
-    await expect(getTaskForUser(userId, taskId)).rejects.toMatchObject({
-      code: http.codes.NOT_FOUND,
-    })
+    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
+      {
+        code: http.codes.NOT_FOUND,
+      },
+    )
   })
 
   test('getTaskForUser returns 404 when parent list is deleted', async () => {
@@ -95,9 +97,11 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    await expect(getTaskForUser(userId, taskId)).rejects.toMatchObject({
-      code: http.codes.NOT_FOUND,
-    })
+    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
+      {
+        code: http.codes.NOT_FOUND,
+      },
+    )
   })
 
   test('getTaskForUser returns 404 for another user task', async () => {
@@ -114,8 +118,10 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    await expect(getTaskForUser(userId, taskId)).rejects.toMatchObject({
-      code: http.codes.NOT_FOUND,
-    })
+    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
+      {
+        code: http.codes.NOT_FOUND,
+      },
+    )
   })
 })

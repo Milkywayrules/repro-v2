@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia'
 
 import { shouldSkipAuthContext } from './paths'
-import { getSession } from './service'
+import { authService } from './service'
 
 export const authSession = new Elysia({ name: 'auth-session' }).derive(
   { as: 'global' },
@@ -13,7 +13,7 @@ export const authSession = new Elysia({ name: 'auth-session' }).derive(
     }
 
     return {
-      authSession: await getSession(request.headers),
+      authSession: await authService.getSession(request.headers),
     }
   },
 )

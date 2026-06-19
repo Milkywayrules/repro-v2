@@ -1,5 +1,4 @@
-import type { Column } from 'drizzle-orm'
-import { asc, desc, type SQL } from 'drizzle-orm'
+import { asc, type Column, desc, type SQL } from '@repro-v2/db/drizzle'
 
 import type { SortField } from '@/libs/contract/meta'
 

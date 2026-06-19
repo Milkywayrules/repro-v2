@@ -12,8 +12,8 @@ src/
   platform/health/      # liveness/readiness probes (plain JSON, no envelope)
   modules/
     auth/               # routes.ts (better-auth mount + requireAuth), service.ts
-    task-lists/         # reference CRUD — routes.ts, service.ts, schemas in service
-    tasks/              # reference CRUD — soft delete via deletedAt
+    task-lists/         # reference CRUD — routes.ts, service.ts, schemas.ts
+    tasks/              # reference CRUD — routes.ts, service.ts, schemas.ts; soft delete via deletedAt
   routes/
     platform/index.ts   # .use(healthRoutes)
     auth/index.ts       # .use(authModuleRoutes) at /api/auth
@@ -32,6 +32,14 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 - Use `@/` path alias (`@/libs/contract`, `@/modules/auth`, `@/platform/health`, …).
 - Barrels allowed under `apps/api/src/`.
 - Route/feature code imports public surfaces only.
+- **Do not** depend on `drizzle-orm` directly — import operators/types from `@repro-v2/db/drizzle`, schema from `@repro-v2/db/schema/*`, and `db` from `@repro-v2/db`.
+
+## Modules & services
+
+- Each module under `modules/*` exports a **service object** from `service.ts` (e.g. `taskListsService`, `tasksService`, `authService`).
+- Methods may be defined outside the object or inlined — export one object, not individual functions.
+- Routes and cross-module callers import the service object and call through it (`taskListsService.list(...)`, not `import { list } from './service'`).
+- Query/business logic lives in `service.ts`; HTTP wiring stays in `routes.ts`.
 
 ## Validation & tests
 

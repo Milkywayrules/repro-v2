@@ -5,12 +5,10 @@ import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { notFoundError } from '@/libs/errors'
-// biome-ignore lint/performance/noNamespaceImport: spyOn requires module namespace in tests
-import * as authService from '@/modules/auth/service'
+import { authService } from '@/modules/auth/service'
 import { v1Routes } from '@/routes/v1'
 
-// biome-ignore lint/performance/noNamespaceImport: spyOn requires module namespace in tests
-import * as tasksService from './service'
+import { tasksService } from './service'
 
 const mockUser = {
   id: '00000000-0000-7000-8000-000000000002',
@@ -58,11 +56,11 @@ function mockAuthedSession() {
 describe('tasks routes', () => {
   afterEach(() => {
     spyOn(authService, 'getSession').mockRestore()
-    spyOn(tasksService, 'listTasks').mockRestore()
-    spyOn(tasksService, 'createTask').mockRestore()
-    spyOn(tasksService, 'getTaskForUser').mockRestore()
-    spyOn(tasksService, 'updateTask').mockRestore()
-    spyOn(tasksService, 'deleteTask').mockRestore()
+    spyOn(tasksService, 'list').mockRestore()
+    spyOn(tasksService, 'create').mockRestore()
+    spyOn(tasksService, 'getForUser').mockRestore()
+    spyOn(tasksService, 'update').mockRestore()
+    spyOn(tasksService, 'delete').mockRestore()
   })
 
   test('GET /api/v1/tasks returns 401 without session', async () => {
@@ -83,7 +81,7 @@ describe('tasks routes', () => {
 
   test('GET /api/v1/tasks returns paginated envelope for authed user', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'listTasks').mockResolvedValue({
+    spyOn(tasksService, 'list').mockResolvedValue({
       rows: [mockTaskRow],
       total: 1,
     })
@@ -104,7 +102,7 @@ describe('tasks routes', () => {
 
   test('GET /api/v1/tasks returns empty envelope when user has no tasks', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'listTasks').mockResolvedValue({
+    spyOn(tasksService, 'list').mockResolvedValue({
       rows: [],
       total: 0,
     })
@@ -164,7 +162,7 @@ describe('tasks routes', () => {
 
   test('POST /api/v1/tasks creates task for authed user', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'createTask').mockResolvedValue(mockTaskRow)
+    spyOn(tasksService, 'create').mockResolvedValue(mockTaskRow)
 
     const response = await createApp().handle(
       new Request('http://localhost/api/v1/tasks', {
@@ -236,7 +234,7 @@ describe('tasks routes', () => {
 
   test('POST /api/v1/tasks returns 404 for deleted listId', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'createTask').mockRejectedValue(notFoundError())
+    spyOn(tasksService, 'create').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
       new Request('http://localhost/api/v1/tasks', {
@@ -263,7 +261,7 @@ describe('tasks routes', () => {
 
   test('GET /api/v1/tasks?listId returns 404 for foreign listId', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'listTasks').mockRejectedValue(notFoundError())
+    spyOn(tasksService, 'list').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
       new Request(
@@ -282,7 +280,7 @@ describe('tasks routes', () => {
 
   test('PATCH /api/v1/tasks/:id updates task for authed user', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'updateTask').mockResolvedValue({
+    spyOn(tasksService, 'update').mockResolvedValue({
       ...mockTaskRow,
       completed: true,
     })
@@ -307,7 +305,7 @@ describe('tasks routes', () => {
 
   test('PATCH /api/v1/tasks/:id returns current task for empty body', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'getTaskForUser').mockResolvedValue(mockTaskRow)
+    spyOn(tasksService, 'getForUser').mockResolvedValue(mockTaskRow)
 
     const response = await createApp().handle(
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`, {
@@ -331,7 +329,7 @@ describe('tasks routes', () => {
 
   test('DELETE /api/v1/tasks/:id deletes task for authed user', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'deleteTask').mockResolvedValue({
+    spyOn(tasksService, 'delete').mockResolvedValue({
       ...mockTaskRow,
       deletedAt: new Date('2026-01-02T00:00:00.000Z'),
     })
@@ -354,7 +352,7 @@ describe('tasks routes', () => {
 
   test('GET /api/v1/tasks/:id returns 404 for another user task', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'getTaskForUser').mockRejectedValue(notFoundError())
+    spyOn(tasksService, 'getForUser').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`),
@@ -371,7 +369,7 @@ describe('tasks routes', () => {
 
   test('GET /api/v1/tasks/:id returns 404 when parent list is deleted', async () => {
     mockAuthedSession()
-    spyOn(tasksService, 'getTaskForUser').mockRejectedValue(notFoundError())
+    spyOn(tasksService, 'getForUser').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
       new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`),

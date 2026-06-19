@@ -1,14 +1,14 @@
 import { db } from '@repro-v2/db'
+import { and, desc, eq, isNull } from '@repro-v2/db/drizzle'
 import { listWithOffset } from '@repro-v2/db/list'
 import { taskLists, tasks } from '@repro-v2/db/schema/tasks'
-import { and, desc, eq, isNull } from 'drizzle-orm'
 
 import type { SortField } from '@/libs/contract/meta'
 import { internalServerError, notFoundError } from '@/libs/errors'
 import { buildSortOrderBy } from '@/libs/queries/sort-order'
 import { serializeAuditTimestamps } from '@/libs/serialize-audit'
 
-export function toTaskListResponse(row: typeof taskLists.$inferSelect) {
+function toResponse(row: typeof taskLists.$inferSelect) {
   return {
     id: row.id,
     name: row.name,
@@ -24,7 +24,7 @@ function activeOwnedTaskListWhere(userId: string, id: string) {
   )
 }
 
-export async function listTaskLists(
+async function list(
   userId: string,
   page: number,
   pageSize: number,
@@ -44,7 +44,7 @@ export async function listTaskLists(
   })
 }
 
-export async function createTaskList(userId: string, name: string) {
+async function create(userId: string, name: string) {
   const [row] = await db
     .insert(taskLists)
     .values({
@@ -61,7 +61,7 @@ export async function createTaskList(userId: string, name: string) {
   return row
 }
 
-export async function getTaskListForUser(userId: string, id: string) {
+async function getForUser(userId: string, id: string) {
   const [row] = await db
     .select()
     .from(taskLists)
@@ -75,8 +75,8 @@ export async function getTaskListForUser(userId: string, id: string) {
   return row
 }
 
-export async function updateTaskList(userId: string, id: string, name: string) {
-  await getTaskListForUser(userId, id)
+async function update(userId: string, id: string, name: string) {
+  await getForUser(userId, id)
 
   const [row] = await db
     .update(taskLists)
@@ -94,8 +94,8 @@ export async function updateTaskList(userId: string, id: string, name: string) {
   return row
 }
 
-export async function deleteTaskList(userId: string, id: string) {
-  await getTaskListForUser(userId, id)
+async function remove(userId: string, id: string) {
+  await getForUser(userId, id)
   const now = new Date()
 
   return await db.transaction(async tx => {
@@ -122,4 +122,13 @@ export async function deleteTaskList(userId: string, id: string) {
 
     return row
   })
+}
+
+export const taskListsService = {
+  list,
+  create,
+  getForUser,
+  update,
+  delete: remove,
+  toResponse,
 }

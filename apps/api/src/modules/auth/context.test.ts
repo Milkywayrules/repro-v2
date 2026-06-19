@@ -3,8 +3,7 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { Elysia } from 'elysia'
 
 import { authSession } from './context'
-// biome-ignore lint/performance/noNamespaceImport: spyOn requires module namespace in tests
-import * as authService from './service'
+import { authService } from './service'
 
 const skipPaths = [
   { path: '/health', route: '/health' },

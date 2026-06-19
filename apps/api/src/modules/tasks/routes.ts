@@ -10,14 +10,7 @@ import {
   taskListFilterQuery,
   updateTaskBody,
 } from './schemas'
-import {
-  createTask,
-  deleteTask,
-  getTaskForUser,
-  listTasks,
-  toTaskResponse,
-  updateTask,
-} from './service'
+import { tasksService } from './service'
 
 export const tasksRoutes = new Elysia({ name: 'tasks-routes' })
   .use(requireAuth)
@@ -29,26 +22,26 @@ export const tasksRoutes = new Elysia({ name: 'tasks-routes' })
         searchParams,
         allowedSortFields: ['title'],
         query: ({ page, pageSize, sort }) =>
-          listTasks(user.id, page, pageSize, query.listId, sort),
+          tasksService.list(user.id, page, pageSize, query.listId, sort),
       })
 
-      return http.okV1(rows.map(toTaskResponse), meta)
+      return http.okV1(rows.map(tasksService.toResponse), meta)
     },
     { query: taskListFilterQuery },
   )
   .post(
     '/',
     async ({ user, body }) => {
-      const row = await createTask(user.id, body)
-      return http.okV1(toTaskResponse(row))
+      const row = await tasksService.create(user.id, body)
+      return http.okV1(tasksService.toResponse(row))
     },
     { body: createTaskBody },
   )
   .get(
     '/:id',
     async ({ user, params }) => {
-      const row = await getTaskForUser(user.id, params.id)
-      return http.okV1(toTaskResponse(row))
+      const row = await tasksService.getForUser(user.id, params.id)
+      return http.okV1(tasksService.toResponse(row))
     },
     { params: taskIdParams },
   )
@@ -56,20 +49,20 @@ export const tasksRoutes = new Elysia({ name: 'tasks-routes' })
     '/:id',
     async ({ user, params, body }) => {
       if (body.title === undefined && body.completed === undefined) {
-        const row = await getTaskForUser(user.id, params.id)
-        return http.okV1(toTaskResponse(row))
+        const row = await tasksService.getForUser(user.id, params.id)
+        return http.okV1(tasksService.toResponse(row))
       }
 
-      const row = await updateTask(user.id, params.id, body)
-      return http.okV1(toTaskResponse(row))
+      const row = await tasksService.update(user.id, params.id, body)
+      return http.okV1(tasksService.toResponse(row))
     },
     { params: taskIdParams, body: updateTaskBody },
   )
   .delete(
     '/:id',
     async ({ user, params }) => {
-      const row = await deleteTask(user.id, params.id)
-      return http.okV1(toTaskResponse(row))
+      const row = await tasksService.delete(user.id, params.id)
+      return http.okV1(tasksService.toResponse(row))
     },
     { params: taskIdParams },
   )

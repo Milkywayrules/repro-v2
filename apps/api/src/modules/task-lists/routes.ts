@@ -9,14 +9,7 @@ import {
   taskListIdParams,
   updateTaskListBody,
 } from './schemas'
-import {
-  createTaskList,
-  deleteTaskList,
-  getTaskListForUser,
-  listTaskLists,
-  toTaskListResponse,
-  updateTaskList,
-} from './service'
+import { taskListsService } from './service'
 
 export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })
   .use(requireAuth)
@@ -26,24 +19,24 @@ export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })
       searchParams,
       allowedSortFields: ['name'],
       query: ({ page, pageSize, sort }) =>
-        listTaskLists(user.id, page, pageSize, sort),
+        taskListsService.list(user.id, page, pageSize, sort),
     })
 
-    return http.okV1(rows.map(toTaskListResponse), meta)
+    return http.okV1(rows.map(taskListsService.toResponse), meta)
   })
   .post(
     '/',
     async ({ user, body }) => {
-      const row = await createTaskList(user.id, body.name)
-      return http.okV1(toTaskListResponse(row))
+      const row = await taskListsService.create(user.id, body.name)
+      return http.okV1(taskListsService.toResponse(row))
     },
     { body: createTaskListBody },
   )
   .get(
     '/:id',
     async ({ user, params }) => {
-      const row = await getTaskListForUser(user.id, params.id)
-      return http.okV1(toTaskListResponse(row))
+      const row = await taskListsService.getForUser(user.id, params.id)
+      return http.okV1(taskListsService.toResponse(row))
     },
     { params: taskListIdParams },
   )
@@ -51,20 +44,20 @@ export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })
     '/:id',
     async ({ user, params, body }) => {
       if (body.name === undefined) {
-        const row = await getTaskListForUser(user.id, params.id)
-        return http.okV1(toTaskListResponse(row))
+        const row = await taskListsService.getForUser(user.id, params.id)
+        return http.okV1(taskListsService.toResponse(row))
       }
 
-      const row = await updateTaskList(user.id, params.id, body.name)
-      return http.okV1(toTaskListResponse(row))
+      const row = await taskListsService.update(user.id, params.id, body.name)
+      return http.okV1(taskListsService.toResponse(row))
     },
     { params: taskListIdParams, body: updateTaskListBody },
   )
   .delete(
     '/:id',
     async ({ user, params }) => {
-      const row = await deleteTaskList(user.id, params.id)
-      return http.okV1(toTaskListResponse(row))
+      const row = await taskListsService.delete(user.id, params.id)
+      return http.okV1(taskListsService.toResponse(row))
     },
     { params: taskListIdParams },
   )
