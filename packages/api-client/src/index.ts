@@ -27,6 +27,9 @@ export type TaskListResponse = TreatySuccess<
 >
 export type Task = TaskListResponse['data'][number]
 
+const UNAUTHORIZED_CODE = 'UNAUTHORIZED'
+const UNAUTHORIZED_STATUS = 401
+
 function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return (
     typeof value === 'object' &&
@@ -36,16 +39,43 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   )
 }
 
+function messageFromEnvelope(envelope: ErrorEnvelope): string | null {
+  const message = envelope.error.message.trim()
+  return message.length > 0 ? message : null
+}
+
+export function isTreatyUnauthorized(error: unknown): boolean {
+  if (!(error && typeof error === 'object')) {
+    return false
+  }
+
+  if (
+    'status' in error &&
+    (error as { status?: number }).status === UNAUTHORIZED_STATUS
+  ) {
+    return true
+  }
+
+  if ('value' in error) {
+    const { value } = error as { value?: unknown }
+    if (isErrorEnvelope(value) && value.error.code === UNAUTHORIZED_CODE) {
+      return true
+    }
+  }
+
+  return isErrorEnvelope(error) && error.error.code === UNAUTHORIZED_CODE
+}
+
 export function formatTreatyError(error: unknown, fallback: string): string {
   if (error && typeof error === 'object' && 'value' in error) {
     const { value } = error as { value?: unknown }
     if (isErrorEnvelope(value)) {
-      return value.error.message
+      return messageFromEnvelope(value) ?? fallback
     }
   }
 
   if (isErrorEnvelope(error)) {
-    return error.error.message
+    return messageFromEnvelope(error) ?? fallback
   }
 
   return fallback

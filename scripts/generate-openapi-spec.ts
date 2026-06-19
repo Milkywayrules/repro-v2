@@ -13,17 +13,25 @@ const specPath = resolve(generatedDir, 'openapi.json')
 
 mkdirSync(generatedDir, { recursive: true })
 
-const { createApp } = await import('../apps/api/src/app.ts')
-const app = createApp()
+try {
+  const { createApp } = await import('../apps/api/src/app.ts')
+  const app = createApp()
 
-const response = await app.handle(new Request('http://localhost/openapi/json'))
-
-if (!response.ok) {
-  process.stderr.write(
-    `Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}\n`,
+  const response = await app.handle(
+    new Request('http://localhost/openapi/json'),
   )
+
+  if (!response.ok) {
+    process.stderr.write(
+      `Failed to fetch OpenAPI spec: ${response.status} ${response.statusText}\n`,
+    )
+    process.exit(1)
+  }
+
+  const spec = await response.json()
+  writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`)
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error)
+  process.stderr.write(`Failed to generate OpenAPI spec: ${message}\n`)
   process.exit(1)
 }
-
-const spec = await response.json()
-writeFileSync(specPath, `${JSON.stringify(spec, null, 2)}\n`)

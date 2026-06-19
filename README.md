@@ -89,6 +89,9 @@ repro-v2/
 │   ├── docs/          # Documentation site (Fumadocs)
 │   └── marketing/     # Marketing landing page (Next.js)
 ├── packages/
+│   ├── api-client/  # Eden Treaty client for the API
+│   ├── api-schemas/ # Shared Zod request schemas
+│   ├── api-types/   # API contract types and generated OpenAPI spec
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── auth/        # Authentication configuration & logic
 │   └── db/          # Database schema & queries
@@ -103,6 +106,8 @@ repro-v2/
 - `bun run dev:docs`: Start only the docs site
 - `bun run dev:marketing`: Start only the marketing site
 - `bun run check-types`: Check TypeScript types across all apps
+- `bun run test`: Run API and package tests
+- `bun run generate:openapi`: Regenerate the OpenAPI spec in `packages/api-types`
 - `bun run db:push`: Push schema changes to database
 - `bun run db:generate`: Generate database client/types
 - `bun run db:migrate`: Run database migrations

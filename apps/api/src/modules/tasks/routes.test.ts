@@ -210,6 +210,25 @@ describe('tasks routes', () => {
     expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
   })
 
+  test('POST /api/v1/tasks returns 422 for empty body', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/tasks', {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as { error: { code: string } }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+  })
+
   test('POST /api/v1/tasks returns 422 for title exceeding max length', async () => {
     mockAuthedSession()
 
@@ -365,17 +384,6 @@ describe('tasks routes', () => {
         message: http.messages.NOT_FOUND,
       },
     })
-  })
-
-  test('GET /api/v1/tasks/:id returns 404 when parent list is deleted', async () => {
-    mockAuthedSession()
-    spyOn(tasksService, 'getForUser').mockRejectedValue(notFoundError())
-
-    const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/tasks/${mockTaskRow.id}`),
-    )
-
-    expect(response.status).toBe(http.status.NOT_FOUND)
   })
 
   test('POST /api/v1/tasks rejects disallowed Origin with 403', async () => {

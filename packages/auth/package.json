@@ -22,6 +22,9 @@
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
+  "peerDependencies": {
+    "react": "catalog:"
+  },
   "devDependencies": {
     "@repro-v2/config": "workspace:*",
     "typescript": "catalog:"

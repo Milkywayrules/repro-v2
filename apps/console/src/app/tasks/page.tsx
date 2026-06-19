@@ -9,7 +9,7 @@ import type {
   TaskListListResponse,
   TaskListResponse,
 } from '@repro-v2/api-client'
-import { formatTreatyError } from '@repro-v2/api-client'
+import { formatTreatyError, isTreatyUnauthorized } from '@repro-v2/api-client'
 import { Button } from '@repro-v2/ui/components/button'
 import { Checkbox } from '@repro-v2/ui/components/checkbox'
 import { Input } from '@repro-v2/ui/components/input'
@@ -30,34 +30,61 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(false)
 
   const loadLists = useCallback(async () => {
-    const response = await apiClient.api.v1['task-lists'].get()
-    if (response.error) {
-      setError(formatTreatyError(response.error, 'Failed to load lists'))
-      return
-    }
+    try {
+      const response = await apiClient.api.v1['task-lists'].get()
+      if (response.error) {
+        if (isTreatyUnauthorized(response.error)) {
+          router.replace('/login')
+          return
+        }
+        setError(formatTreatyError(response.error, 'Failed to load lists'))
+        return
+      }
 
-    const body = response.data as TaskListListResponse | null
-    if (body && Array.isArray(body.data)) {
-      setLists(body.data)
-      setSelectedListId(current => current ?? body.data[0]?.id ?? null)
+      const body = response.data as TaskListListResponse | null
+      if (body && Array.isArray(body.data)) {
+        setLists(body.data)
+        setSelectedListId(current => current ?? body.data[0]?.id ?? null)
+      }
+    } catch (error) {
+      if (isTreatyUnauthorized(error)) {
+        router.replace('/login')
+        return
+      }
+      setError(formatTreatyError(error, 'Failed to load task lists'))
     }
-  }, [])
+  }, [router])
 
-  const loadTasks = useCallback(async (listId: string) => {
-    const response = await apiClient.api.v1.tasks.get({
-      query: { listId },
-    })
+  const loadTasks = useCallback(
+    async (listId: string) => {
+      try {
+        const response = await apiClient.api.v1.tasks.get({
+          query: { listId },
+        })
 
-    if (response.error) {
-      setError(formatTreatyError(response.error, 'Failed to load tasks'))
-      return
-    }
+        if (response.error) {
+          if (isTreatyUnauthorized(response.error)) {
+            router.replace('/login')
+            return
+          }
+          setError(formatTreatyError(response.error, 'Failed to load tasks'))
+          return
+        }
 
-    const body = response.data as TaskListResponse | null
-    if (body && Array.isArray(body.data)) {
-      setTasks(body.data)
-    }
-  }, [])
+        const body = response.data as TaskListResponse | null
+        if (body && Array.isArray(body.data)) {
+          setTasks(body.data)
+        }
+      } catch (error) {
+        if (isTreatyUnauthorized(error)) {
+          router.replace('/login')
+          return
+        }
+        setError(formatTreatyError(error, 'Failed to load tasks'))
+      }
+    },
+    [router],
+  )
 
   useEffect(() => {
     if (isPending) {
@@ -69,9 +96,7 @@ export default function TasksPage() {
       return
     }
 
-    loadLists().catch(() => {
-      setError('Failed to load task lists')
-    })
+    loadLists()
   }, [isPending, session?.user, router, loadLists])
 
   useEffect(() => {
@@ -80,10 +105,21 @@ export default function TasksPage() {
       return
     }
 
-    loadTasks(selectedListId).catch(() => {
-      setError('Failed to load tasks')
-    })
+    loadTasks(selectedListId)
   }, [selectedListId, loadTasks])
+
+  const handleApiError = useCallback(
+    (apiError: unknown, fallback: string) => {
+      if (isTreatyUnauthorized(apiError)) {
+        router.replace('/login')
+        return true
+      }
+
+      setError(formatTreatyError(apiError, fallback))
+      return false
+    },
+    [router],
+  )
 
   async function handleCreateList() {
     if (!newListName.trim()) {
@@ -100,7 +136,7 @@ export default function TasksPage() {
     setLoading(false)
 
     if (response.error) {
-      setError(formatTreatyError(response.error, 'Failed to create list'))
+      handleApiError(response.error, 'Failed to create list')
       return
     }
 
@@ -124,7 +160,7 @@ export default function TasksPage() {
     setLoading(false)
 
     if (response.error) {
-      setError(formatTreatyError(response.error, 'Failed to create task'))
+      handleApiError(response.error, 'Failed to create task')
       return
     }
 
@@ -137,23 +173,27 @@ export default function TasksPage() {
       completed: !task.completed,
     })
 
-    if (response.error || !selectedListId) {
-      setError(formatTreatyError(response.error, 'Failed to update task'))
+    if (response.error) {
+      handleApiError(response.error, 'Failed to update task')
       return
     }
 
-    await loadTasks(selectedListId)
+    if (selectedListId) {
+      await loadTasks(selectedListId)
+    }
   }
 
   async function handleDeleteTask(taskId: string) {
     const response = await apiClient.api.v1.tasks({ id: taskId }).delete()
 
-    if (response.error || !selectedListId) {
-      setError(formatTreatyError(response.error, 'Failed to delete task'))
+    if (response.error) {
+      handleApiError(response.error, 'Failed to delete task')
       return
     }
 
-    await loadTasks(selectedListId)
+    if (selectedListId) {
+      await loadTasks(selectedListId)
+    }
   }
 
   if (isPending || !session?.user) {

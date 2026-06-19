@@ -106,4 +106,4 @@ CORS `onRequest` runs before handlers; error responses set `set.status` so CORS 
 
 - Use `bun:test` (`describe`, `test`, `expect`).
 - Assert contract values via `http.codes`, `http.messages`, `http.status` — not raw constants imports.
-- Route validation: **Zod** only (no Elysia TypeBox).
+- Route validation: **Zod** schemas from `@repro-v2/api-schemas` (no Elysia TypeBox).

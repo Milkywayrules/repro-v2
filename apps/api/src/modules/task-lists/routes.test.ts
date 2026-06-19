@@ -179,6 +179,25 @@ describe('task-lists routes', () => {
     expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
   })
 
+  test('POST /api/v1/task-lists returns 422 for empty body', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/task-lists', {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as { error: { code: string } }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+  })
+
   test('PATCH /api/v1/task-lists/:id updates list for authed user', async () => {
     mockAuthedSession()
     spyOn(taskListsService, 'update').mockResolvedValue({
@@ -202,6 +221,29 @@ describe('task-lists routes', () => {
       data: { name: string }
     }
     expect(body.data.name).toBe('Renamed list')
+  })
+
+  test('PATCH /api/v1/task-lists/:id returns current list for empty body', async () => {
+    mockAuthedSession()
+    spyOn(taskListsService, 'getForUser').mockResolvedValue(mockTaskListRow)
+
+    const response = await createApp().handle(
+      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+        method: 'PATCH',
+        headers: {
+          Origin: env.CORS_ORIGIN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }),
+    )
+
+    expect(response.status).toBe(http.status.OK)
+    const body = (await response.json()) as {
+      data: { id: string; name: string }
+    }
+    expect(body.data.id).toBe(mockTaskListRow.id)
+    expect(body.data.name).toBe(mockTaskListRow.name)
   })
 
   test('DELETE /api/v1/task-lists/:id deletes list for authed user', async () => {

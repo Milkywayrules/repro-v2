@@ -10,6 +10,7 @@
     }
   },
   "scripts": {
+    "prepare": "tsc -b",
     "check-types": "tsc -b",
     "test": "bun test src",
     "build:tsdown": "tsdown",

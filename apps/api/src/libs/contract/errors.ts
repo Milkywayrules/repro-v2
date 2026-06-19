@@ -8,10 +8,10 @@ export function unauthorizedError() {
   })
 }
 
-export function notFoundError(message = http.messages.NOT_FOUND) {
+export function notFoundError() {
   return http.error({
     code: http.codes.NOT_FOUND,
-    message,
+    message: http.messages.NOT_FOUND,
     status: http.status.NOT_FOUND,
   })
 }
