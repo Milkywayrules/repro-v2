@@ -1,4 +1,4 @@
-import { env } from '@repro-v2/env/web'
+import { env } from '@repro-v2/env/marketing'
 import { Button } from '@repro-v2/ui/components/button'
 
 export default function Home() {

@@ -8,7 +8,10 @@
   },
   "exports": {
     "./api": "./src/api.ts",
-    "./web": "./src/web.ts"
+    "./browser-ext": "./src/browser-ext.ts",
+    "./console": "./src/console.ts",
+    "./docs": "./src/docs.ts",
+    "./marketing": "./src/marketing.ts"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.1",

@@ -1,4 +1,4 @@
-import { env } from '@repro-v2/env/web'
+import { env } from '@repro-v2/env/console'
 
 export const probeHeaders = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',

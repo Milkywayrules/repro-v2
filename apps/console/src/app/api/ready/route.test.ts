@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { env } from '@repro-v2/env/web'
+import { env } from '@repro-v2/env/console'
 
 import { GET } from './route'
 

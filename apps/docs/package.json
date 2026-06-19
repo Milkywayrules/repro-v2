@@ -13,6 +13,7 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
     "fumadocs-core": "16.10.3",
     "fumadocs-mdx": "15.0.12",
