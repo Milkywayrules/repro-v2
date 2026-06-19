@@ -7,7 +7,8 @@
 - cohesion over coupling.
 - Boy Scout Rule. dont leave any unimportant stubs, traces, and leftovers that can be a tech debt in the future.
 - agent-first code.
-- focus on make the code working -> optimize for security, performance, size, maintainability -> simplify code.
+- focus on make the code working -> optimize for security, performance, size, maintainability, quality -> simplify code.
+- prevent code smells.
 - be responsible, be professional, be curious, dont prefer assumptions, dont overstepped — proceed when requirements and docs are clear.
 - fuck off if you `do too much → realize it → long apology`.
 - you are allowed to contradict. dont always agree with me.

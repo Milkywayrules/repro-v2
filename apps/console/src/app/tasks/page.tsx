@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import type {
-  Task,
-  TaskList,
-  TaskListListResponse,
-  TaskListResponse,
+import {
+  formatTreatyError,
+  isTreatyUnauthorized,
+  type Task,
+  type TaskList,
+  type TaskListListResponse,
+  type TaskListResponse,
 } from '@repro-v2/api-client'
-import { formatTreatyError, isTreatyUnauthorized } from '@repro-v2/api-client'
 import { Button } from '@repro-v2/ui/components/button'
 import { Checkbox } from '@repro-v2/ui/components/checkbox'
 import { Input } from '@repro-v2/ui/components/input'
@@ -29,15 +30,24 @@ export default function TasksPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const handleApiError = useCallback(
+    (apiError: unknown, fallback: string) => {
+      if (isTreatyUnauthorized(apiError)) {
+        router.replace('/login')
+        return true
+      }
+
+      setError(formatTreatyError(apiError, fallback))
+      return false
+    },
+    [router],
+  )
+
   const loadLists = useCallback(async () => {
     try {
       const response = await apiClient.api.v1['task-lists'].get()
       if (response.error) {
-        if (isTreatyUnauthorized(response.error)) {
-          router.replace('/login')
-          return
-        }
-        setError(formatTreatyError(response.error, 'Failed to load lists'))
+        handleApiError(response.error, 'Failed to load lists')
         return
       }
 
@@ -47,13 +57,9 @@ export default function TasksPage() {
         setSelectedListId(current => current ?? body.data[0]?.id ?? null)
       }
     } catch (error) {
-      if (isTreatyUnauthorized(error)) {
-        router.replace('/login')
-        return
-      }
-      setError(formatTreatyError(error, 'Failed to load task lists'))
+      handleApiError(error, 'Failed to load task lists')
     }
-  }, [router])
+  }, [handleApiError])
 
   const loadTasks = useCallback(
     async (listId: string) => {
@@ -63,11 +69,7 @@ export default function TasksPage() {
         })
 
         if (response.error) {
-          if (isTreatyUnauthorized(response.error)) {
-            router.replace('/login')
-            return
-          }
-          setError(formatTreatyError(response.error, 'Failed to load tasks'))
+          handleApiError(response.error, 'Failed to load tasks')
           return
         }
 
@@ -76,14 +78,10 @@ export default function TasksPage() {
           setTasks(body.data)
         }
       } catch (error) {
-        if (isTreatyUnauthorized(error)) {
-          router.replace('/login')
-          return
-        }
-        setError(formatTreatyError(error, 'Failed to load tasks'))
+        handleApiError(error, 'Failed to load tasks')
       }
     },
-    [router],
+    [handleApiError],
   )
 
   useEffect(() => {
@@ -107,19 +105,6 @@ export default function TasksPage() {
 
     loadTasks(selectedListId)
   }, [selectedListId, loadTasks])
-
-  const handleApiError = useCallback(
-    (apiError: unknown, fallback: string) => {
-      if (isTreatyUnauthorized(apiError)) {
-        router.replace('/login')
-        return true
-      }
-
-      setError(formatTreatyError(apiError, fallback))
-      return false
-    },
-    [router],
-  )
 
   async function handleCreateList() {
     if (!newListName.trim()) {
