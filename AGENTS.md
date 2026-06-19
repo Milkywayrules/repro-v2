@@ -19,6 +19,22 @@
 
 ---
 
+# Agent doc map
+
+| Need                             | Open                                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Git commits (style + no trailer) | [.cursor/rules/verasic-git-commits.mdc](.cursor/rules/verasic-git-commits.mdc)                           |
+| JSDoc / code comments            | [.cursor/rules/verasic-jsdoc-and-comments.mdc](.cursor/rules/verasic-jsdoc-and-comments.mdc)             |
+| Human onboarding                 | [README.md](README.md)                                                                                   |
+| shadcn MCP                       | [.agents/skills/shadcn/mcp.md](.agents/skills/shadcn/mcp.md)                                             |
+| Better Auth                      | [.agents/skills/better-auth-best-practices/SKILL.md](.agents/skills/better-auth-best-practices/SKILL.md) |
+| Drizzle                          | [.agents/skills/drizzle-orm-patterns/SKILL.md](.agents/skills/drizzle-orm-patterns/SKILL.md)             |
+| Log debugging                    | [.agents/skills/analyze-logs/SKILL.md](.agents/skills/analyze-logs/SKILL.md)                             |
+
+Skills under `.agents/skills/` are reference — load when the task matches.
+
+---
+
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
