@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 
-import { ensureActiveWorkspace } from '@repro-v2/iam/workspace'
+import {
+  type EnsureActiveWorkspaceResult,
+  ensureActiveWorkspace,
+} from '@repro-v2/iam/workspace'
 
 import { iamClient } from '@/lib/iam-client'
 
@@ -16,6 +19,20 @@ const pendingState: EnsureActiveWorkspaceState = {
   isReady: false,
   workspaceId: null,
   error: null,
+}
+
+function workspaceFailureMessage(
+  result: Extract<EnsureActiveWorkspaceResult, { ok: false }>,
+): string {
+  if (result.error) {
+    return result.error
+  }
+
+  if (result.reason === 'no_workspace') {
+    return 'No workspace available'
+  }
+
+  return 'Could not activate workspace'
 }
 
 export function useEnsureActiveWorkspace(sessionUserId: string | undefined) {
@@ -59,11 +76,7 @@ export function useEnsureActiveWorkspace(sessionUserId: string | undefined) {
         setState({
           isReady: false,
           workspaceId: null,
-          error:
-            result.error ??
-            (result.reason === 'no_workspace'
-              ? 'No workspace available'
-              : 'Could not activate workspace'),
+          error: workspaceFailureMessage(result),
         })
       })
       .catch(() => {

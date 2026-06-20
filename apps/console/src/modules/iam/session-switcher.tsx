@@ -39,15 +39,18 @@ export function SessionSwitcher() {
 
     setLoading(true)
 
-    const { data } = await iamClient.multiSession.listDeviceSessions()
-    setDeviceSessions(data ?? [])
-    setLoading(false)
+    try {
+      const { data } = await iamClient.multiSession.listDeviceSessions()
+      setDeviceSessions(data ?? [])
+    } catch {
+      setDeviceSessions([])
+    } finally {
+      setLoading(false)
+    }
   }, [features?.multiSession])
 
   useEffect(() => {
-    loadSessions().catch(() => {
-      setLoading(false)
-    })
+    loadSessions()
   }, [loadSessions])
 
   if (!features?.multiSession) {
@@ -64,18 +67,22 @@ export function SessionSwitcher() {
     setSwitchError(null)
     setSwitchingToken(sessionToken)
 
-    const { error } = await iamClient.multiSession.setActive({ sessionToken })
+    try {
+      const { error } = await iamClient.multiSession.setActive({ sessionToken })
 
-    setSwitchingToken(null)
+      if (error) {
+        setSwitchError(error.message ?? 'Could not switch session')
+        return
+      }
 
-    if (error) {
-      setSwitchError(error.message ?? 'Could not switch session')
-      return
+      await refetchSession()
+      queryClient.invalidateQueries()
+      await loadSessions()
+    } catch {
+      setSwitchError('Could not switch session')
+    } finally {
+      setSwitchingToken(null)
     }
-
-    await refetchSession()
-    queryClient.invalidateQueries()
-    await loadSessions()
   }
 
   return (
@@ -103,9 +110,7 @@ export function SessionSwitcher() {
             disabled={isActive || isSwitching}
             key={deviceSession.session.token}
             onClick={() => {
-              handleSwitch(deviceSession.session.token).catch(() => {
-                setSwitchingToken(null)
-              })
+              handleSwitch(deviceSession.session.token)
             }}
           >
             {deviceSession.user.name} ({deviceSession.user.email})
