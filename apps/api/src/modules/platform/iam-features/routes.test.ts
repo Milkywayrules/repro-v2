@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { captchaActive, iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { v1Routes } from '@/routes/v1'
+
+import { iamFeaturesService } from './service'
 
 function createApp() {
   return new Elysia().use(http.plugin()).use(v1Routes)
@@ -20,14 +21,7 @@ describe('GET /api/v1/platform/iam-features', () => {
 
     const body = await response.json()
     expect(body).toEqual({
-      data: {
-        emailPassword: iamFeatures.emailPassword,
-        magicLink: iamFeatures.magicLink,
-        github: iamFeatures.github,
-        captcha: captchaActive,
-        workspace: iamFeatures.workspace,
-        multiSession: iamFeatures.multiSession,
-      },
+      data: iamFeaturesService.getPublicFeatures(),
       meta: { apiVersion: http.api.VERSION },
     })
   })

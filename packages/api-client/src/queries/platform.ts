@@ -24,13 +24,12 @@ interface TreatyResult<T> {
 }
 
 function isReadyProbe(value: unknown): value is ReadyProbe {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'status' in value &&
-    ((value as ReadyProbe).status === 'ready' ||
-      (value as ReadyProbe).status === 'not_ready')
-  )
+  if (typeof value !== 'object' || value === null || !('status' in value)) {
+    return false
+  }
+
+  const { status } = value as { status: unknown }
+  return status === 'ready' || status === 'not_ready'
 }
 
 function treatyPayload(error: unknown): unknown {
