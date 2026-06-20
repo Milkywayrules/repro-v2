@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Smoke checks for API auth + tasks, console route build, and browser-ext targets.
+ * Smoke checks for IAM (iam-features, sign-up), tasks, and browser-ext builds.
  */
 
 import dotenv from 'dotenv'
@@ -66,6 +66,88 @@ function cookieHeaderFromSetCookies(setCookies: string[]): string {
     .join('; ')
 }
 
+function mergeCookieHeader(
+  existingCookie: string,
+  setCookies: string[],
+): string {
+  const jar = new Map<string, string>()
+
+  for (const part of existingCookie.split(';')) {
+    const trimmed = part.trim()
+    const separator = trimmed.indexOf('=')
+    if (separator > 0) {
+      jar.set(trimmed.slice(0, separator), trimmed.slice(separator + 1))
+    }
+  }
+
+  for (const setCookie of setCookies) {
+    const pair = setCookie.split(';')[0]?.trim()
+    if (!pair) {
+      continue
+    }
+
+    const separator = pair.indexOf('=')
+    if (separator > 0) {
+      jar.set(pair.slice(0, separator), pair.slice(separator + 1))
+    }
+  }
+
+  return [...jar.entries()]
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ')
+}
+
+async function ensureActiveWorkspace(
+  sessionCookie: string,
+  workspaceEnabled: boolean,
+): Promise<string> {
+  if (!workspaceEnabled) {
+    return sessionCookie
+  }
+
+  const authHeaders = {
+    cookie: sessionCookie,
+    origin: consoleOrigin,
+  }
+
+  const list = await fetchJson(`${apiUrl}/api/auth/organization/list`, {
+    headers: authHeaders,
+  })
+
+  if (list.status !== 200) {
+    fail(
+      `organization/list failed (${list.status}): ${JSON.stringify(list.body)}`,
+    )
+  }
+
+  const organizations = list.body as Array<{ id: string }> | null
+  const firstOrg = organizations?.[0]
+
+  if (!firstOrg) {
+    fail('sign-up did not provision a workspace')
+  }
+
+  const setActive = await fetchJson(
+    `${apiUrl}/api/auth/organization/set-active`,
+    {
+      method: 'POST',
+      headers: {
+        ...authHeaders,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ organizationId: firstOrg.id }),
+    },
+  )
+
+  if (setActive.status !== 200) {
+    fail(
+      `organization/set-active failed (${setActive.status}): ${JSON.stringify(setActive.body)}`,
+    )
+  }
+
+  return mergeCookieHeader(sessionCookie, collectSetCookie(setActive.headers))
+}
+
 async function waitForReady(maxAttempts = 30) {
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
@@ -117,6 +199,48 @@ process.on('SIGTERM', shutdown)
 try {
   await waitForReady()
 
+  const iamFeatures = await fetchJson(
+    `${apiUrl}/api/v1/platform/iam-features`,
+    {
+      headers: { origin: consoleOrigin },
+    },
+  )
+
+  if (iamFeatures.status !== 200) {
+    fail(
+      `iam-features failed (${iamFeatures.status}): ${JSON.stringify(iamFeatures.body)}`,
+    )
+  }
+
+  const iamFeaturesBody = iamFeatures.body as {
+    data?: Record<string, boolean>
+    meta?: { apiVersion?: string }
+  }
+
+  if (!iamFeaturesBody.data) {
+    fail('iam-features response missing data envelope')
+  }
+
+  for (const [key, value] of Object.entries(iamFeaturesBody.data)) {
+    if (typeof value !== 'boolean') {
+      fail(`iam-features.${key} is not a boolean`)
+    }
+  }
+
+  if (!iamFeaturesBody.data.emailPassword) {
+    fail('iam-features.emailPassword must be true for smoke sign-up')
+  }
+
+  const taskListsUnauthed = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
+    headers: { origin: consoleOrigin },
+  })
+
+  if (taskListsUnauthed.status !== 401) {
+    fail(
+      `expected 401 for unauthenticated task-lists, got ${taskListsUnauthed.status}`,
+    )
+  }
+
   const smokeEmail = `smoke-${Date.now()}@example.com`
   const smokePassword = 'smoke-password-123'
   const smokeName = 'Smoke User'
@@ -139,11 +263,16 @@ try {
   }
 
   const signUpCookies = collectSetCookie(signUp.headers)
-  const sessionCookie = cookieHeaderFromSetCookies(signUpCookies)
+  let sessionCookie = cookieHeaderFromSetCookies(signUpCookies)
 
   if (!sessionCookie) {
     fail('sign-up did not return session cookie')
   }
+
+  sessionCookie = await ensureActiveWorkspace(
+    sessionCookie,
+    iamFeaturesBody.data.workspace,
+  )
 
   const taskLists = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
     headers: {
@@ -226,7 +355,7 @@ try {
   }
 
   process.stdout.write(
-    `smoke: ok — user ${smokeEmail}, ${listsBody.data.length} list(s), ${tasksBody.data.length} task(s), chrome+firefox builds\n`,
+    `smoke: ok — iam-features, user ${smokeEmail}, ${listsBody.data.length} list(s), ${tasksBody.data.length} task(s), chrome+firefox builds\n`,
   )
 } catch (error) {
   process.stderr.write(

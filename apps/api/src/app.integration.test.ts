@@ -55,6 +55,28 @@ describe('full app wiring', () => {
     })
   })
 
+  test('GET /api/v1/platform/iam-features is public', async () => {
+    const { createApp } = await import('./app')
+    const app = createApp()
+
+    const response = await app.handle(
+      new Request('http://localhost/api/v1/platform/iam-features'),
+    )
+
+    expect(response.status).toBe(http.status.OK)
+
+    const body = (await response.json()) as {
+      data: Record<string, boolean>
+      meta: { apiVersion: string }
+    }
+
+    expect(body.meta.apiVersion).toBe(http.api.VERSION)
+    for (const value of Object.values(body.data)) {
+      expect(typeof value).toBe('boolean')
+    }
+    expect(body.data.emailPassword).toBe(true)
+  })
+
   test('GET /openapi/json documents v1 task routes', async () => {
     const { createApp } = await import('./app')
     const app = createApp()

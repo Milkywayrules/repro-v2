@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Bun** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
 - **PostgreSQL** - Database engine
-- **Authentication** - Better Auth via `@repro-v2/iam` (IAM plugins from env)
+- **IAM** - Better Auth via `@repro-v2/iam` (feature flags from `IAM_*` env; public flags at `/api/v1/platform/iam-features`)
 - **Biome** - Linting and formatting
 - **Turborepo** - Optimized monorepo build system
 
@@ -93,7 +93,7 @@ repro-v2/
 │   ├── api-schemas/ # Shared Zod request schemas
 │   ├── api-types/   # API contract types and generated OpenAPI spec
 │   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── auth/        # Authentication configuration & logic
+│   ├── iam/         # Better Auth server + React client
 │   └── db/          # Database schema & queries
 ```
 

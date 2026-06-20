@@ -48,6 +48,7 @@ try {
       'packages/api-client',
       'packages/ui',
       'packages/email',
+      'packages/iam',
     ],
     {
       cwd: rootDir,
