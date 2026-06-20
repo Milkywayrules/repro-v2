@@ -1,39 +1,32 @@
-import { readyQueryOptions } from '@repro-v2/api-client/queries'
 import { useQuery } from '@tanstack/react-query'
 
-import { apiClient } from '@/lib/api-client'
+import { readyQuery } from '@/lib/api-client'
+
+const labelByState = {
+  pending: 'Checking API readiness',
+  ready: 'API ready',
+  error: 'API not ready',
+} as const
 
 export function ApiReadyDot() {
-  const { data, isPending, isError } = useQuery(readyQueryOptions(apiClient))
+  const { data, isPending, isError } = useQuery(readyQuery)
   const ready = !(isPending || isError) && data?.status === 'ready'
 
-  let state: 'pending' | 'ready' | 'error' = 'error'
+  let state: keyof typeof labelByState = 'error'
   if (isPending) {
     state = 'pending'
   } else if (ready) {
     state = 'ready'
   }
 
-  let ariaLabel = 'API not ready'
-  if (state === 'pending') {
-    ariaLabel = 'Checking API readiness'
-  } else if (state === 'ready') {
-    ariaLabel = 'API ready'
-  }
-
-  let title = 'API not ready'
-  if (state === 'pending') {
-    title = 'Checking API readiness'
-  } else if (ready) {
-    title = 'API ready'
-  }
+  const label = labelByState[state]
 
   return (
     <span
-      aria-label={ariaLabel}
+      aria-label={label}
       className={`ready-dot ready-dot--${state}`}
       role="status"
-      title={title}
+      title={label}
     />
   )
 }

@@ -1,11 +1,8 @@
 import { isTreatyUnauthorized } from '@repro-v2/api-client'
-import { taskListQueryOptions } from '@repro-v2/api-client/queries'
 import { useQuery } from '@tanstack/react-query'
 
-import { apiClient } from '@/lib/api-client'
-import { getConsoleLoginUrl } from '@/lib/console-login-url'
-
-const consoleLoginUrl = getConsoleLoginUrl()
+import { taskListsQuery } from '@/lib/api-client'
+import { consoleLoginUrl } from '@/lib/console-login-url'
 
 function treatyErrorPayload(error: unknown): unknown {
   if (typeof error === 'object' && error !== null && 'value' in error) {
@@ -30,9 +27,7 @@ function serializeQueryError(error: unknown): string {
 }
 
 export function ApiTaskListsWidget() {
-  const { data, isPending, isError, error } = useQuery(
-    taskListQueryOptions(apiClient),
-  )
+  const { data, isPending, isError, error } = useQuery(taskListsQuery)
 
   if (isPending) {
     return (

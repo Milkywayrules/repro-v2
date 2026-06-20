@@ -1,10 +1,8 @@
 import { authClient } from '@/lib/auth-client'
-import { getConsoleLoginUrl } from '@/lib/console-login-url'
+import { consoleLoginUrl } from '@/lib/console-login-url'
 
 import { ApiReadyDot } from './api-ready-dot'
 import { ApiTaskListsWidget } from './api-task-lists-widget'
-
-const consoleLoginUrl = getConsoleLoginUrl()
 
 export function PopupPage() {
   const { data: session, isPending: sessionPending } = authClient.useSession()
