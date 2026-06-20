@@ -2,6 +2,7 @@ import type { Db } from '@repro-v2/db'
 import { createId } from '@repro-v2/db/id'
 // biome-ignore lint/performance/noNamespaceImport: we need this for auth
 import * as schema from '@repro-v2/db/schema/auth'
+import { seedDefaultTasksForUser } from '@repro-v2/db/seed-tasks-for-user'
 import { corsOrigins, env, extensionTrustedOrigins } from '@repro-v2/env/api'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
@@ -29,6 +30,17 @@ export function createAuth(db: Db) {
     trustedOrigins: authTrustedOrigins(),
     emailAndPassword: {
       enabled: true,
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          after: async user => {
+            if (env.NODE_ENV === 'development') {
+              await seedDefaultTasksForUser(db, user.id)
+            }
+          },
+        },
+      },
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,

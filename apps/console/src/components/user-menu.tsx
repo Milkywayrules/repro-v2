@@ -14,14 +14,16 @@ import {
 import { Skeleton } from '@repro-v2/ui/components/skeleton'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { useClientMounted } from '@/hooks/use-client-mounted'
 import { authClient } from '@/lib/auth-client'
 
 export default function UserMenu() {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const mounted = useClientMounted()
   const { data: session, isPending } = authClient.useSession()
 
-  if (isPending) {
+  if (!mounted || isPending) {
     return <Skeleton className="h-9 w-24" />
   }
 

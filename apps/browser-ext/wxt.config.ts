@@ -14,10 +14,22 @@ export default defineConfig({
   zip: {
     name: 'browser-ext',
   },
-  manifest: {
+  suppressWarnings: {
+    firefoxDataCollection: true,
+  },
+  manifest: ({ browser }) => ({
     name: 'repro v2 - Browser Extension',
     description: 'repro v2 - Browser extension',
     version: '1.0.0',
     host_permissions: [apiHostPermission],
-  },
+    ...(browser === 'firefox'
+      ? {
+          browser_specific_settings: {
+            gecko: {
+              id: 'repro-v2@localhost',
+            },
+          },
+        }
+      : {}),
+  }),
 })

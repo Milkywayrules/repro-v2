@@ -40,6 +40,7 @@
     "db:migrate": "turbo -F @repro-v2/db db:migrate",
     "generate:openapi": "bun run scripts/generate-openapi-spec.ts",
     "test": "bun run scripts/test-probes.ts",
+    "smoke": "bun run scripts/smoke-test.ts",
     "check": "ultracite check",
     "fix": "ultracite fix"
   },
