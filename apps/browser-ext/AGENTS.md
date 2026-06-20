@@ -31,7 +31,7 @@ Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
 | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | API           | `@repro-v2/api-client` — `createApiClient(env.WXT_API_URL)`, `credentials: 'include'`, `X-Requested-With: XMLHttpRequest` |
 | Queries       | `@repro-v2/api-client/queries` — `readyQuery`, `taskListsQuery` (read-only)                                               |
-| Auth          | `@repro-v2/iam/react` — `iamClient.useSession()`; login via **Console tab** (`WXT_CONSOLE_URL/login`)                   |
+| Auth          | `@repro-v2/iam/react` — `iamClient.useSession()`; login via **Console tab** (`WXT_CONSOLE_URL/login`)                     |
 | Providers     | `@repro-v2/ui/providers/app-providers` — `showQueryDevtools={false}`                                                      |
 | Env (runtime) | `@repro-v2/env/browser-ext` — `WXT_*` prefix, `import.meta.env`                                                           |
 | Env (build)   | `wxt.config.ts` reads `WXT_API_URL` via dotenv for `host_permissions`                                                     |
@@ -40,6 +40,10 @@ Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
 **401:** `isTreatyUnauthorized` + `onUnauthorized` → `iamClient.signOut()`; widgets link to Console login.
 
 **Manifest:** `host_permissions` = `${origin(WXT_API_URL)}/*`; Firefox gecko id `repro-v2@localhost`.
+
+## React Compiler
+
+**Not enabled** (WXT, not Next.js). Next apps use compiler — see root `AGENTS.md`. Here, `useMemo` / `useCallback` / `memo` are ok when a popup widget actually needs stable refs.
 
 ## Avoid
 

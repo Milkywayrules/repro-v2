@@ -25,23 +25,36 @@ Path aliases: `@/*` → `src/*`; `@repro-v2/ui/*` → `packages/ui/src/*`.
 
 ## Use
 
-| Concern   | Package / pattern                                                                                            |
-| --------- | ------------------------------------------------------------------------------------------------------------ |
-| API       | `@repro-v2/api-client` — `createApiClient(env.NEXT_PUBLIC_API_URL)`, `credentials: 'include'`                |
-| Queries   | `@repro-v2/api-client/queries` + TanStack Query via `@repro-v2/ui/providers/app-providers`                   |
+| Concern   | Package / pattern                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------------- |
+| API       | `@repro-v2/api-client` — `createApiClient(env.NEXT_PUBLIC_API_URL)`, `credentials: 'include'`              |
+| Queries   | `@repro-v2/api-client/queries` + TanStack Query via `@repro-v2/ui/providers/app-providers`                 |
 | Auth      | `@repro-v2/iam/react` — `createIamReactClient`; client session guards (`useSession`, redirect to `/login`) |
-| Forms     | TanStack Form + Zod (sign-in/up)                                                                             |
-| URL state | `nuqs` (`useQueryState`, Zod-backed parsers)                                                                 |
-| Env       | `@repro-v2/env/console` — import in `next.config.ts`; template `.env.example`                                |
-| UI        | `@repro-v2/ui` + shadcn `components.json` (style `base-lyra`)                                                |
-| Logging   | `evlog` — `instrumentation.ts`, `src/lib/evlog.ts`, `src/proxy.ts`                                           |
-| Styling   | `@repro-v2/ui/globals.css` in app CSS                                                                        |
+| Forms     | TanStack Form + Zod (sign-in/up)                                                                           |
+| URL state | `nuqs` (`useQueryState`, Zod-backed parsers)                                                               |
+| Env       | `@repro-v2/env/console` — import in `next.config.ts`; template `.env.example`                              |
+| UI        | `@repro-v2/ui` + shadcn `components.json` (style `base-lyra`)                                              |
+| Logging   | `evlog` — `instrumentation.ts`, `src/lib/evlog.ts`, `src/proxy.ts`                                         |
+| Styling   | `@repro-v2/ui/globals.css` in app CSS                                                                      |
 
 **Page convention:** `app/**/page.tsx` delegates to `modules/<domain>/*.page.tsx`. Most feature pages are `'use client'`.
 
 **Hydration:** `ClientOnly` + `useClientMounted` (`useSyncExternalStore`) for auth/menu.
 
 **401:** `AppProviders` + `isTreatyUnauthorized` → `router.replace('/login')`.
+
+## React Compiler
+
+Root `AGENTS.md` has the monorepo rule. This app has `reactCompiler: true` — **no `useMemo` / `useCallback` / `memo` for perf**.
+
+| Do                                     | Reference file                           |
+| -------------------------------------- | ---------------------------------------- |
+| Plain handlers                         | `src/modules/tasks/tasks.page.tsx`       |
+| Effect-local async + cancellation      | `src/modules/iam/use-onboarding-gate.ts` |
+| Post-auth redirect (no callback chain) | `src/modules/iam/login.page.tsx`         |
+| Session reload after switch            | `src/modules/iam/session-switcher.tsx`   |
+
+IAM module was cleaned up from manual memo (2026-06) — do not reintroduce `useCallback` chains for redirect/session/oauth flows.
 
 ## Avoid
 
@@ -50,7 +63,7 @@ Path aliases: `@/*` → `src/*`; `@repro-v2/ui/*` → `packages/ui/src/*`.
 - No server-side auth middleware today — don't add without explicit scope
 - No RSC data fetching for API — client Query + Treaty
 - No tsconfig path cheats to sibling apps
-- No `useMemo` / `useCallback` / `memo` for perf — `reactCompiler: true`; plain functions + effect-local async (see `use-onboarding-gate.ts`, `tasks.page.tsx`)
+- No `useMemo` / `useCallback` / `memo` for perf — see root `AGENTS.md` **React Compiler** + references above
 
 ## Tests & deploy
 

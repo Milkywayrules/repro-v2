@@ -38,6 +38,10 @@ Single landing page today. New routes: add `modules/<domain>/*.page.tsx` + thin 
 
 **No auth** — public marketing site.
 
+## React Compiler
+
+`reactCompiler: true` — no manual `useMemo` / `useCallback` / `memo` for perf. See root `AGENTS.md` **React Compiler**; copy patterns from `apps/console` (`tasks.page.tsx`, `use-onboarding-gate.ts`) when adding client components.
+
 ## Avoid
 
 - No `api/app` or app→app imports
@@ -46,6 +50,7 @@ Single landing page today. New routes: add `modules/<domain>/*.page.tsx` + thin 
 - No shadcn from app-local paths — use `@repro-v2/ui`
 - No inline `process.env` — extend `@repro-v2/env/marketing`
 - No evlog `proxy.ts` / middleware (unlike console)
+- No `useMemo` / `useCallback` / `memo` for perf — React Compiler enabled
 
 ## Deploy
 

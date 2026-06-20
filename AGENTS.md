@@ -32,8 +32,44 @@
 | Better Auth                      | [.agents/skills/better-auth-best-practices/SKILL.md](.agents/skills/better-auth-best-practices/SKILL.md)                                                                                                                                               |
 | Drizzle                          | [.agents/skills/drizzle-orm-patterns/SKILL.md](.agents/skills/drizzle-orm-patterns/SKILL.md)                                                                                                                                                           |
 | Log debugging                    | [.agents/skills/analyze-logs/SKILL.md](.agents/skills/analyze-logs/SKILL.md)                                                                                                                                                                           |
+| React Compiler (no manual memo)  | section below + [apps/console/AGENTS.md](apps/console/AGENTS.md) (reference files)                                                                                                                                                                     |
 
 Skills under `.agents/skills/` are reference — load when the task matches.
+
+---
+
+# React Compiler — Next.js apps (agents)
+
+**Enabled** in `apps/console`, `apps/marketing`, `apps/docs` — `reactCompiler: true` in each `next.config.ts` (build-time `babel-plugin-react-compiler`).
+
+**Not enabled** in `apps/browser-ext` (WXT). Manual `useMemo` / `useCallback` / `memo` there is still ok when needed.
+
+The compiler auto-memoizes component output and stable callbacks. **Do not add manual memoization for re-render performance** in the three Next apps above.
+
+## Write this way
+
+| Pattern                                             | Example in repo                                                                                   |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Plain event/async handlers                          | `apps/console/src/modules/tasks/tasks.page.tsx` — `function handleCreateTask()`                   |
+| Async inside `useEffect` + `cancelled` flag         | `apps/console/src/modules/iam/use-onboarding-gate.ts`                                             |
+| Gate effect until prerequisites load                | `login.page.tsx` waits `featuresPending` before post-auth redirect (same idea as onboarding gate) |
+| Functional `setState` when deriving from prev state | still use — correctness, not perf                                                                 |
+
+## Do not write
+
+- `useCallback` / `useMemo` / `memo()` / `React.memo()` to avoid re-renders or to “stabilize” `useEffect` deps
+- Chains of memoized callbacks (`executeX` → `runX` → `handleRetry`) — collapse into effect-local async or plain functions
+- Manual static JSX hoisting “for perf”
+
+## Still fine (not perf memo)
+
+- `useDeferredValue`, `useTransition` — scheduling / UX
+- `useMemo` only when a **consumer requires referential identity** (external lib API, stable query key object) — rare; comment why
+- `useRef` for DOM or mutable values that must not trigger render
+
+## If unsure
+
+Match existing console IAM/tasks modules. When adding client UI in console/marketing/docs, read those files before reaching for memo hooks.
 
 ---
 
@@ -135,6 +171,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 **React 19+:**
 
 - Use ref as a prop instead of `React.forwardRef`
+- Next.js apps (`console`, `marketing`, `docs`): **React Compiler on** — no `useMemo` / `useCallback` / `memo` for perf; see **React Compiler** section above
 
 **Solid/Svelte/Vue/Qwik:**
 

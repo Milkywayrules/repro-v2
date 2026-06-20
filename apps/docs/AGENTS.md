@@ -5,7 +5,7 @@ Scoped rules for this app. Root `AGENTS.md` applies otherwise.
 ## Stack & port
 
 - Next.js 16 App Router + **Fumadocs** (core, mdx, ui)
-- Port **5009**; React 19, Tailwind 4, Fumadocs UI CSS (not `@repro-v2/ui/globals.css`)
+- Port **5009**; React 19, `reactCompiler: true`, Tailwind 4, Fumadocs UI CSS (not `@repro-v2/ui/globals.css`)
 - **Local Biome** (`biome.json`, `root: false`) — lint/format via `bun run lint` / `format` in this app, not root Ultracite
 - `check-types` = `fumadocs-mdx && next typegen && tsc --noEmit`; `postinstall` runs `fumadocs-mdx`
 
@@ -45,6 +45,10 @@ Generated (gitignored): `.source/` — never hand-edit; regen via `fumadocs-mdx`
 
 **No auth** — public docs site; don't add `@repro-v2/iam` without scope.
 
+## React Compiler
+
+`reactCompiler: true` — no manual `useMemo` / `useCallback` / `memo` for perf. See root `AGENTS.md` **React Compiler**.
+
 ## Avoid
 
 - No `api/app` or app→app imports
@@ -52,6 +56,7 @@ Generated (gitignored): `.source/` — never hand-edit; regen via `fumadocs-mdx`
 - No hand-editing `.source/`
 - No skipping `fumadocs-mdx` in CI/build
 - Don't copy console auth/protected-route patterns here
+- No `useMemo` / `useCallback` / `memo` for perf — React Compiler enabled
 
 ## Quirks
 
