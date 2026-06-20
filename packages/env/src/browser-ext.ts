@@ -10,6 +10,6 @@ export const env = createEnv({
     WXT_MARKETING_URL: z.url(),
   },
   runtimeEnv: import.meta.env,
-  skipValidation: !!import.meta.env.SKIP_ENV_VALIDATION,
+  skipValidation: import.meta.env.SKIP_ENV_VALIDATION === 'true',
   emptyStringAsUndefined: true,
 })

@@ -1,6 +1,8 @@
 import { createEnv } from '@t3-oss/env-nextjs'
 import { z } from 'zod'
 
+import { skipEnvValidation } from './skip-env-validation'
+
 export const env = createEnv({
   client: {
     NEXT_PUBLIC_API_URL: z.url(),
@@ -14,6 +16,6 @@ export const env = createEnv({
     NEXT_PUBLIC_DOCS_URL: process.env.NEXT_PUBLIC_DOCS_URL,
     NEXT_PUBLIC_MARKETING_URL: process.env.NEXT_PUBLIC_MARKETING_URL,
   },
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: skipEnvValidation,
   emptyStringAsUndefined: true,
 })

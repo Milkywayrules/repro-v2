@@ -3,6 +3,7 @@ import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
 import { booleanEnv } from './boolean-env'
+import { skipEnvValidation } from './skip-env-validation'
 
 function parseOriginList(value: string): string[] {
   return value
@@ -22,6 +23,7 @@ function parseCorsOrigins(value: string): [string, ...string[]] {
 
 const iamCoordinationSchema = z
   .object({
+    IAM_EMAIL_PASSWORD_ENABLED: z.boolean(),
     IAM_GITHUB_ENABLED: z.boolean(),
     IAM_GITHUB_CLIENT_ID: z.string().min(1).optional(),
     IAM_GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
@@ -32,6 +34,21 @@ const iamCoordinationSchema = z
     TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
+    if (
+      !(
+        data.IAM_EMAIL_PASSWORD_ENABLED ||
+        data.IAM_MAGIC_LINK_ENABLED ||
+        data.IAM_GITHUB_ENABLED
+      )
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IAM_EMAIL_PASSWORD_ENABLED'],
+        message:
+          'At least one of IAM_EMAIL_PASSWORD_ENABLED, IAM_MAGIC_LINK_ENABLED, or IAM_GITHUB_ENABLED must be true',
+      })
+    }
+
     if (data.IAM_GITHUB_ENABLED) {
       if (!data.IAM_GITHUB_CLIENT_ID) {
         ctx.addIssue({
@@ -60,17 +77,24 @@ const iamCoordinationSchema = z
       })
     }
 
-    if (
-      data.TURNSTILE_ENABLED &&
-      data.IAM_CAPTCHA_ENABLED &&
-      !data.TURNSTILE_SECRET_KEY
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['TURNSTILE_SECRET_KEY'],
-        message:
-          'TURNSTILE_SECRET_KEY is required when TURNSTILE_ENABLED and IAM_CAPTCHA_ENABLED are both true',
-      })
+    if (data.IAM_CAPTCHA_ENABLED) {
+      if (!data.TURNSTILE_ENABLED) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['TURNSTILE_ENABLED'],
+          message:
+            'TURNSTILE_ENABLED must be true when IAM_CAPTCHA_ENABLED is true',
+        })
+      }
+
+      if (!data.TURNSTILE_SECRET_KEY) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['TURNSTILE_SECRET_KEY'],
+          message:
+            'TURNSTILE_SECRET_KEY is required when IAM_CAPTCHA_ENABLED is true',
+        })
+      }
     }
   })
 
@@ -80,12 +104,12 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
 
     // iam — feature flags
-    IAM_EMAIL_PASSWORD_ENABLED: booleanEnv(true),
-    IAM_MAGIC_LINK_ENABLED: booleanEnv(true),
-    IAM_GITHUB_ENABLED: booleanEnv(true),
-    IAM_WORKSPACE_ENABLED: booleanEnv(true),
-    IAM_MULTI_SESSION_ENABLED: booleanEnv(true),
-    IAM_CAPTCHA_ENABLED: booleanEnv(true),
+    IAM_EMAIL_PASSWORD_ENABLED: booleanEnv('IAM_EMAIL_PASSWORD_ENABLED', true),
+    IAM_MAGIC_LINK_ENABLED: booleanEnv('IAM_MAGIC_LINK_ENABLED', true),
+    IAM_GITHUB_ENABLED: booleanEnv('IAM_GITHUB_ENABLED', true),
+    IAM_WORKSPACE_ENABLED: booleanEnv('IAM_WORKSPACE_ENABLED', true),
+    IAM_MULTI_SESSION_ENABLED: booleanEnv('IAM_MULTI_SESSION_ENABLED', true),
+    IAM_CAPTCHA_ENABLED: booleanEnv('IAM_CAPTCHA_ENABLED', true),
 
     // iam — core (Better Auth)
     IAM_BETTER_AUTH_SECRET: z.string().min(32),
@@ -96,7 +120,7 @@ export const env = createEnv({
     IAM_GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
 
     // turnstile platform
-    TURNSTILE_ENABLED: booleanEnv(false),
+    TURNSTILE_ENABLED: booleanEnv('TURNSTILE_ENABLED', false),
     TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
 
     // email
@@ -117,10 +141,10 @@ export const env = createEnv({
       .default('development'),
 
     // openapi
-    OPENAPI_ENABLED: booleanEnv(false),
+    OPENAPI_ENABLED: booleanEnv('OPENAPI_ENABLED', false),
 
     // database seeding
-    ALLOW_SEED: booleanEnv(false),
+    ALLOW_SEED: booleanEnv('ALLOW_SEED', false),
 
     // rate limiting
     RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(15),
@@ -138,12 +162,13 @@ export const env = createEnv({
     RATE_LIMIT_DEV_MULTIPLIER: z.coerce.number().int().positive().default(10),
   },
   runtimeEnv: process.env,
-  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
+  skipValidation: skipEnvValidation,
   emptyStringAsUndefined: true,
 })
 
-if (!process.env.SKIP_ENV_VALIDATION) {
+if (!skipEnvValidation) {
   iamCoordinationSchema.parse({
+    IAM_EMAIL_PASSWORD_ENABLED: env.IAM_EMAIL_PASSWORD_ENABLED,
     IAM_GITHUB_ENABLED: env.IAM_GITHUB_ENABLED,
     IAM_GITHUB_CLIENT_ID: env.IAM_GITHUB_CLIENT_ID,
     IAM_GITHUB_CLIENT_SECRET: env.IAM_GITHUB_CLIENT_SECRET,
