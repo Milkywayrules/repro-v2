@@ -1,33 +1,37 @@
-import { env } from '@repro-v2/env/browser-ext'
-
 import { authClient } from '@/lib/auth-client'
-import { routes } from '@/lib/routes'
+import { getConsoleLoginUrl } from '@/lib/console-login-url'
 
 import { ApiReadyDot } from './api-ready-dot'
 import { ApiTaskListsWidget } from './api-task-lists-widget'
 
-const consoleLoginUrl = new URL(routes.login, env.WXT_CONSOLE_URL).href
+const consoleLoginUrl = getConsoleLoginUrl()
 
 export function PopupPage() {
   const { data: session, isPending: sessionPending } = authClient.useSession()
 
   return (
-    <div className="popup">
+    <main className="popup">
       <header className="popup-header">
         <ApiReadyDot />
       </header>
 
-      {sessionPending ? <p className="popup-muted">Checking session…</p> : null}
+      <h1 className="popup-title">repro-v2</h1>
+
+      {sessionPending ? (
+        <p aria-live="polite" className="popup-muted" role="status">
+          Checking session…
+        </p>
+      ) : null}
 
       {sessionPending || session?.user ? null : (
         <p>
-          <a href={consoleLoginUrl} rel="noopener" target="_blank">
-            Sign in via Console
+          <a href={consoleLoginUrl} rel="noopener noreferrer" target="_blank">
+            Sign in via Console (opens in new tab)
           </a>
         </p>
       )}
 
       {session?.user ? <ApiTaskListsWidget /> : null}
-    </div>
+    </main>
   )
 }

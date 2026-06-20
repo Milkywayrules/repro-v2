@@ -20,6 +20,12 @@ a:hover {
   color: #1d4ed8;
 }
 
+a:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 body {
   min-width: 280px;
   margin: 0;
@@ -39,6 +45,12 @@ body {
 .popup-header {
   display: flex;
   justify-content: flex-end;
+}
+
+.popup-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .popup-muted {

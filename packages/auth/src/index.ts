@@ -2,15 +2,22 @@ import type { Db } from '@repro-v2/db'
 import { createId } from '@repro-v2/db/id'
 // biome-ignore lint/performance/noNamespaceImport: we need this for auth
 import * as schema from '@repro-v2/db/schema/auth'
-import { corsOrigins, env } from '@repro-v2/env/api'
+import { corsOrigins, env, extensionTrustedOrigins } from '@repro-v2/env/api'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
-/** MV3 extension popups call Better Auth with a dynamic extension origin. */
-const extensionTrustedOrigins = [
+const devExtensionTrustedOrigins = [
   'chrome-extension://*',
   'moz-extension://*',
 ] as const
+
+function authTrustedOrigins(): string[] {
+  if (env.NODE_ENV !== 'production') {
+    return [...corsOrigins, ...devExtensionTrustedOrigins]
+  }
+
+  return [...corsOrigins, ...extensionTrustedOrigins]
+}
 
 export function createAuth(db: Db) {
   return betterAuth({
@@ -19,7 +26,7 @@ export function createAuth(db: Db) {
 
       schema,
     }),
-    trustedOrigins: [...corsOrigins, ...extensionTrustedOrigins],
+    trustedOrigins: authTrustedOrigins(),
     emailAndPassword: {
       enabled: true,
     },

@@ -21,12 +21,19 @@ export function ApiReadyDot() {
     ariaLabel = 'API ready'
   }
 
+  let title = 'API not ready'
+  if (state === 'pending') {
+    title = 'Checking API readiness'
+  } else if (ready) {
+    title = 'API ready'
+  }
+
   return (
     <span
       aria-label={ariaLabel}
       className={`ready-dot ready-dot--${state}`}
       role="status"
-      title={ready ? 'API ready' : 'API not ready'}
+      title={title}
     />
   )
 }

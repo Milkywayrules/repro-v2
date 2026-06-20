@@ -2,6 +2,13 @@ import 'dotenv/config'
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
+function parseOriginList(value: string): string[] {
+  return value
+    .split(',')
+    .map(part => part.trim())
+    .filter(part => part.length > 0)
+}
+
 function parseCorsOrigins(value: string): [string, ...string[]] {
   const origins = value
     .split(',')
@@ -21,6 +28,12 @@ export const env = createEnv({
     BETTER_AUTH_URL: z.url(),
     /** Comma-separated allowed browser origins (console, marketing, docs, …). */
     CORS_ORIGIN: z.string().min(1).transform(parseCorsOrigins),
+
+    /** Comma-separated MV3 extension origins for production (e.g. chrome-extension://id). */
+    EXTENSION_TRUSTED_ORIGINS: z
+      .string()
+      .optional()
+      .transform(value => (value ? parseOriginList(value) : [])),
 
     // node environment
     NODE_ENV: z
@@ -63,3 +76,6 @@ export const env = createEnv({
 
 /** Parsed from {@link env.CORS_ORIGIN} — use for CORS and CSRF origin checks. */
 export const corsOrigins = env.CORS_ORIGIN
+
+/** MV3 extension origins trusted by Better Auth in production. */
+export const extensionTrustedOrigins = env.EXTENSION_TRUSTED_ORIGINS
