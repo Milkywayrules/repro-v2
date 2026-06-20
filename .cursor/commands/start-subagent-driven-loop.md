@@ -1,6 +1,10 @@
+# SUBAGENT-DRIVEN LOOP
+
 ## FYI
 
 read this if maybe you forget our overall context @AGENTS.md for your knowledge.
+
+if this command is paired with phases, so each phase is implement this whole protocol. then next phase is implement again the protocol. and so on.
 
 dont make documentation files exhaustive. it is less effective. you can use grammarly incorrect-but-understandable-for-ai-agent to save context tokens.
 
@@ -26,7 +30,13 @@ $automated-verify: ultracite check -> check-types (touched packages) -> test (to
 
 $post-wave: `bun run generate:openapi` & `bun run build` & `bun run start` & cleanup all leftovers (Boy Scout Rule).
 
-### wave 1 - implementation rule
+### escalation protocol
+
+- if subagent is unavailable or failed to dispatch. try another cheaper model, last resort is use Auto model.
+
+### WAVES
+
+#### wave 1 - implementation rule
 
 start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR):
 
@@ -40,7 +50,7 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
     - run $automated-verify.
 - git commit once.
 
-### wave 2 - after wave 1 defined as done and no gate unresolved
+#### wave 2 - after wave 1 defined as done and no gate unresolved
 
 start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR):
 
@@ -48,7 +58,7 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
   - run $automated-verify.
   - auditers team (parallel subagents -> report to you + you merge duplicate findings):
     - [if touches client-related]: client performance + a11y audit.
-    - security-review subagent audit (if unavailable, use a generic subagent for security review audit).
+    - security-review subagent audit (if unavailable, use a generic subagent for security review audit). Be extremely thorough. No security vulnerabilities can slip through.
     - API contract + openapi drift audit.
     - boundary + monorepo architecture audit.
     - edge cases + errors audit.
@@ -62,9 +72,13 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
 - run $automated-verify.
 - git commit once.
 
+#### wave 3 - re-run wave
+
+re-run the complete wave 1. verbatim.
+
 ### git
 
-total is 3 commits, no less no more. dont do other git command except those 3 commits at the exact step.
+total is 3-4 commits, no less no more. dont do other git command except those 3 commits at the exact step.
 
 ### gate before start initial implementation
 
@@ -73,3 +87,5 @@ if something is needed an answer, ask me using our QnA protocols (using picker, 
 ## after everything
 
 additionally give a very simple timestamp & agents report. just need the start + end + duration time and total subagents spawned/dispatched ONLY for this session (not the whole chat).
+
+tells what to do next and what is your opinion after everything is done.
