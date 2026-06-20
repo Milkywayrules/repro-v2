@@ -27,6 +27,73 @@
         "operationId": "getApiV1"
       }
     },
+    "/api/v1/platform/iam-features/": {
+      "get": {
+        "security": [],
+        "summary": "Public IAM feature flags",
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "emailPassword": {
+                          "type": "boolean"
+                        },
+                        "magicLink": {
+                          "type": "boolean"
+                        },
+                        "github": {
+                          "type": "boolean"
+                        },
+                        "captcha": {
+                          "type": "boolean"
+                        },
+                        "workspace": {
+                          "type": "boolean"
+                        },
+                        "multiSession": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "emailPassword",
+                        "magicLink",
+                        "github",
+                        "captcha",
+                        "workspace",
+                        "multiSession"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "apiVersion": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getApiV1PlatformIam-features"
+      }
+    },
     "/api/v1/task-lists/": {
       "get": {
         "operationId": "getApiV1Task-lists"

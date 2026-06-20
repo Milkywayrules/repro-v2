@@ -8,6 +8,7 @@ const PROBE_STALE_TIME_MS = 30_000 // matches QUERY_STALE_TIME_MS in @repro-v2/u
 export const platformKeys = {
   all: ['platform'] as const,
   health: () => [...platformKeys.all, 'health'] as const,
+  iamFeatures: () => [...platformKeys.all, 'iam-features'] as const,
   root: () => [...platformKeys.all, 'root'] as const,
   ready: () => [...platformKeys.all, 'ready'] as const,
 }
@@ -63,6 +64,19 @@ function platformQueryDefaults<T extends readonly unknown[]>(queryKey: T) {
     retry: false as const,
     staleTime: PROBE_STALE_TIME_MS,
   }
+}
+
+const IAM_FEATURES_STALE_TIME_MS = 60_000
+
+export function iamFeaturesQueryOptions(client: ApiClient) {
+  return queryOptions({
+    queryKey: platformKeys.iamFeatures(),
+    queryFn: async () => {
+      const response = await client.api.v1.platform['iam-features'].get()
+      return unwrapTreatyResponse(response)
+    },
+    staleTime: IAM_FEATURES_STALE_TIME_MS,
+  })
 }
 
 export function healthQueryOptions(client: ApiClient) {

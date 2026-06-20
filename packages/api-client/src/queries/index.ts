@@ -3,6 +3,7 @@ export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
 export { taskKeys, taskListKeys } from './keys'
 export {
   healthQueryOptions,
+  iamFeaturesQueryOptions,
   platformKeys,
   readyQueryOptions,
   rootQueryOptions,

@@ -73,6 +73,7 @@ describe('full app wiring', () => {
     }
     expect(spec.paths).toHaveProperty('/api/v1/task-lists/')
     expect(spec.paths).toHaveProperty('/api/v1/tasks/')
+    expect(spec.paths).toHaveProperty('/api/v1/platform/iam-features/')
     expect(spec.paths).not.toHaveProperty('/health')
     expect(spec.paths).not.toHaveProperty('/ready')
     expect(spec.components?.securitySchemes).toHaveProperty('sessionCookie')

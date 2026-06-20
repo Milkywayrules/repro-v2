@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { ApiClient } from '../index'
 import {
   healthQueryOptions,
+  iamFeaturesQueryOptions,
   platformKeys,
   type ReadyProbe,
   readyQueryOptions,
@@ -13,12 +14,19 @@ describe('platformKeys', () => {
   test('builds hierarchical keys', () => {
     expect(platformKeys.all).toEqual(['platform'])
     expect(platformKeys.health()).toEqual(['platform', 'health'])
+    expect(platformKeys.iamFeatures()).toEqual(['platform', 'iam-features'])
     expect(platformKeys.root()).toEqual(['platform', 'root'])
     expect(platformKeys.ready()).toEqual(['platform', 'ready'])
   })
 })
 
 describe('platform query options', () => {
+  test('iamFeaturesQueryOptions uses 60s stale time', () => {
+    const client = {} as ApiClient
+
+    expect(iamFeaturesQueryOptions(client).staleTime).toBe(60_000)
+  })
+
   test('use probe defaults', () => {
     const client = {} as ApiClient
 

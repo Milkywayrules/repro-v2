@@ -12,6 +12,10 @@ const skipPaths = [
   { path: '/openapi', route: '/openapi' },
   { path: '/openapi/json', route: '/openapi/*' },
   { path: '/api/auth/session', route: '/api/auth/**' },
+  {
+    path: '/api/v1/platform/iam-features',
+    route: '/api/v1/platform/iam-features',
+  },
 ] as const
 
 describe('iamSession derive', () => {

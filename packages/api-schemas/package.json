@@ -2,11 +2,17 @@
   "name": "@repro-v2/api-schemas",
   "type": "module",
   "exports": {
+    "./modules/platform": {
+      "default": "./src/modules/platform.ts"
+    },
     "./modules/task-lists": {
       "default": "./src/modules/task-lists.ts"
     },
     "./modules/tasks": {
       "default": "./src/modules/tasks.ts"
+    },
+    "./shared/envelope": {
+      "default": "./src/shared/envelope.ts"
     },
     "./shared/id": {
       "default": "./src/shared/id.ts"
