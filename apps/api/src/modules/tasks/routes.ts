@@ -8,12 +8,12 @@ import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { paginatedList } from '@/libs/queries/paginated-list'
-import { requireAuth } from '@/modules/auth/routes'
+import { requireIam } from '@/modules/iam/routes'
 
 import { tasksService } from './service'
 
 export const tasksRoutes = new Elysia({ name: 'tasks-routes' })
-  .use(requireAuth)
+  .use(requireIam)
   .get(
     '/',
     async ({ user, query, request }) => {

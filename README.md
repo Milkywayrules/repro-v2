@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Bun** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
 - **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
+- **Authentication** - Better Auth via `@repro-v2/iam` (IAM plugins from env)
 - **Biome** - Linting and formatting
 - **Turborepo** - Optimized monorepo build system
 

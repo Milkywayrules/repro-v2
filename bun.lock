@@ -26,9 +26,9 @@
         "@elysiajs/openapi": "^1.4.14",
         "@repro-v2/api-schemas": "workspace:*",
         "@repro-v2/api-types": "workspace:*",
-        "@repro-v2/auth": "workspace:*",
         "@repro-v2/db": "workspace:*",
         "@repro-v2/env": "workspace:*",
+        "@repro-v2/iam": "workspace:*",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
         "elysia": "^1.4.28",
@@ -48,8 +48,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@repro-v2/api-client": "workspace:*",
-        "@repro-v2/auth": "workspace:*",
         "@repro-v2/env": "workspace:*",
+        "@repro-v2/iam": "workspace:*",
         "@repro-v2/ui": "workspace:*",
         "@tanstack/react-query": "catalog:",
         "react": "^19.2.4",
@@ -68,8 +68,8 @@
       "version": "0.1.0",
       "dependencies": {
         "@repro-v2/api-client": "workspace:*",
-        "@repro-v2/auth": "workspace:*",
         "@repro-v2/env": "workspace:*",
+        "@repro-v2/iam": "workspace:*",
         "@repro-v2/ui": "workspace:*",
         "@tanstack/react-form": "^1.28.0",
         "@tanstack/react-query": "catalog:",
@@ -184,23 +184,6 @@
         "typescript": "catalog:",
       },
     },
-    "packages/auth": {
-      "name": "@repro-v2/auth",
-      "dependencies": {
-        "@repro-v2/db": "workspace:*",
-        "@repro-v2/env": "workspace:*",
-        "better-auth": "catalog:",
-        "dotenv": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@repro-v2/config": "workspace:*",
-        "typescript": "catalog:",
-      },
-      "peerDependencies": {
-        "react": "catalog:",
-      },
-    },
     "packages/config": {
       "name": "@repro-v2/config",
       "version": "0.0.0",
@@ -250,6 +233,26 @@
         "@repro-v2/config": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
+      },
+    },
+    "packages/iam": {
+      "name": "@repro-v2/iam",
+      "dependencies": {
+        "@repro-v2/db": "workspace:*",
+        "@repro-v2/email": "workspace:*",
+        "@repro-v2/env": "workspace:*",
+        "better-auth": "catalog:",
+        "dotenv": "catalog:",
+        "react": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@repro-v2/config": "workspace:*",
+        "@types/react": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "react": "catalog:",
       },
     },
     "packages/ui": {
@@ -760,8 +763,6 @@
 
     "@repro-v2/api-types": ["@repro-v2/api-types@workspace:packages/api-types"],
 
-    "@repro-v2/auth": ["@repro-v2/auth@workspace:packages/auth"],
-
     "@repro-v2/config": ["@repro-v2/config@workspace:packages/config"],
 
     "@repro-v2/db": ["@repro-v2/db@workspace:packages/db"],
@@ -769,6 +770,8 @@
     "@repro-v2/email": ["@repro-v2/email@workspace:packages/email"],
 
     "@repro-v2/env": ["@repro-v2/env@workspace:packages/env"],
+
+    "@repro-v2/iam": ["@repro-v2/iam@workspace:packages/iam"],
 
     "@repro-v2/ui": ["@repro-v2/ui@workspace:packages/ui"],
 

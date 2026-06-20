@@ -17,13 +17,13 @@ src/
   lifecycle.ts          # graceful shutdown
   platform/health/      # liveness/readiness probes (plain JSON, no envelope)
   modules/
-    auth/               # routes.ts (better-auth mount + requireAuth), service.ts
+    iam/               # routes.ts (better-auth mount + requireIam), service.ts
     task-lists/         # reference CRUD — routes.ts, service.ts
     tasks/              # reference CRUD — routes.ts, service.ts; soft delete via deletedAt
   routes/
     platform/index.ts   # .use(healthRoutes)
     auth/index.ts       # .use(authModuleRoutes) at /api/auth
-    v1/index.ts         # requireAuth + task-lists + tasks + GET / okV1
+    v1/index.ts         # requireIam + task-lists + tasks + GET / okV1
   libs/
     contract/           # response contract + errors; public API is http
     helpers/            # serialize-audit and other small utilities
@@ -36,14 +36,14 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 
 ## Imports
 
-- Use `@/` path alias (`@/libs/contract`, `@/modules/auth`, `@/platform/health`, …).
+- Use `@/` path alias (`@/libs/contract`, `@/modules/iam`, `@/platform/health`, …).
 - Barrels allowed under `apps/api/src/`.
 - Route/feature code imports public surfaces only.
 - **Do not** depend on `drizzle-orm` directly — import operators/types from `@repro-v2/db/drizzle`, schema from `@repro-v2/db/schema/*`, and `db` from `@repro-v2/db`.
 
 ## Modules & services
 
-- Each module under `modules/*` exports a **service object** from `service.ts` (e.g. `taskListsService`, `tasksService`, `authService`).
+- Each module under `modules/*` exports a **service object** from `service.ts` (e.g. `taskListsService`, `tasksService`, `iamService`).
 - Methods may be defined outside the object or inlined — export one object, not individual functions.
 - Routes and cross-module callers import the service object and call through it (`taskListsService.list(...)`, not `import { list } from './service'`).
 - Query/business logic lives in `service.ts`; HTTP wiring stays in `routes.ts`.
@@ -63,11 +63,11 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 
 ## Auth
 
-- `authSession` global derive resolves the session once per request; `requireAuth` reuses it via `.resolve()`.
+- `iamSession` global derive resolves the session once per request; `requireIam` reuses it via `.resolve()`.
 - better-auth handler at `/api/auth/*` — native response shape, not our envelope.
 - User-scoped modules read `{ user }` from context; never trust client-supplied user ids.
-- `modules/auth/auth.ts` wires `createAuth(db)` with the shared `@repro-v2/db` pool — auth must not call `createDb()` again.
-- evlog user identification in `app.ts` reads the same `authSession` derive.
+- `modules/iam/iam.ts` wires `createIam(db)` with the shared `@repro-v2/db` pool — IAM must not call `createDb()` again.
+- evlog user identification in `app.ts` reads the same `iamSession` derive.
 
 ## OpenAPI
 
@@ -112,7 +112,7 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 - **`@repro-v2/api-client`** is the sole consumer: `import type { App } from 'api/app'`.
 - **No app→app imports** (console must not import from `apps/api/src/*`).
 - **No tsconfig path cheats** to reach sibling app source (no `"../api/src/*"` in console paths).
-- Frontends use `@repro-v2/api-client` and `@repro-v2/auth/react`; contract types from `@repro-v2/api-types/contract`.
+- Frontends use `@repro-v2/api-client` and `@repro-v2/iam/react`; contract types from `@repro-v2/api-types/contract`.
 
 ## Docs
 

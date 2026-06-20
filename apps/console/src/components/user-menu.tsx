@@ -15,13 +15,13 @@ import { Skeleton } from '@repro-v2/ui/components/skeleton'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { useClientMounted } from '@/hooks/use-client-mounted'
-import { authClient } from '@/lib/auth-client'
+import { iamClient } from '@/lib/iam-client'
 
 export default function UserMenu() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const mounted = useClientMounted()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending } = iamClient.useSession()
 
   if (!mounted || isPending) {
     return <Skeleton className="h-9 w-24" />
@@ -47,7 +47,7 @@ export default function UserMenu() {
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              authClient.signOut({
+              iamClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {
                     queryClient.clear()

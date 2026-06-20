@@ -7,12 +7,12 @@ import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { paginatedList } from '@/libs/queries/paginated-list'
-import { requireAuth } from '@/modules/auth/routes'
+import { requireIam } from '@/modules/iam/routes'
 
 import { taskListsService } from './service'
 
 export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })
-  .use(requireAuth)
+  .use(requireIam)
   .get('/', async ({ user, request }) => {
     const searchParams = new URL(request.url).searchParams
     const { rows, meta } = await paginatedList({

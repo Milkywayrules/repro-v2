@@ -1,11 +1,11 @@
-import { authClient } from '@/lib/auth-client'
 import { consoleLoginUrl } from '@/lib/console-login-url'
+import { iamClient } from '@/lib/iam-client'
 
 import { ApiReadyDot } from './api-ready-dot'
 import { ApiTaskListsWidget } from './api-task-lists-widget'
 
 export function PopupPage() {
-  const { data: session, isPending: sessionPending } = authClient.useSession()
+  const { data: session, isPending: sessionPending } = iamClient.useSession()
 
   return (
     <main className="popup">

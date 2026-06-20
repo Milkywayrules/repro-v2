@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import { ClientOnly } from '@/components/client-only'
 import Loader from '@/components/loader'
-import { authClient } from '@/lib/auth-client'
+import { iamClient } from '@/lib/iam-client'
 
 import Dashboard from './dashboard'
 
@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
 function DashboardPageClient() {
   const router = useRouter()
-  const { data: session, isPending } = authClient.useSession()
+  const { data: session, isPending } = iamClient.useSession()
 
   useEffect(() => {
     if (!(isPending || session?.user)) {

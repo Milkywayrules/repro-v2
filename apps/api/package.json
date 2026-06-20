@@ -25,7 +25,7 @@
     "@elysiajs/openapi": "^1.4.14",
     "@repro-v2/api-schemas": "workspace:*",
     "@repro-v2/api-types": "workspace:*",
-    "@repro-v2/auth": "workspace:*",
+    "@repro-v2/iam": "workspace:*",
     "@repro-v2/db": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "better-auth": "catalog:",

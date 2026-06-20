@@ -23,7 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useQueryState } from 'nuqs'
 
 import { apiClient } from '@/lib/api-client'
-import { authClient } from '@/lib/auth-client'
+import { iamClient } from '@/lib/iam-client'
 import { parseAsListId } from '@/lib/list-id-parser'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
@@ -31,7 +31,7 @@ import { searchParams } from '@/lib/search-params'
 export function TasksPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { data: session, isPending: sessionPending } = authClient.useSession()
+  const { data: session, isPending: sessionPending } = iamClient.useSession()
   const [listId, setListId] = useQueryState(searchParams.listId, parseAsListId)
   const [newListName, setNewListName] = useState('')
   const [newTaskTitle, setNewTaskTitle] = useState('')

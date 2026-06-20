@@ -5,7 +5,7 @@ import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { notFoundError } from '@/libs/contract/errors'
-import { authService } from '@/modules/auth/service'
+import { iamService } from '@/modules/iam/service'
 import { v1Routes } from '@/routes/v1'
 
 import { tasksService } from './service'
@@ -47,7 +47,7 @@ function createApp() {
 }
 
 function mockAuthedSession() {
-  spyOn(authService, 'getSession').mockResolvedValue({
+  spyOn(iamService, 'getSession').mockResolvedValue({
     user: mockUser,
     session: mockSession,
   })
@@ -55,7 +55,7 @@ function mockAuthedSession() {
 
 describe('tasks routes', () => {
   afterEach(() => {
-    spyOn(authService, 'getSession').mockRestore()
+    spyOn(iamService, 'getSession').mockRestore()
     spyOn(tasksService, 'list').mockRestore()
     spyOn(tasksService, 'create').mockRestore()
     spyOn(tasksService, 'getForUser').mockRestore()
@@ -64,7 +64,7 @@ describe('tasks routes', () => {
   })
 
   test('GET /api/v1/tasks returns 401 without session', async () => {
-    spyOn(authService, 'getSession').mockResolvedValue(null)
+    spyOn(iamService, 'getSession').mockResolvedValue(null)
 
     const response = await createApp().handle(
       new Request('http://localhost/api/v1/tasks'),

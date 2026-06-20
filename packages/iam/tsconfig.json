@@ -2,7 +2,8 @@
   "extends": "@repro-v2/config/tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "jsx": "react-jsx"
   },
   "include": ["src"]
 }

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { Elysia } from 'elysia'
 
-import { authSession } from './context'
-import { authService } from './service'
+import { iamSession } from './context'
+import { iamService } from './service'
 
 const skipPaths = [
   { path: '/health', route: '/health' },
@@ -14,17 +14,17 @@ const skipPaths = [
   { path: '/api/auth/session', route: '/api/auth/**' },
 ] as const
 
-describe('authSession derive', () => {
+describe('iamSession derive', () => {
   afterEach(() => {
-    spyOn(authService, 'getSession').mockRestore()
+    spyOn(iamService, 'getSession').mockRestore()
   })
 
   for (const { path, route } of skipPaths) {
     test(`skips getSession for ${route}`, async () => {
-      const getSessionSpy = spyOn(authService, 'getSession').mockResolvedValue(
+      const getSessionSpy = spyOn(iamService, 'getSession').mockResolvedValue(
         null,
       )
-      const app = new Elysia().use(authSession).all('*', () => 'ok')
+      const app = new Elysia().use(iamSession).all('*', () => 'ok')
 
       await app.handle(new Request(`http://localhost${path}`))
 
@@ -33,10 +33,10 @@ describe('authSession derive', () => {
   }
 
   test('resolves session for other paths', async () => {
-    const getSessionSpy = spyOn(authService, 'getSession').mockResolvedValue(
+    const getSessionSpy = spyOn(iamService, 'getSession').mockResolvedValue(
       null,
     )
-    const app = new Elysia().use(authSession).get('/api/v1/', () => 'v1')
+    const app = new Elysia().use(iamSession).get('/api/v1/', () => 'v1')
 
     await app.handle(new Request('http://localhost/api/v1/'))
 

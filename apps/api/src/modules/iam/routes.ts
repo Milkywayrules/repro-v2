@@ -4,12 +4,12 @@ import { http } from '@/libs/contract'
 import { unauthorizedError } from '@/libs/contract/errors'
 import { authRateLimit } from '@/libs/middleware'
 
-import { auth } from './auth'
-import { authSession } from './context'
+import { iamSession } from './context'
+import { iam } from './iam'
 
-export const requireAuth = new Elysia({ name: 'require-auth' })
-  .use(authSession)
-  .resolve({ as: 'scoped' }, ({ authSession: session }) => {
+export const requireIam = new Elysia({ name: 'require-iam' })
+  .use(iamSession)
+  .resolve({ as: 'scoped' }, ({ iamSession: session }) => {
     if (!session) {
       throw unauthorizedError()
     }
@@ -20,11 +20,11 @@ export const requireAuth = new Elysia({ name: 'require-auth' })
     }
   })
 
-export const authModuleRoutes = new Elysia({ name: 'auth-module-routes' })
+export const iamModuleRoutes = new Elysia({ name: 'iam-module-routes' })
   .use(authRateLimit)
   .all('/*', async ({ request }) => {
     if (['POST', 'GET'].includes(request.method)) {
-      return await auth.handler(request)
+      return await iam.handler(request)
     }
 
     throw http.error({

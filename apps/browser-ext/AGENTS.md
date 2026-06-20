@@ -18,7 +18,7 @@ src/
     popup/              # index.html, main.tsx, App.tsx, style.css
   modules/popup/        # popup.page.tsx + widgets (*.page.tsx)
   components/providers.tsx
-  lib/                  # api-client, auth-client, console-login-url
+  lib/                  # api-client, iam-client, console-login-url
 ```
 
 Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
@@ -31,13 +31,13 @@ Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
 | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | API           | `@repro-v2/api-client` — `createApiClient(env.WXT_API_URL)`, `credentials: 'include'`, `X-Requested-With: XMLHttpRequest` |
 | Queries       | `@repro-v2/api-client/queries` — `readyQuery`, `taskListsQuery` (read-only)                                               |
-| Auth          | `@repro-v2/auth/react` — `authClient.useSession()`; login via **Console tab** (`WXT_CONSOLE_URL/login`)                   |
+| Auth          | `@repro-v2/iam/react` — `iamClient.useSession()`; login via **Console tab** (`WXT_CONSOLE_URL/login`)                   |
 | Providers     | `@repro-v2/ui/providers/app-providers` — `showQueryDevtools={false}`                                                      |
 | Env (runtime) | `@repro-v2/env/browser-ext` — `WXT_*` prefix, `import.meta.env`                                                           |
 | Env (build)   | `wxt.config.ts` reads `WXT_API_URL` via dotenv for `host_permissions`                                                     |
 | Styling       | Plain CSS in `popup/style.css` — not Tailwind/shadcn in popup                                                             |
 
-**401:** `isTreatyUnauthorized` + `onUnauthorized` → `authClient.signOut()`; widgets link to Console login.
+**401:** `isTreatyUnauthorized` + `onUnauthorized` → `iamClient.signOut()`; widgets link to Console login.
 
 **Manifest:** `host_permissions` = `${origin(WXT_API_URL)}/*`; Firefox gecko id `repro-v2@localhost`.
 
@@ -55,4 +55,4 @@ Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
 - WXT config: https://wxt.dev/api/config.html
 - Skill reference: `.agents/skills/wxt-browser-extensions/`
 - Env schema: `packages/env/src/browser-ext.ts`
-- Auth extension origins: `packages/auth` (trusts `chrome-extension://*`, `moz-extension://*` in dev)
+- Auth extension origins: `packages/iam` (trusts `chrome-extension://*`, `moz-extension://*` in dev)

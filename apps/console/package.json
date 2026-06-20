@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@repro-v2/api-client": "workspace:*",
-    "@repro-v2/auth": "workspace:*",
+    "@repro-v2/iam": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "@repro-v2/ui": "workspace:*",
     "@tanstack/react-form": "^1.28.0",

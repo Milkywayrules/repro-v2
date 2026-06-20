@@ -1,5 +1,5 @@
 {
-  "name": "@repro-v2/auth",
+  "name": "@repro-v2/iam",
   "type": "module",
   "exports": {
     ".": {
@@ -14,16 +14,16 @@
   },
   "dependencies": {
     "@repro-v2/db": "workspace:*",
+    "@repro-v2/email": "workspace:*",
     "@repro-v2/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "react": "catalog:",
     "zod": "catalog:"
-  },
-  "peerDependencies": {
-    "react": "catalog:"
   },
   "devDependencies": {
     "@repro-v2/config": "workspace:*",
+    "@types/react": "catalog:",
     "typescript": "catalog:"
   }
 }

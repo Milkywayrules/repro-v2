@@ -43,7 +43,7 @@ Generated (gitignored): `.source/` — never hand-edit; regen via `fumadocs-mdx`
 
 **Page convention:** thin `app/**/page.tsx` → `modules/<domain>/*.page.tsx`.
 
-**No auth** — public docs site; don't add `@repro-v2/auth` without scope.
+**No auth** — public docs site; don't add `@repro-v2/iam` without scope.
 
 ## Avoid
 

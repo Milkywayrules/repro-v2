@@ -15,7 +15,7 @@ src/
   app/**/page.tsx       # thin shells — Suspense, metadata, ClientOnly
   modules/<domain>/*.page.tsx   # domain UI (*Page export)
   components/           # app-local (forms, header, providers)
-  lib/                  # api-client, auth-client, routes, evlog, nuqs parsers
+  lib/                  # api-client, iam-client, routes, evlog, nuqs parsers
   hooks/
   app/api/              # /api/health, /api/ready (Railway probes)
   proxy.ts              # evlog middleware for /api/:path* (not middleware.ts)
@@ -29,7 +29,7 @@ Path aliases: `@/*` → `src/*`; `@repro-v2/ui/*` → `packages/ui/src/*`.
 | --------- | ------------------------------------------------------------------------------------------------------------ |
 | API       | `@repro-v2/api-client` — `createApiClient(env.NEXT_PUBLIC_API_URL)`, `credentials: 'include'`                |
 | Queries   | `@repro-v2/api-client/queries` + TanStack Query via `@repro-v2/ui/providers/app-providers`                   |
-| Auth      | `@repro-v2/auth/react` — `createAuthReactClient`; client session guards (`useSession`, redirect to `/login`) |
+| Auth      | `@repro-v2/iam/react` — `createIamReactClient`; client session guards (`useSession`, redirect to `/login`) |
 | Forms     | TanStack Form + Zod (sign-in/up)                                                                             |
 | URL state | `nuqs` (`useQueryState`, Zod-backed parsers)                                                                 |
 | Env       | `@repro-v2/env/console` — import in `next.config.ts`; template `.env.example`                                |
@@ -60,5 +60,5 @@ Path aliases: `@/*` → `src/*`; `@repro-v2/ui/*` → `packages/ui/src/*`.
 ## Docs
 
 - Env schema: `packages/env/src/console.ts`
-- Auth client example: `src/lib/auth-client.ts` (see `packages/auth/README.md`)
+- IAM client example: `src/lib/iam-client.ts` (see `packages/iam/README.md`)
 - Monorepo: root `README.md`, root `AGENTS.md` (app boundary)

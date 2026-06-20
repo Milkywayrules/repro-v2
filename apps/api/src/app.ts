@@ -9,8 +9,8 @@ import { z } from 'zod'
 
 import { http } from '@/libs/contract'
 import { globalRateLimit, requestId } from '@/libs/middleware'
-import { authSession } from '@/modules/auth/context'
-import { shouldSkipAuthContext } from '@/modules/auth/paths'
+import { iamSession } from '@/modules/iam/context'
+import { shouldSkipIamContext } from '@/modules/iam/paths'
 import { authRoutes } from '@/routes/auth'
 import { platformRoutes } from '@/routes/platform'
 import { v1Routes } from '@/routes/v1'
@@ -70,10 +70,10 @@ export function createApp() {
     .use(evlog({ exclude: ['/health', '/ready'] }))
     .use(http.plugin())
     .use(globalRateLimit)
-    .use(authSession)
-    .derive(({ request, log, authSession: session }) => {
+    .use(iamSession)
+    .derive(({ request, log, iamSession: session }) => {
       const pathname = new URL(request.url).pathname
-      if (shouldSkipAuthContext(pathname)) {
+      if (shouldSkipIamContext(pathname)) {
         return {}
       }
 

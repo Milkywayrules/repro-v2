@@ -7,7 +7,7 @@ import { useForm } from '@tanstack/react-form'
 import { toast } from 'sonner'
 import z from 'zod'
 
-import { authClient } from '@/lib/auth-client'
+import { iamClient } from '@/lib/iam-client'
 
 import Loader from './loader'
 
@@ -17,7 +17,7 @@ export default function SignInForm({
   onSwitchToSignUp: () => void
 }) {
   const router = useRouter()
-  const { isPending } = authClient.useSession()
+  const { isPending } = iamClient.useSession()
 
   const form = useForm({
     defaultValues: {
@@ -25,7 +25,7 @@ export default function SignInForm({
       password: '',
     },
     onSubmit: async ({ value }) => {
-      await authClient.signIn.email(
+      await iamClient.signIn.email(
         {
           email: value.email,
           password: value.password,

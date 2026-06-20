@@ -3,13 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
-import { authModuleRoutes } from '@/modules/auth/routes'
+import { iamModuleRoutes } from '@/modules/iam/routes'
 
-describe('auth module routes', () => {
+describe('iam module routes', () => {
   test('DELETE /api/auth/session returns 405 with envelope', async () => {
     const app = new Elysia()
       .use(http.plugin())
-      .group('/api/auth', authApp => authApp.use(authModuleRoutes))
+      .group('/api/auth', authApp => authApp.use(iamModuleRoutes))
 
     const response = await app.handle(
       new Request('http://localhost/api/auth/session', {
