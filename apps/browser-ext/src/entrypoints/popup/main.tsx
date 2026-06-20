@@ -10,7 +10,7 @@ import './style.css'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {/* onUnauthorized / isUnauthorized omitted until extension calls the API */}
-    <AppProviders>
+    <AppProviders showQueryDevtools={false}>
       <App />
     </AppProviders>
   </React.StrictMode>,

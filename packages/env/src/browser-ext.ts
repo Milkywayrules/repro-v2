@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod'
 
@@ -10,12 +9,7 @@ export const env = createEnv({
     WXT_DOCS_URL: z.url(),
     WXT_MARKETING_URL: z.url(),
   },
-  runtimeEnv: {
-    WXT_API_URL: import.meta.env.WXT_API_URL,
-    WXT_CONSOLE_URL: import.meta.env.WXT_CONSOLE_URL,
-    WXT_DOCS_URL: import.meta.env.WXT_DOCS_URL,
-    WXT_MARKETING_URL: import.meta.env.WXT_MARKETING_URL,
-  },
+  runtimeEnv: import.meta.env,
   skipValidation: !!import.meta.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
 })

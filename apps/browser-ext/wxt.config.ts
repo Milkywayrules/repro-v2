@@ -1,7 +1,10 @@
-import { env } from '@repro-v2/env/browser-ext'
-import { defineConfig } from 'wxt'
+import 'dotenv/config'
 
-const apiHostPermission = `${new URL(env.WXT_API_URL).origin}/*`
+import { defineConfig } from 'wxt'
+import { z } from 'zod'
+
+const apiUrl = z.url().parse(process.env.WXT_API_URL)
+const apiHostPermission = `${new URL(apiUrl).origin}/*`
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({

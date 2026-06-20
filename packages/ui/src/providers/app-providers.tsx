@@ -20,6 +20,8 @@ type NuqsMode = 'next-app' | 'spa' | false
 export type AppProvidersProps = {
   children: React.ReactNode
   nuqs?: NuqsMode
+  /** Off for extension popups and other constrained surfaces. */
+  showQueryDevtools?: boolean
 } & CreateAppQueryClientOptions
 
 function NuqsWrapper({
@@ -45,6 +47,7 @@ export function AppProviders({
   onUnauthorized,
   isUnauthorized,
   nuqs = false,
+  showQueryDevtools = process.env.NODE_ENV === 'development',
 }: AppProvidersProps) {
   const onUnauthorizedRef = useRef(onUnauthorized)
   onUnauthorizedRef.current = onUnauthorized
@@ -70,7 +73,7 @@ export function AppProviders({
           {children}
           <Toaster richColors />
         </NuqsWrapper>
-        {process.env.NODE_ENV === 'development' ? (
+        {showQueryDevtools ? (
           <ReactQueryDevtools initialIsOpen={false} />
         ) : null}
       </QueryClientProvider>
