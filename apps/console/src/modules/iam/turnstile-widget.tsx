@@ -27,6 +27,34 @@ declare global {
 const TURNSTILE_SCRIPT =
   'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
 
+const turnstileLoadCallbacks = new Set<() => void>()
+
+function invokeTurnstileLoadCallbacks() {
+  for (const callback of turnstileLoadCallbacks) {
+    callback()
+  }
+}
+
+function ensureTurnstileScript() {
+  if (window.turnstile) {
+    invokeTurnstileLoadCallbacks()
+    return
+  }
+
+  const previousOnLoad = window.onTurnstileLoad
+  window.onTurnstileLoad = () => {
+    previousOnLoad?.()
+    invokeTurnstileLoadCallbacks()
+  }
+
+  if (!document.querySelector(`script[src="${TURNSTILE_SCRIPT}"]`)) {
+    const script = document.createElement('script')
+    script.src = TURNSTILE_SCRIPT
+    script.async = true
+    document.head.appendChild(script)
+  }
+}
+
 export function TurnstileWidget({
   onExpire,
   onToken,
@@ -49,6 +77,10 @@ export function TurnstileWidget({
         return
       }
 
+      if (widgetIdRef.current) {
+        return
+      }
+
       widgetIdRef.current = window.turnstile.render(container, {
         sitekey: siteKey,
         callback: onToken,
@@ -57,20 +89,16 @@ export function TurnstileWidget({
       })
     }
 
+    turnstileLoadCallbacks.add(renderWidget)
+    ensureTurnstileScript()
+
     if (window.turnstile) {
       renderWidget()
-    } else {
-      window.onTurnstileLoad = renderWidget
-
-      if (!document.querySelector(`script[src="${TURNSTILE_SCRIPT}"]`)) {
-        const script = document.createElement('script')
-        script.src = TURNSTILE_SCRIPT
-        script.async = true
-        document.head.appendChild(script)
-      }
     }
 
     return () => {
+      turnstileLoadCallbacks.delete(renderWidget)
+
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current)
         widgetIdRef.current = null

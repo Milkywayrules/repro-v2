@@ -25,6 +25,12 @@ export function buildIamPlugins(
       captcha({
         provider: 'cloudflare-turnstile',
         secretKey: env.TURNSTILE_SECRET_KEY,
+        endpoints: [
+          '/sign-up/email',
+          '/sign-in/email',
+          '/request-password-reset',
+          ...(iamFeatures.magicLink ? (['/sign-in/magic-link'] as const) : []),
+        ],
       }),
     )
   }

@@ -1,7 +1,5 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
@@ -12,27 +10,54 @@ import z from 'zod'
 import { iamClient } from '@/lib/iam-client'
 
 import { captchaFetchOptions } from './captcha-fetch-options'
-import { TurnstileWidget } from './turnstile-widget'
 import type { PublicIamFeatures } from './types'
 import { usePostAuthRedirect } from './use-post-auth-redirect'
+
+function FieldErrors({
+  errors,
+  fieldName,
+}: {
+  errors: Array<{ message?: string } | undefined>
+  fieldName: string
+}) {
+  if (errors.length === 0) {
+    return null
+  }
+
+  const errorId = `${fieldName}-error`
+
+  return (
+    <>
+      {errors.map(error => (
+        <p
+          className="text-destructive text-sm"
+          id={errorId}
+          key={error?.message}
+          role="alert"
+        >
+          {error?.message}
+        </p>
+      ))}
+    </>
+  )
+}
 
 export function EmailSignInForm({
   authBlocked,
   captchaRequired,
+  captchaToken,
+  clearCaptcha,
   features,
   onSwitchToSignUp,
 }: {
   authBlocked?: boolean
   captchaRequired: boolean
+  captchaToken: string | null
+  clearCaptcha: () => void
   features: PublicIamFeatures | undefined
   onSwitchToSignUp: () => void
 }) {
   const redirectAfterAuth = usePostAuthRedirect()
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-
-  const clearCaptcha = useCallback(() => {
-    setCaptchaToken(null)
-  }, [])
 
   const form = useForm({
     defaultValues: {
@@ -81,52 +106,60 @@ export function EmailSignInForm({
         }}
       >
         <form.Field name="email">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Email</Label>
-              <Input
-                disabled={authBlocked}
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                type="email"
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
+
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Email</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  disabled={authBlocked}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  type="email"
+                  value={field.state.value}
+                />
+                <FieldErrors
+                  errors={field.state.meta.errors}
+                  fieldName={field.name}
+                />
+              </div>
+            )
+          }}
         </form.Field>
 
         <form.Field name="password">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Password</Label>
-              <Input
-                disabled={authBlocked}
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                type="password"
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
 
-        {captchaRequired ? (
-          <TurnstileWidget onExpire={clearCaptcha} onToken={setCaptchaToken} />
-        ) : null}
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Password</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  disabled={authBlocked}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  type="password"
+                  value={field.state.value}
+                />
+                <FieldErrors
+                  errors={field.state.meta.errors}
+                  fieldName={field.name}
+                />
+              </div>
+            )
+          }}
+        </form.Field>
 
         <form.Subscribe
           selector={state => ({
@@ -163,20 +196,19 @@ export function EmailSignInForm({
 export function EmailSignUpForm({
   authBlocked,
   captchaRequired,
+  captchaToken,
+  clearCaptcha,
   features,
   onSwitchToSignIn,
 }: {
   authBlocked?: boolean
   captchaRequired: boolean
+  captchaToken: string | null
+  clearCaptcha: () => void
   features: PublicIamFeatures | undefined
   onSwitchToSignIn: () => void
 }) {
   const redirectAfterAuth = usePostAuthRedirect()
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-
-  const clearCaptcha = useCallback(() => {
-    setCaptchaToken(null)
-  }, [])
 
   const form = useForm({
     defaultValues: {
@@ -228,73 +260,87 @@ export function EmailSignUpForm({
         }}
       >
         <form.Field name="name">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Name</Label>
-              <Input
-                disabled={authBlocked}
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
+
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Name</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  disabled={authBlocked}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  value={field.state.value}
+                />
+                <FieldErrors
+                  errors={field.state.meta.errors}
+                  fieldName={field.name}
+                />
+              </div>
+            )
+          }}
         </form.Field>
 
         <form.Field name="email">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Email</Label>
-              <Input
-                disabled={authBlocked}
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                type="email"
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
+
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Email</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  disabled={authBlocked}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  type="email"
+                  value={field.state.value}
+                />
+                <FieldErrors
+                  errors={field.state.meta.errors}
+                  fieldName={field.name}
+                />
+              </div>
+            )
+          }}
         </form.Field>
 
         <form.Field name="password">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Password</Label>
-              <Input
-                disabled={authBlocked}
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                type="password"
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
-        </form.Field>
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
 
-        {captchaRequired ? (
-          <TurnstileWidget onExpire={clearCaptcha} onToken={setCaptchaToken} />
-        ) : null}
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Password</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  disabled={authBlocked}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  type="password"
+                  value={field.state.value}
+                />
+                <FieldErrors
+                  errors={field.state.meta.errors}
+                  fieldName={field.name}
+                />
+              </div>
+            )
+          }}
+        </form.Field>
 
         <form.Subscribe
           selector={state => ({

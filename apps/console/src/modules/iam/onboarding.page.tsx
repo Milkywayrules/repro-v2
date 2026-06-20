@@ -1,19 +1,23 @@
 'use client'
 
 import { useEffect } from 'react'
+import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
 import { useForm } from '@tanstack/react-form'
+import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import z from 'zod'
 
 import Loader from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
+import { searchParams } from '@/lib/search-params'
 
+import { resolvePostAuthPath } from './auth-redirect'
 import { useIamFeatures } from './use-iam-features'
 import { workspaceSlugFromName } from './workspace-slug'
 
@@ -21,6 +25,7 @@ const WORKSPACE_LIMIT = 2
 
 export function OnboardingPage() {
   const router = useRouter()
+  const [nextPath] = useQueryState(searchParams.next, parseAsString)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const { data: organizations, isPending: orgsPending } =
     iamClient.useListOrganizations()
@@ -41,17 +46,13 @@ export function OnboardingPage() {
       return
     }
 
-    if (!features.workspace) {
-      router.replace(routes.dashboard)
-      return
-    }
-
     if ((organizations?.length ?? 0) > 0) {
-      router.replace(routes.dashboard)
+      router.replace(resolvePostAuthPath(nextPath) as Route)
     }
   }, [
     features?.workspace,
     featuresPending,
+    nextPath,
     orgsPending,
     organizations?.length,
     router,
@@ -76,7 +77,7 @@ export function OnboardingPage() {
       }
 
       toast.success('Workspace created')
-      router.push(routes.dashboard)
+      router.push(resolvePostAuthPath(nextPath) as Route)
     },
     validators: {
       onSubmit: z.object({
@@ -113,24 +114,36 @@ export function OnboardingPage() {
         }}
       >
         <form.Field name="name">
-          {field => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Workspace name</Label>
-              <Input
-                id={field.name}
-                name={field.name}
-                onBlur={field.handleBlur}
-                onChange={event => field.handleChange(event.target.value)}
-                placeholder="Acme Inc"
-                value={field.state.value}
-              />
-              {field.state.meta.errors.map(error => (
-                <p className="text-destructive text-sm" key={error?.message}>
-                  {error?.message}
-                </p>
-              ))}
-            </div>
-          )}
+          {field => {
+            const errorId = `${field.name}-error`
+            const hasError = field.state.meta.errors.length > 0
+
+            return (
+              <div className="space-y-2">
+                <Label htmlFor={field.name}>Workspace name</Label>
+                <Input
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-invalid={hasError}
+                  id={field.name}
+                  name={field.name}
+                  onBlur={field.handleBlur}
+                  onChange={event => field.handleChange(event.target.value)}
+                  placeholder="Acme Inc"
+                  value={field.state.value}
+                />
+                {field.state.meta.errors.map(error => (
+                  <p
+                    className="text-destructive text-sm"
+                    id={errorId}
+                    key={error?.message}
+                    role="alert"
+                  >
+                    {error?.message}
+                  </p>
+                ))}
+              </div>
+            )
+          }}
         </form.Field>
 
         <form.Subscribe

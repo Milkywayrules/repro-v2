@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 import { env } from '@repro-v2/env/console'
 import { Button } from '@repro-v2/ui/components/button'
@@ -17,24 +17,22 @@ import { searchParams } from '@/lib/search-params'
 
 import { buildAuthCallbackUrl } from './auth-redirect'
 import { captchaFetchOptions } from './captcha-fetch-options'
-import { TurnstileWidget } from './turnstile-widget'
 
 export function MagicLinkForm({
   authBlocked,
   captchaRequired,
+  captchaToken,
+  clearCaptcha,
   features,
 }: {
   authBlocked?: boolean
   captchaRequired: boolean
+  captchaToken: string | null
+  clearCaptcha: () => void
   features: { magicLink: boolean } | undefined
 }) {
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
-
-  const clearCaptcha = useCallback(() => {
-    setCaptchaToken(null)
-  }, [])
 
   const form = useForm({
     defaultValues: {
@@ -73,7 +71,10 @@ export function MagicLinkForm({
 
   if (sent) {
     return (
-      <p className="text-center text-muted-foreground text-sm">
+      <p
+        aria-live="polite"
+        className="text-center text-muted-foreground text-sm"
+      >
         We sent a sign-in link to your email. You can close this tab after
         signing in.
       </p>
@@ -90,31 +91,39 @@ export function MagicLinkForm({
       }}
     >
       <form.Field name="email">
-        {field => (
-          <div className="space-y-2">
-            <Label htmlFor={field.name}>Email</Label>
-            <Input
-              disabled={authBlocked}
-              id={field.name}
-              name={field.name}
-              onBlur={field.handleBlur}
-              onChange={event => field.handleChange(event.target.value)}
-              placeholder="you@example.com"
-              type="email"
-              value={field.state.value}
-            />
-            {field.state.meta.errors.map(error => (
-              <p className="text-destructive text-sm" key={error?.message}>
-                {error?.message}
-              </p>
-            ))}
-          </div>
-        )}
-      </form.Field>
+        {field => {
+          const errorId = `${field.name}-error`
+          const hasError = field.state.meta.errors.length > 0
 
-      {captchaRequired ? (
-        <TurnstileWidget onExpire={clearCaptcha} onToken={setCaptchaToken} />
-      ) : null}
+          return (
+            <div className="space-y-2">
+              <Label htmlFor={field.name}>Email</Label>
+              <Input
+                aria-describedby={hasError ? errorId : undefined}
+                aria-invalid={hasError}
+                disabled={authBlocked}
+                id={field.name}
+                name={field.name}
+                onBlur={field.handleBlur}
+                onChange={event => field.handleChange(event.target.value)}
+                placeholder="you@example.com"
+                type="email"
+                value={field.state.value}
+              />
+              {field.state.meta.errors.map(error => (
+                <p
+                  className="text-destructive text-sm"
+                  id={errorId}
+                  key={error?.message}
+                  role="alert"
+                >
+                  {error?.message}
+                </p>
+              ))}
+            </div>
+          )
+        }}
+      </form.Field>
 
       <form.Subscribe
         selector={state => ({
