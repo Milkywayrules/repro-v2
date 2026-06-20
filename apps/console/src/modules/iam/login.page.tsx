@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { env } from '@repro-v2/env/console'
@@ -18,10 +18,7 @@ import { MagicLinkForm } from './magic-link-form'
 import { TurnstileWidget } from './turnstile-widget'
 import type { PublicIamFeatures } from './types'
 import { useIamFeatures } from './use-iam-features'
-import {
-  type PostAuthRedirectResult,
-  usePostAuthRedirect,
-} from './use-post-auth-redirect'
+import { usePostAuthRedirect } from './use-post-auth-redirect'
 
 function hasAnyAuthMethod(features: PublicIamFeatures | undefined): boolean {
   return Boolean(
@@ -178,25 +175,9 @@ export function LoginPage() {
   const captchaMisconfigured = captchaEnabled && !hasTurnstileSiteKey
   const authBlocked = captchaMisconfigured
 
-  const clearCaptcha = useCallback(() => {
+  function clearCaptcha() {
     setCaptchaToken(null)
-  }, [])
-
-  const handleRedirectResult = useCallback((result: PostAuthRedirectResult) => {
-    if (!result.ok) {
-      setRedirectState({ status: 'error', message: result.error })
-    }
-  }, [])
-
-  const executePostAuthRedirect = useCallback(() => {
-    setRedirectState({ status: 'pending' })
-    return redirectAfterAuth(features)
-  }, [features, redirectAfterAuth])
-
-  const runPostAuthRedirect = useCallback(
-    () => executePostAuthRedirect().then(handleRedirectResult),
-    [executePostAuthRedirect, handleRedirectResult],
-  )
+  }
 
   useEffect(() => {
     if (sessionPending || !session?.user) {
@@ -205,23 +186,35 @@ export function LoginPage() {
     }
 
     let cancelled = false
-    executePostAuthRedirect().then(result => {
+    setRedirectState({ status: 'pending' })
+
+    async function runPostAuthRedirect() {
+      const result = await redirectAfterAuth(features)
+
+      if (cancelled) {
+        return
+      }
+
+      if (!result.ok) {
+        setRedirectState({ status: 'error', message: result.error })
+      }
+    }
+
+    runPostAuthRedirect().catch(() => {
       if (!cancelled) {
-        handleRedirectResult(result)
+        setRedirectState({
+          status: 'error',
+          message: 'Could not continue',
+        })
       }
     })
 
     return () => {
       cancelled = true
     }
-  }, [
-    executePostAuthRedirect,
-    handleRedirectResult,
-    session?.user,
-    sessionPending,
-  ])
+  }, [features, redirectAfterAuth, session?.user, sessionPending])
 
-  const handleSignOut = useCallback(() => {
+  function handleSignOut() {
     iamClient.signOut({
       fetchOptions: {
         onSuccess: () => {
@@ -230,11 +223,23 @@ export function LoginPage() {
         },
       },
     })
-  }, [queryClient, router])
+  }
 
-  const handleRetry = useCallback(() => {
-    runPostAuthRedirect()
-  }, [runPostAuthRedirect])
+  function handleRetry() {
+    setRedirectState({ status: 'pending' })
+    redirectAfterAuth(features)
+      .then(result => {
+        if (!result.ok) {
+          setRedirectState({ status: 'error', message: result.error })
+        }
+      })
+      .catch(() => {
+        setRedirectState({
+          status: 'error',
+          message: 'Could not continue',
+        })
+      })
+  }
 
   if (sessionPending) {
     return <Loader />

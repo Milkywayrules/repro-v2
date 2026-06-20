@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   DropdownMenuItem,
@@ -32,32 +32,52 @@ export function SessionSwitcher() {
   const [switchError, setSwitchError] = useState<string | null>(null)
   const [switchingToken, setSwitchingToken] = useState<string | null>(null)
 
-  const loadSessions = useCallback(async () => {
+  useEffect(() => {
     if (!features?.multiSession) {
       return
     }
 
+    let cancelled = false
     setLoading(true)
 
-    try {
-      const { data } = await iamClient.multiSession.listDeviceSessions()
-      setDeviceSessions(data ?? [])
-    } catch {
-      setDeviceSessions([])
-    } finally {
-      setLoading(false)
+    async function loadSessions() {
+      try {
+        const { data } = await iamClient.multiSession.listDeviceSessions()
+        if (!cancelled) {
+          setDeviceSessions(data ?? [])
+        }
+      } catch {
+        if (!cancelled) {
+          setDeviceSessions([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadSessions()
+
+    return () => {
+      cancelled = true
     }
   }, [features?.multiSession])
-
-  useEffect(() => {
-    loadSessions()
-  }, [loadSessions])
 
   if (!features?.multiSession) {
     return null
   }
 
   const activeToken = session?.session.token
+
+  async function reloadSessions() {
+    try {
+      const { data } = await iamClient.multiSession.listDeviceSessions()
+      setDeviceSessions(data ?? [])
+    } catch {
+      setDeviceSessions([])
+    }
+  }
 
   async function handleSwitch(sessionToken: string) {
     if (sessionToken === activeToken || switchingToken) {
@@ -77,7 +97,7 @@ export function SessionSwitcher() {
 
       await refetchSession()
       queryClient.invalidateQueries()
-      await loadSessions()
+      await reloadSessions()
     } catch {
       setSwitchError('Could not switch session')
     } finally {

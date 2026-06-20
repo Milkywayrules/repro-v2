@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
@@ -21,7 +21,7 @@ export function GitHubOAuthButton({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
 
-  const handleSignIn = useCallback(async () => {
+  async function handleSignIn() {
     setIsSubmitting(true)
 
     await iamClient.signIn.social(
@@ -36,7 +36,7 @@ export function GitHubOAuthButton({
         },
       },
     )
-  }, [nextPath])
+  }
 
   if (!features?.github) {
     return null

@@ -1,6 +1,5 @@
 'use client'
 
-import { useCallback } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
@@ -18,30 +17,28 @@ export function usePostAuthRedirect() {
   const router = useRouter()
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
 
-  return useCallback(
-    async (
-      features: PublicIamFeatures | undefined,
-    ): Promise<PostAuthRedirectResult> => {
-      if (features?.workspace) {
-        const { data: organizations, error } =
-          await iamClient.organization.list()
+  async function redirectAfterAuth(
+    features: PublicIamFeatures | undefined,
+  ): Promise<PostAuthRedirectResult> {
+    if (features?.workspace) {
+      const { data: organizations, error } = await iamClient.organization.list()
 
-        if (error) {
-          return {
-            ok: false,
-            error: error.message ?? 'Could not load workspaces',
-          }
-        }
-
-        if (!organizations?.length) {
-          router.push(buildOnboardingPath(nextPath) as Route)
-          return { ok: true }
+      if (error) {
+        return {
+          ok: false,
+          error: error.message ?? 'Could not load workspaces',
         }
       }
 
-      router.push(resolvePostAuthPath(nextPath) as Route)
-      return { ok: true }
-    },
-    [nextPath, router],
-  )
+      if (!organizations?.length) {
+        router.push(buildOnboardingPath(nextPath) as Route)
+        return { ok: true }
+      }
+    }
+
+    router.push(resolvePostAuthPath(nextPath) as Route)
+    return { ok: true }
+  }
+
+  return redirectAfterAuth
 }
