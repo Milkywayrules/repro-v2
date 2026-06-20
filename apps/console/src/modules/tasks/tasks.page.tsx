@@ -27,6 +27,7 @@ import { iamClient } from '@/lib/iam-client'
 import { parseAsListId } from '@/lib/list-id-parser'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
+import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
 
 export function TasksPage() {
   const router = useRouter()
@@ -57,6 +58,9 @@ export function TasksPage() {
       router.replace(routes.login)
     }
   }, [sessionPending, session?.user, router])
+
+  const { error: onboardingError, isChecking: onboardingChecking } =
+    useOnboardingGate(session?.user?.id)
 
   useEffect(() => {
     if (listsQuery.isPending) {
@@ -179,8 +183,16 @@ export function TasksPage() {
     deleteTaskMutation.mutate({ id: taskId, listId })
   }
 
-  if (sessionPending || !session?.user) {
+  if (sessionPending || !session?.user || onboardingChecking) {
     return <p className="p-4">Loading…</p>
+  }
+
+  if (onboardingError) {
+    return (
+      <main className="mx-auto w-full max-w-3xl p-4">
+        <p className="text-destructive text-sm">{onboardingError}</p>
+      </main>
+    )
   }
 
   return (
