@@ -24,18 +24,22 @@ export function GitHubOAuthButton({
   async function handleSignIn() {
     setIsSubmitting(true)
 
-    await iamClient.signIn.social(
-      {
-        provider: 'github',
-        callbackURL: buildAuthCallbackUrl(nextPath),
-      },
-      {
-        onError: error => {
-          setIsSubmitting(false)
-          toast.error(error.error.message || error.error.statusText)
+    try {
+      await iamClient.signIn.social(
+        {
+          provider: 'github',
+          callbackURL: buildAuthCallbackUrl(nextPath),
         },
-      },
-    )
+        {
+          onError: error => {
+            setIsSubmitting(false)
+            toast.error(error.error.message || error.error.statusText)
+          },
+        },
+      )
+    } catch {
+      setIsSubmitting(false)
+    }
   }
 
   if (!features?.github) {
@@ -46,11 +50,7 @@ export function GitHubOAuthButton({
     <Button
       className="w-full"
       disabled={authBlocked || isSubmitting}
-      onClick={() => {
-        handleSignIn().catch(() => {
-          setIsSubmitting(false)
-        })
-      }}
+      onClick={handleSignIn}
       type="button"
       variant="outline"
     >

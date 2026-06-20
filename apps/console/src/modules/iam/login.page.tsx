@@ -18,7 +18,10 @@ import { MagicLinkForm } from './magic-link-form'
 import { TurnstileWidget } from './turnstile-widget'
 import type { PublicIamFeatures } from './types'
 import { useIamFeatures } from './use-iam-features'
-import { usePostAuthRedirect } from './use-post-auth-redirect'
+import {
+  type PostAuthRedirectResult,
+  usePostAuthRedirect,
+} from './use-post-auth-redirect'
 
 function hasAnyAuthMethod(features: PublicIamFeatures | undefined): boolean {
   return Boolean(
@@ -30,6 +33,22 @@ function hasAnyAuthMethod(features: PublicIamFeatures | undefined): boolean {
 type RedirectState =
   | { status: 'pending' }
   | { status: 'error'; message: string }
+
+function finishRedirect(
+  setRedirectState: (state: RedirectState) => void,
+  result: PostAuthRedirectResult,
+) {
+  if (!result.ok) {
+    setRedirectState({ status: 'error', message: result.error })
+  }
+}
+
+function failRedirect(setRedirectState: (state: RedirectState) => void) {
+  setRedirectState({
+    status: 'error',
+    message: 'Could not continue',
+  })
+}
 
 function LoginRedirectError({
   message,
@@ -81,6 +100,7 @@ function LoginAuthForms({
 }) {
   const showEmailPassword = features.emailPassword
   const showMagicLink = features.magicLink
+  const showMagicLinkSection = showMagicLink && showSignIn
   const showDivider = features.github && (showEmailPassword || showMagicLink)
 
   return (
@@ -116,7 +136,7 @@ function LoginAuthForms({
         </div>
       ) : null}
 
-      {showMagicLink && showSignIn ? (
+      {showMagicLinkSection ? (
         <section className="space-y-2">
           <h2 className="font-medium text-sm">Magic link</h2>
           <MagicLinkForm
@@ -131,7 +151,7 @@ function LoginAuthForms({
 
       {showEmailPassword ? (
         <section className="space-y-2">
-          {showMagicLink && showSignIn ? (
+          {showMagicLinkSection ? (
             <h2 className="font-medium text-sm">Email and password</h2>
           ) : null}
           {showSignIn ? (
@@ -179,9 +199,21 @@ export function LoginPage() {
     setCaptchaToken(null)
   }
 
+  function showSignInForm() {
+    setShowSignIn(true)
+  }
+
+  function showSignUpForm() {
+    setShowSignIn(false)
+  }
+
   useEffect(() => {
     if (sessionPending || !session?.user) {
       setRedirectState(null)
+      return
+    }
+
+    if (featuresPending) {
       return
     }
 
@@ -195,24 +227,25 @@ export function LoginPage() {
         return
       }
 
-      if (!result.ok) {
-        setRedirectState({ status: 'error', message: result.error })
-      }
+      finishRedirect(setRedirectState, result)
     }
 
     runPostAuthRedirect().catch(() => {
       if (!cancelled) {
-        setRedirectState({
-          status: 'error',
-          message: 'Could not continue',
-        })
+        failRedirect(setRedirectState)
       }
     })
 
     return () => {
       cancelled = true
     }
-  }, [features, redirectAfterAuth, session?.user, sessionPending])
+  }, [
+    features,
+    featuresPending,
+    redirectAfterAuth,
+    session?.user,
+    sessionPending,
+  ])
 
   function handleSignOut() {
     iamClient.signOut({
@@ -228,17 +261,8 @@ export function LoginPage() {
   function handleRetry() {
     setRedirectState({ status: 'pending' })
     redirectAfterAuth(features)
-      .then(result => {
-        if (!result.ok) {
-          setRedirectState({ status: 'error', message: result.error })
-        }
-      })
-      .catch(() => {
-        setRedirectState({
-          status: 'error',
-          message: 'Could not continue',
-        })
-      })
+      .then(result => finishRedirect(setRedirectState, result))
+      .catch(() => failRedirect(setRedirectState))
   }
 
   if (sessionPending) {
@@ -291,8 +315,8 @@ export function LoginPage() {
       clearCaptcha={clearCaptcha}
       features={features}
       onCaptchaToken={setCaptchaToken}
-      onShowSignIn={() => setShowSignIn(true)}
-      onShowSignUp={() => setShowSignIn(false)}
+      onShowSignIn={showSignInForm}
+      onShowSignUp={showSignUpForm}
       showSignIn={showSignIn}
     />
   )

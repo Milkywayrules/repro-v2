@@ -50,6 +50,7 @@ Path aliases: `@/*` → `src/*`; `@repro-v2/ui/*` → `packages/ui/src/*`.
 - No server-side auth middleware today — don't add without explicit scope
 - No RSC data fetching for API — client Query + Treaty
 - No tsconfig path cheats to sibling apps
+- No `useMemo` / `useCallback` / `memo` for perf — `reactCompiler: true`; plain functions + effect-local async (see `use-onboarding-gate.ts`, `tasks.page.tsx`)
 
 ## Tests & deploy
 

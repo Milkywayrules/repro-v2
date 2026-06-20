@@ -23,6 +23,15 @@ interface DeviceSession {
   }
 }
 
+async function listDeviceSessions(): Promise<DeviceSession[]> {
+  try {
+    const { data } = await iamClient.multiSession.listDeviceSessions()
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
 export function SessionSwitcher() {
   const queryClient = useQueryClient()
   const { features } = useIamFeatures()
@@ -42,13 +51,9 @@ export function SessionSwitcher() {
 
     async function loadSessions() {
       try {
-        const { data } = await iamClient.multiSession.listDeviceSessions()
+        const sessions = await listDeviceSessions()
         if (!cancelled) {
-          setDeviceSessions(data ?? [])
-        }
-      } catch {
-        if (!cancelled) {
-          setDeviceSessions([])
+          setDeviceSessions(sessions)
         }
       } finally {
         if (!cancelled) {
@@ -71,12 +76,7 @@ export function SessionSwitcher() {
   const activeToken = session?.session.token
 
   async function reloadSessions() {
-    try {
-      const { data } = await iamClient.multiSession.listDeviceSessions()
-      setDeviceSessions(data ?? [])
-    } catch {
-      setDeviceSessions([])
-    }
+    setDeviceSessions(await listDeviceSessions())
   }
 
   async function handleSwitch(sessionToken: string) {

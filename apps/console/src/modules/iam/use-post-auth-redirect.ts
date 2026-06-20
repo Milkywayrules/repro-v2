@@ -20,20 +20,23 @@ export function usePostAuthRedirect() {
   async function redirectAfterAuth(
     features: PublicIamFeatures | undefined,
   ): Promise<PostAuthRedirectResult> {
-    if (features?.workspace) {
-      const { data: organizations, error } = await iamClient.organization.list()
+    if (!features?.workspace) {
+      router.push(resolvePostAuthPath(nextPath) as Route)
+      return { ok: true }
+    }
 
-      if (error) {
-        return {
-          ok: false,
-          error: error.message ?? 'Could not load workspaces',
-        }
-      }
+    const { data: organizations, error } = await iamClient.organization.list()
 
-      if (!organizations?.length) {
-        router.push(buildOnboardingPath(nextPath) as Route)
-        return { ok: true }
+    if (error) {
+      return {
+        ok: false,
+        error: error.message ?? 'Could not load workspaces',
       }
+    }
+
+    if (!organizations?.length) {
+      router.push(buildOnboardingPath(nextPath) as Route)
+      return { ok: true }
     }
 
     router.push(resolvePostAuthPath(nextPath) as Route)
