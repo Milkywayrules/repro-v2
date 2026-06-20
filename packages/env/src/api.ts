@@ -13,12 +13,10 @@ function parseOriginList(value: string): string[] {
 }
 
 function parseCorsOrigins(value: string): [string, ...string[]] {
-  const origins = value
-    .split(',')
-    .map(part => part.trim())
-    .filter(part => part.length > 0)
-
-  return z.array(z.url()).min(1).parse(origins) as [string, ...string[]]
+  return z.array(z.url()).min(1).parse(parseOriginList(value)) as [
+    string,
+    ...string[],
+  ]
 }
 
 const iamCoordinationSchema = z
@@ -34,13 +32,12 @@ const iamCoordinationSchema = z
     TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
-    if (
-      !(
-        data.IAM_EMAIL_PASSWORD_ENABLED ||
-        data.IAM_MAGIC_LINK_ENABLED ||
-        data.IAM_GITHUB_ENABLED
-      )
-    ) {
+    const hasAuthMethod =
+      data.IAM_EMAIL_PASSWORD_ENABLED ||
+      data.IAM_MAGIC_LINK_ENABLED ||
+      data.IAM_GITHUB_ENABLED
+
+    if (!hasAuthMethod) {
       ctx.addIssue({
         code: 'custom',
         path: ['IAM_EMAIL_PASSWORD_ENABLED'],

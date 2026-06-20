@@ -6,12 +6,14 @@ import { z } from 'zod'
  * `emptyStringAsUndefined`.
  */
 export function booleanEnv(envKey: string, defaultValue: boolean) {
+  const defaultString = defaultValue ? 'true' : 'false'
+
   return z.preprocess(
     () => {
       const raw = process.env[envKey]
 
       if (raw === undefined) {
-        return defaultValue ? 'true' : 'false'
+        return defaultString
       }
 
       if (raw === '') {
