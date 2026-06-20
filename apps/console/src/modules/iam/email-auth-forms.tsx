@@ -74,7 +74,10 @@ export function EmailSignInForm({
           ...captchaFetchOptions(captchaToken),
           onSuccess: async () => {
             toast.success('Sign in successful')
-            await redirectAfterAuth(features)
+            const result = await redirectAfterAuth(features)
+            if (!result.ok) {
+              toast.error(result.error)
+            }
           },
           onError: error => {
             clearCaptcha()
@@ -227,7 +230,10 @@ export function EmailSignUpForm({
           ...captchaFetchOptions(captchaToken),
           onSuccess: async () => {
             toast.success('Account created')
-            await redirectAfterAuth(features)
+            const result = await redirectAfterAuth(features)
+            if (!result.ok) {
+              toast.error(result.error)
+            }
           },
           onError: error => {
             clearCaptcha()

@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 
+import { listWorkspaces } from './list-workspaces'
 import { useIamFeatures } from './use-iam-features'
 
 interface OnboardingGateState {
@@ -43,21 +43,21 @@ export function useOnboardingGate(sessionUserId: string | undefined) {
     setState(checkingState)
 
     async function ensureWorkspace() {
-      const { data: organizations, error } = await iamClient.organization.list()
+      const listed = await listWorkspaces()
 
       if (cancelled) {
         return
       }
 
-      if (error) {
+      if (!listed.ok) {
         setState({
           isChecking: false,
-          error: error.message ?? 'Could not load workspaces',
+          error: listed.error,
         })
         return
       }
 
-      if (!organizations?.length) {
+      if (!listed.workspaces.length) {
         router.replace(routes.onboarding)
         return
       }

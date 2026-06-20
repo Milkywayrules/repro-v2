@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 
 import { parseAsString, useQueryState } from 'nuqs'
 
-import { iamClient } from '@/lib/iam-client'
 import { searchParams } from '@/lib/search-params'
 
 import { buildOnboardingPath, resolvePostAuthPath } from './auth-redirect'
+import { listWorkspaces } from './list-workspaces'
 import type { PublicIamFeatures } from './types'
 
 export type PostAuthRedirectResult = { ok: true } | { ok: false; error: string }
@@ -25,16 +25,13 @@ export function usePostAuthRedirect() {
       return { ok: true }
     }
 
-    const { data: organizations, error } = await iamClient.organization.list()
+    const listed = await listWorkspaces()
 
-    if (error) {
-      return {
-        ok: false,
-        error: error.message ?? 'Could not load workspaces',
-      }
+    if (!listed.ok) {
+      return listed
     }
 
-    if (!organizations?.length) {
+    if (!listed.workspaces.length) {
       router.push(buildOnboardingPath(nextPath) as Route)
       return { ok: true }
     }

@@ -28,6 +28,7 @@ export function buildIamPlugins(
         endpoints: [
           '/sign-up/email',
           '/sign-in/email',
+          '/sign-in/social',
           '/request-password-reset',
           ...(iamFeatures.magicLink ? (['/sign-in/magic-link'] as const) : []),
         ],

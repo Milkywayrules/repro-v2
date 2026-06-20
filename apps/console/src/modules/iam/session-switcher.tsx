@@ -116,9 +116,13 @@ export function SessionSwitcher() {
         <DropdownMenuItem disabled>No other sessions</DropdownMenuItem>
       ) : null}
       {switchError ? (
-        <DropdownMenuItem aria-live="polite" disabled role="alert">
+        <DropdownMenuLabel
+          aria-live="assertive"
+          className="font-normal text-destructive text-sm"
+          role="alert"
+        >
           {switchError}
-        </DropdownMenuItem>
+        </DropdownMenuLabel>
       ) : null}
       {deviceSessions.map(deviceSession => {
         const isActive = deviceSession.session.token === activeToken

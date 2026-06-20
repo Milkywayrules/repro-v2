@@ -121,7 +121,13 @@ function LoginAuthForms({
         <TurnstileWidget onExpire={clearCaptcha} onToken={onCaptchaToken} />
       ) : null}
 
-      <GitHubOAuthButton authBlocked={authBlocked} features={features} />
+      <GitHubOAuthButton
+        authBlocked={authBlocked}
+        captchaRequired={captchaRequired}
+        captchaToken={captchaToken}
+        clearCaptcha={clearCaptcha}
+        features={features}
+      />
 
       {showDivider ? (
         <div className="relative">

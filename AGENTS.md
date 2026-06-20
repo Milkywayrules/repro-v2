@@ -71,6 +71,8 @@ The compiler auto-memoizes component output and stable callbacks. **Do not add m
 
 Match existing console IAM/tasks modules. When adding client UI in console/marketing/docs, read those files before reaching for memo hooks.
 
+**Lint:** Biome `noRestrictedImports` warns on `useCallback` / `useMemo` / `memo` from `react` in console, marketing, and docs (`biome.jsonc` overrides). browser-ext is excluded.
+
 ---
 
 # Ultracite Code Standards

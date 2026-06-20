@@ -10,12 +10,19 @@ import { iamClient } from '@/lib/iam-client'
 import { searchParams } from '@/lib/search-params'
 
 import { buildAuthCallbackUrl } from './auth-redirect'
+import { captchaFetchOptions } from './captcha-fetch-options'
 
 export function GitHubOAuthButton({
   authBlocked,
+  captchaRequired,
+  captchaToken,
+  clearCaptcha,
   features,
 }: {
   authBlocked?: boolean
+  captchaRequired: boolean
+  captchaToken: string | null
+  clearCaptcha: () => void
   features: { github: boolean } | undefined
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -31,8 +38,10 @@ export function GitHubOAuthButton({
           callbackURL: buildAuthCallbackUrl(nextPath),
         },
         {
+          ...captchaFetchOptions(captchaToken),
           onError: error => {
             setIsSubmitting(false)
+            clearCaptcha()
             toast.error(error.error.message || error.error.statusText)
           },
         },
@@ -49,7 +58,9 @@ export function GitHubOAuthButton({
   return (
     <Button
       className="w-full"
-      disabled={authBlocked || isSubmitting}
+      disabled={
+        authBlocked || isSubmitting || (captchaRequired && !captchaToken)
+      }
       onClick={handleSignIn}
       type="button"
       variant="outline"
