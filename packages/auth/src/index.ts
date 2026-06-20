@@ -42,8 +42,8 @@ export function createAuth(db: Db) {
         },
       },
     },
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
+    secret: env.IAM_BETTER_AUTH_SECRET,
+    baseURL: env.IAM_BETTER_AUTH_URL,
     advanced: {
       database: { generateId: () => createId() },
       defaultCookieAttributes: {

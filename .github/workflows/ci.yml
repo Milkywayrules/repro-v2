@@ -12,8 +12,10 @@ concurrency:
 env:
   CI: true
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/repro_v2_test
-  BETTER_AUTH_SECRET: test-secret-must-be-at-least-32-chars-long
-  BETTER_AUTH_URL: http://localhost:5000
+  IAM_BETTER_AUTH_SECRET: test-secret-must-be-at-least-32-chars-long
+  IAM_BETTER_AUTH_URL: http://localhost:5000
+  IAM_MAGIC_LINK_ENABLED: false
+  IAM_GITHUB_ENABLED: false
   CORS_ORIGIN: http://localhost:5001,http://localhost:5002,http://localhost:5009
   NODE_ENV: test
   PORT: 5000

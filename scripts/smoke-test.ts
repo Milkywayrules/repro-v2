@@ -15,7 +15,7 @@ const rootDir = resolve(import.meta.dir, '..')
 dotenv.config({ path: resolve(rootDir, 'apps/api/.env') })
 dotenv.config({ path: resolve(rootDir, 'apps/console/.env') })
 
-const apiUrl = process.env.BETTER_AUTH_URL ?? 'http://localhost:5000'
+const apiUrl = process.env.IAM_BETTER_AUTH_URL ?? 'http://localhost:5000'
 const consoleOrigin = 'http://localhost:5001'
 
 const sleep = (ms: number) =>
