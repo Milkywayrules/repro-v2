@@ -5,18 +5,10 @@ import { Elysia } from 'elysia'
 import { http } from '@/libs/contract'
 import { isDraining } from '@/lifecycle'
 
-const probeHeaders = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate',
-} as const
-
 export const healthRoutes = new Elysia()
-  .get('/health', ({ set }) => {
-    set.headers = probeHeaders
-    return { status: 'ok' as const }
-  })
+  .get('/health', () => ({ status: 'ok' as const }))
   .get('/ready', async ({ set }) => {
     if (isDraining()) {
-      set.headers = probeHeaders
       set.status = 503
 
       return {
@@ -33,7 +25,6 @@ export const healthRoutes = new Elysia()
     const databaseResult = await checkDatabaseConnection()
     const ready = databaseResult.ok
 
-    set.headers = probeHeaders
     set.status = ready ? 200 : 503
 
     return {

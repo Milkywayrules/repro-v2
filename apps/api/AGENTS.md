@@ -72,15 +72,19 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 
 ## Plugin order (app.ts)
 
-1. Platform probes (`routes/platform`)
-2. Request ID
-3. Evlog logging
-4. Error handler (`http.plugin()`)
-5. Global rate limit
-6. Auth identify derive (evlog)
-7. CORS (`exposedHeaders: ['X-Request-Id']`)
+1. Request ID
+2. CORS (`exposedHeaders: ['X-Request-Id']`) — before platform + v1 so probes get CORS headers
+3. Platform probes (`routes/platform`)
+4. Evlog logging
+5. Error handler (`http.plugin()`)
+6. Global rate limit
+7. Auth identify derive (evlog)
 8. OpenAPI
 9. Auth routes, v1 routes, root GET /
+
+## Dev server
+
+- Use `bun --watch` (not `--hot`) for `dev` — Elysia does not stop the previous listener on hot reload, which leaves ghost processes on `:5000` and breaks CORS until stale PIDs are killed.
 
 ## Soft delete (tasks reference)
 

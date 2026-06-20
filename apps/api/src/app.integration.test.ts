@@ -8,6 +8,25 @@ const requestIdHeader = 'X-Request-Id'
 const jsonContentTypePattern = /^application\/json/
 
 describe('full app wiring', () => {
+  test('GET /ready includes CORS headers for configured browser origins', async () => {
+    const { createApp } = await import('./app')
+    const app = createApp()
+
+    const response = await app.handle(
+      new Request('http://localhost/ready', {
+        headers: { Origin: env.CORS_ORIGIN[0] },
+      }),
+    )
+
+    expect(response.status).toBe(http.status.OK)
+    expect(response.headers.get('access-control-allow-origin')).toBe(
+      env.CORS_ORIGIN[0],
+    )
+    expect(response.headers.get('access-control-allow-credentials')).toBe(
+      'true',
+    )
+  })
+
   test('GET / returns success envelope with X-Request-Id', async () => {
     const { createApp } = await import('./app')
     const app = createApp()

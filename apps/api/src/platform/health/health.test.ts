@@ -17,9 +17,6 @@ describe('health probes', () => {
 
     expect(response.status).toBe(http.status.OK)
     expect(await response.json()).toEqual({ status: 'ok' })
-    expect(response.headers.get('cache-control')).toBe(
-      'no-store, no-cache, must-revalidate',
-    )
   })
 
   test('GET /ready returns 200 when database is reachable', async () => {

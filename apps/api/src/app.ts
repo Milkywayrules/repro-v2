@@ -54,10 +54,19 @@ function createOpenApiPlugin() {
   })
 }
 
+const corsPlugin = cors({
+  origin: corsOrigins,
+  methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposeHeaders: ['X-Request-Id'],
+  credentials: true,
+})
+
 export function createApp() {
   return new Elysia()
-    .use(platformRoutes)
     .use(requestId)
+    .use(corsPlugin)
+    .use(platformRoutes)
     .use(evlog({ exclude: ['/health', '/ready'] }))
     .use(http.plugin())
     .use(globalRateLimit)
@@ -74,15 +83,6 @@ export function createApp() {
 
       return {}
     })
-    .use(
-      cors({
-        origin: corsOrigins,
-        methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-        exposeHeaders: ['X-Request-Id'],
-        credentials: true,
-      }),
-    )
     .use(createOpenApiPlugin())
     .use(authRoutes)
     .use(v1Routes)
