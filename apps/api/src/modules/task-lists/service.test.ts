@@ -1,18 +1,23 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { db } from '@repro-v2/db'
+import { PgDialect } from 'drizzle-orm/pg-core'
 
 import { http } from '@/libs/contract'
 
 import { taskListsService } from './service'
 
+const pgDialect = new PgDialect()
+
 const userId = '00000000-0000-7000-8000-000000000001'
+const workspaceId = '00000000-0000-7000-8000-000000000099'
 const listId = '00000000-0000-7000-8000-000000000002'
 
 const activeList = {
   id: listId,
   name: 'Soft delete list',
   userId,
+  workspaceId,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   deletedAt: null as Date | null,
@@ -64,7 +69,7 @@ describe('task-lists soft delete', () => {
       return callback(tx as never)
     })
 
-    await taskListsService.delete(userId, listId)
+    await taskListsService.delete(userId, workspaceId, listId)
 
     expect(updateCount).toBe(2)
   })
@@ -105,12 +110,65 @@ describe('task-lists soft delete', () => {
       return callback(tx as never)
     })
 
-    await expect(taskListsService.delete(userId, listId)).rejects.toMatchObject(
-      {
-        status: http.status.NOT_FOUND,
-      },
-    )
+    await expect(
+      taskListsService.delete(userId, workspaceId, listId),
+    ).rejects.toMatchObject({
+      status: http.status.NOT_FOUND,
+    })
 
     expect(updateCount).toBe(2)
+  })
+})
+
+describe('task-lists workspace isolation', () => {
+  afterEach(() => {
+    spyOn(db, 'select').mockRestore()
+  })
+
+  test('getForUser returns 404 for list in another workspace', async () => {
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            where: () => ({
+              limit: () => Promise.resolve([]),
+            }),
+          }),
+        }) as never,
+    )
+
+    await expect(
+      taskListsService.getForUser(
+        userId,
+        '00000000-0000-7000-8000-000000000088',
+        listId,
+      ),
+    ).rejects.toMatchObject({
+      code: http.codes.NOT_FOUND,
+    })
+  })
+
+  test('getForUser query filters by workspaceId', async () => {
+    let capturedWhere: unknown
+
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            where: (where: unknown) => {
+              capturedWhere = where
+              return {
+                limit: () => Promise.resolve([activeList]),
+              }
+            },
+          }),
+        }) as never,
+    )
+
+    await taskListsService.getForUser(userId, workspaceId, listId)
+
+    const query = pgDialect.sqlToQuery(capturedWhere as never)
+    expect(query.sql).toContain('"task_lists"."workspace_id"')
+    expect(query.params).toContain(workspaceId)
   })
 })

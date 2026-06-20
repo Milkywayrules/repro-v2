@@ -27,47 +27,60 @@ function toResponse(row: {
   }
 }
 
-function ownedListIdsSubquery(userId: string) {
+function ownedListIdsSubquery(userId: string, workspaceId: string) {
   return db
     .select({ id: taskLists.id })
     .from(taskLists)
-    .where(and(eq(taskLists.userId, userId), isNull(taskLists.deletedAt)))
+    .where(
+      and(
+        eq(taskLists.userId, userId),
+        eq(taskLists.workspaceId, workspaceId),
+        isNull(taskLists.deletedAt),
+      ),
+    )
 }
 
-function ownedTaskWhere(userId: string, taskId: string) {
+function ownedTaskWhere(userId: string, workspaceId: string, taskId: string) {
   return and(
     eq(tasks.id, taskId),
+    eq(tasks.workspaceId, workspaceId),
     isNull(tasks.deletedAt),
-    inArray(tasks.listId, ownedListIdsSubquery(userId)),
+    inArray(tasks.listId, ownedListIdsSubquery(userId, workspaceId)),
   )
 }
 
-function tasksListWhere(userId: string, listId?: string) {
+function tasksListWhere(userId: string, workspaceId: string, listId?: string) {
   if (listId) {
-    return and(eq(tasks.listId, listId), isNull(tasks.deletedAt))
+    return and(
+      eq(tasks.listId, listId),
+      eq(tasks.workspaceId, workspaceId),
+      isNull(tasks.deletedAt),
+    )
   }
 
   return and(
+    eq(tasks.workspaceId, workspaceId),
     isNull(tasks.deletedAt),
-    inArray(tasks.listId, ownedListIdsSubquery(userId)),
+    inArray(tasks.listId, ownedListIdsSubquery(userId, workspaceId)),
   )
 }
 
 async function list(
   userId: string,
+  workspaceId: string,
   page: number,
   pageSize: number,
   listId?: string,
   sort: SortField[] = [],
 ) {
   if (listId) {
-    await taskListsService.getForUser(userId, listId)
+    await taskListsService.getForUser(userId, workspaceId, listId)
   }
 
   return await listWithOffset<typeof tasks.$inferSelect>({
     db,
     table: tasks,
-    where: tasksListWhere(userId, listId),
+    where: tasksListWhere(userId, workspaceId, listId),
     orderBy: buildSortOrderBy(
       sort,
       { title: tasks.title },
@@ -80,6 +93,7 @@ async function list(
 
 async function create(
   userId: string,
+  workspaceId: string,
   input: { title: string; listId: string },
 ) {
   return await db.transaction(async tx => {
@@ -90,6 +104,7 @@ async function create(
         and(
           eq(taskLists.id, input.listId),
           eq(taskLists.userId, userId),
+          eq(taskLists.workspaceId, workspaceId),
           isNull(taskLists.deletedAt),
         ),
       )
@@ -104,6 +119,7 @@ async function create(
       .values({
         title: input.title,
         listId: input.listId,
+        workspaceId,
         createdById: userId,
       })
       .returning()
@@ -116,7 +132,7 @@ async function create(
   })
 }
 
-async function getForUser(userId: string, id: string) {
+async function getForUser(userId: string, workspaceId: string, id: string) {
   const [row] = await db
     .select({
       id: tasks.id,
@@ -132,7 +148,9 @@ async function getForUser(userId: string, id: string) {
     .where(
       and(
         eq(tasks.id, id),
+        eq(tasks.workspaceId, workspaceId),
         eq(taskLists.userId, userId),
+        eq(taskLists.workspaceId, workspaceId),
         isNull(tasks.deletedAt),
         isNull(taskLists.deletedAt),
       ),
@@ -148,10 +166,11 @@ async function getForUser(userId: string, id: string) {
 
 async function update(
   userId: string,
+  workspaceId: string,
   id: string,
   input: { title?: string; completed?: boolean },
 ) {
-  await getForUser(userId, id)
+  await getForUser(userId, workspaceId, id)
 
   const [row] = await db
     .update(tasks)
@@ -160,7 +179,7 @@ async function update(
       ...(input.completed === undefined ? {} : { completed: input.completed }),
       updatedById: userId,
     })
-    .where(ownedTaskWhere(userId, id))
+    .where(ownedTaskWhere(userId, workspaceId, id))
     .returning()
 
   if (!row) {
@@ -170,8 +189,8 @@ async function update(
   return row
 }
 
-async function remove(userId: string, id: string) {
-  await getForUser(userId, id)
+async function remove(userId: string, workspaceId: string, id: string) {
+  await getForUser(userId, workspaceId, id)
   const now = new Date()
 
   const [row] = await db
@@ -180,7 +199,7 @@ async function remove(userId: string, id: string) {
       deletedAt: now,
       deletedById: userId,
     })
-    .where(ownedTaskWhere(userId, id))
+    .where(ownedTaskWhere(userId, workspaceId, id))
     .returning()
 
   if (!row) {

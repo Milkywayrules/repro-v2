@@ -16,6 +16,14 @@ export function notFoundError() {
   })
 }
 
+export function forbiddenError() {
+  return http.error({
+    code: http.codes.FORBIDDEN,
+    message: http.messages.FORBIDDEN,
+    status: http.status.FORBIDDEN,
+  })
+}
+
 export function internalServerError() {
   return http.error({
     code: http.codes.INTERNAL_SERVER_ERROR,

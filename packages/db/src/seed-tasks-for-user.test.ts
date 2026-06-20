@@ -3,6 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import type { createDb } from './index'
 import { seedDefaultTasksForUser } from './seed-tasks-for-user'
 
+const workspaceId = '00000000-0000-7000-8000-000000000099'
+
 describe('seedDefaultTasksForUser', () => {
   test('inserts inbox and tasks when user has no lists', async () => {
     let insertCalls = 0
@@ -28,6 +30,7 @@ describe('seedDefaultTasksForUser', () => {
     const seeded = await seedDefaultTasksForUser(
       mockDb as unknown as ReturnType<typeof createDb>,
       'user-id',
+      workspaceId,
     )
 
     expect(seeded).toBe(true)
@@ -58,6 +61,7 @@ describe('seedDefaultTasksForUser', () => {
     const seeded = await seedDefaultTasksForUser(
       mockDb as unknown as ReturnType<typeof createDb>,
       'user-id',
+      workspaceId,
     )
 
     expect(seeded).toBe(false)

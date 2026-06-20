@@ -6,6 +6,7 @@ import { Elysia } from 'elysia'
 import { http } from '@/libs/contract'
 import { notFoundError } from '@/libs/contract/errors'
 import { iamService } from '@/modules/iam/service'
+import { workspaceService } from '@/modules/iam/workspace-service'
 import { v1Routes } from '@/routes/v1'
 
 import { tasksService } from './service'
@@ -20,6 +21,8 @@ const mockUser = {
   image: null,
 }
 
+const workspaceId = '00000000-0000-7000-8000-000000000099'
+
 const mockSession = {
   id: 'session-2',
   userId: mockUser.id,
@@ -27,11 +30,13 @@ const mockSession = {
   token: 'test-token',
   createdAt: new Date(),
   updatedAt: new Date(),
+  activeOrganizationId: workspaceId,
 }
 
 const mockTaskRow = {
   id: '00000000-0000-7000-8000-000000000010',
   listId: '00000000-0000-7000-8000-000000000001',
+  workspaceId,
   title: 'Test task',
   completed: false,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -46,16 +51,21 @@ function createApp() {
   return new Elysia().use(http.plugin()).use(v1Routes)
 }
 
-function mockAuthedSession() {
+function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
   spyOn(iamService, 'getSession').mockResolvedValue({
     user: mockUser,
-    session: mockSession,
-  })
+    session: {
+      ...mockSession,
+      activeOrganizationId,
+    },
+  } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
+  spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
 }
 
 describe('tasks routes', () => {
   afterEach(() => {
     spyOn(iamService, 'getSession').mockRestore()
+    spyOn(workspaceService, 'assertMembership').mockRestore()
     spyOn(tasksService, 'list').mockRestore()
     spyOn(tasksService, 'create').mockRestore()
     spyOn(tasksService, 'getForUser').mockRestore()
@@ -75,6 +85,22 @@ describe('tasks routes', () => {
       error: {
         code: http.codes.UNAUTHORIZED,
         message: http.messages.UNAUTHORIZED,
+      },
+    })
+  })
+
+  test('GET /api/v1/tasks returns 403 without active workspace', async () => {
+    mockAuthedSession(null)
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/tasks'),
+    )
+
+    expect(response.status).toBe(http.status.FORBIDDEN)
+    expect(await response.json()).toEqual({
+      error: {
+        code: http.codes.FORBIDDEN,
+        message: http.messages.FORBIDDEN,
       },
     })
   })

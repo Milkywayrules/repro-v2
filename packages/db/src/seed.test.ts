@@ -4,6 +4,7 @@ import type { createDb } from './index'
 import { runSeed } from './seed'
 
 const seedUserId = '00000000-0000-7000-8000-000000000001'
+const workspaceId = '00000000-0000-7000-8000-000000000099'
 
 const baseSeedEnv = {
   DATABASE_URL: 'postgres://localhost:5432/test',
@@ -12,14 +13,31 @@ const baseSeedEnv = {
   ALLOW_SEED: false,
 }
 
-function createMockDb(existingListIds: string[] = []) {
+function createMockDb(
+  options: { existingMembership?: boolean; existingListIds?: string[] } = {},
+) {
   let insertCalled = false
+  let selectCalls = 0
 
   const mockDb = {
     select: () => ({
       from: () => ({
         where: () => ({
-          limit: () => Promise.resolve(existingListIds.map(id => ({ id }))),
+          limit: () => {
+            selectCalls += 1
+
+            if (selectCalls === 1) {
+              return Promise.resolve(
+                options.existingMembership
+                  ? [{ organizationId: workspaceId }]
+                  : [],
+              )
+            }
+
+            return Promise.resolve(
+              (options.existingListIds ?? []).map(id => ({ id })),
+            )
+          },
         }),
       }),
     }),
@@ -57,11 +75,38 @@ describe('runSeed', () => {
     )
   })
 
-  test('skips insert when user already has lists', async () => {
-    const { db, wasInsertCalled } = createMockDb(['existing-list-id'])
+  test('skips task insert when user already has lists', async () => {
+    const { db, wasInsertCalled } = createMockDb({
+      existingMembership: true,
+      existingListIds: ['existing-list-id'],
+    })
 
     await runSeed(baseSeedEnv, db)
 
     expect(wasInsertCalled()).toBe(false)
+  })
+
+  test('creates workspace and tasks when user has no membership or lists', async () => {
+    const { db, wasInsertCalled } = createMockDb()
+
+    await runSeed(baseSeedEnv, db)
+
+    expect(wasInsertCalled()).toBe(true)
+  })
+
+  test('throws when SEED_WORKSPACE_ID is set but user is not a member', async () => {
+    const { db } = createMockDb()
+
+    await expect(
+      runSeed(
+        {
+          ...baseSeedEnv,
+          SEED_WORKSPACE_ID: '00000000-0000-7000-8000-000000000088',
+        },
+        db,
+      ),
+    ).rejects.toThrow(
+      'SEED_WORKSPACE_ID 00000000-0000-7000-8000-000000000088 is not a workspace the user belongs to',
+    )
   })
 })

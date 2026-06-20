@@ -6,6 +6,7 @@ import { Elysia } from 'elysia'
 import { http } from '@/libs/contract'
 import { notFoundError } from '@/libs/contract/errors'
 import { iamService } from '@/modules/iam/service'
+import { workspaceService } from '@/modules/iam/workspace-service'
 import { v1Routes } from '@/routes/v1'
 
 import { taskListsService } from './service'
@@ -20,6 +21,8 @@ const mockUser = {
   image: null,
 }
 
+const workspaceId = '00000000-0000-7000-8000-000000000099'
+
 const mockSession = {
   id: 'session-1',
   userId: mockUser.id,
@@ -27,12 +30,14 @@ const mockSession = {
   token: 'test-token',
   createdAt: new Date(),
   updatedAt: new Date(),
+  activeOrganizationId: workspaceId,
 }
 
 const mockTaskListRow = {
   id: '00000000-0000-7000-8000-000000000001',
   name: 'Test list',
   userId: mockUser.id,
+  workspaceId,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   deletedAt: null as Date | null,
@@ -45,16 +50,21 @@ function createApp() {
   return new Elysia().use(http.plugin()).use(v1Routes)
 }
 
-function mockAuthedSession() {
+function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
   spyOn(iamService, 'getSession').mockResolvedValue({
     user: mockUser,
-    session: mockSession,
-  })
+    session: {
+      ...mockSession,
+      activeOrganizationId,
+    },
+  } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
+  spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
 }
 
 describe('task-lists routes', () => {
   afterEach(() => {
     spyOn(iamService, 'getSession').mockRestore()
+    spyOn(workspaceService, 'assertMembership').mockRestore()
     spyOn(taskListsService, 'list').mockRestore()
     spyOn(taskListsService, 'create').mockRestore()
     spyOn(taskListsService, 'getForUser').mockRestore()
@@ -74,6 +84,51 @@ describe('task-lists routes', () => {
       error: {
         code: http.codes.UNAUTHORIZED,
         message: http.messages.UNAUTHORIZED,
+      },
+    })
+  })
+
+  test('GET /api/v1/task-lists returns 403 without active workspace', async () => {
+    mockAuthedSession(null)
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/task-lists'),
+    )
+
+    expect(response.status).toBe(http.status.FORBIDDEN)
+    expect(await response.json()).toEqual({
+      error: {
+        code: http.codes.FORBIDDEN,
+        message: http.messages.FORBIDDEN,
+      },
+    })
+  })
+
+  test('GET /api/v1/task-lists returns 403 when user is not a workspace member', async () => {
+    spyOn(iamService, 'getSession').mockResolvedValue({
+      user: mockUser,
+      session: {
+        ...mockSession,
+        activeOrganizationId: workspaceId,
+      },
+    } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
+    spyOn(workspaceService, 'assertMembership').mockRejectedValue(
+      http.error({
+        code: http.codes.FORBIDDEN,
+        message: http.messages.FORBIDDEN,
+        status: http.status.FORBIDDEN,
+      }),
+    )
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/task-lists'),
+    )
+
+    expect(response.status).toBe(http.status.FORBIDDEN)
+    expect(await response.json()).toEqual({
+      error: {
+        code: http.codes.FORBIDDEN,
+        message: http.messages.FORBIDDEN,
       },
     })
   })

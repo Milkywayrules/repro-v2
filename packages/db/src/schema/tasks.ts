@@ -2,7 +2,7 @@ import { relations } from 'drizzle-orm'
 import { boolean, index, pgTable, text } from 'drizzle-orm/pg-core'
 
 import { auditColumns, idColumn } from '../columns'
-import { user } from './auth'
+import { user, workspace } from './auth'
 
 export const taskLists = pgTable(
   'task_lists',
@@ -12,10 +12,14 @@ export const taskLists = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+    workspaceId: text('workspace_id')
+      .notNull()
+      .references(() => workspace.id, { onDelete: 'cascade' }),
     ...auditColumns(),
   },
   table => [
     index('task_lists_user_id_idx').on(table.userId),
+    index('task_lists_workspace_id_idx').on(table.workspaceId),
     index('task_lists_deleted_at_idx').on(table.deletedAt),
   ],
 )
@@ -27,12 +31,16 @@ export const tasks = pgTable(
     listId: text('list_id')
       .notNull()
       .references(() => taskLists.id, { onDelete: 'cascade' }),
+    workspaceId: text('workspace_id')
+      .notNull()
+      .references(() => workspace.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     completed: boolean('completed').default(false).notNull(),
     ...auditColumns(),
   },
   table => [
     index('tasks_list_id_idx').on(table.listId),
+    index('tasks_workspace_id_idx').on(table.workspaceId),
     index('tasks_deleted_at_idx').on(table.deletedAt),
   ],
 )
@@ -42,6 +50,10 @@ export const taskListsRelations = relations(taskLists, ({ one, many }) => ({
     fields: [taskLists.userId],
     references: [user.id],
   }),
+  workspace: one(workspace, {
+    fields: [taskLists.workspaceId],
+    references: [workspace.id],
+  }),
   tasks: many(tasks),
 }))
 
@@ -49,6 +61,10 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   list: one(taskLists, {
     fields: [tasks.listId],
     references: [taskLists.id],
+  }),
+  workspace: one(workspace, {
+    fields: [tasks.workspaceId],
+    references: [workspace.id],
   }),
 }))
 

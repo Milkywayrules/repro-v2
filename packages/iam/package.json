@@ -7,6 +7,9 @@
     },
     "./react": {
       "default": "./src/react.ts"
+    },
+    "./session": {
+      "default": "./src/session.ts"
     }
   },
   "scripts": {

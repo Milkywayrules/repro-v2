@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import type { createDb } from './index'
 import { taskLists, tasks } from './schema/tasks'
@@ -6,11 +6,14 @@ import { taskLists, tasks } from './schema/tasks'
 export async function seedDefaultTasksForUser(
   dbInstance: ReturnType<typeof createDb>,
   userId: string,
+  workspaceId: string,
 ) {
   const existingLists = await dbInstance
     .select({ id: taskLists.id })
     .from(taskLists)
-    .where(eq(taskLists.userId, userId))
+    .where(
+      and(eq(taskLists.userId, userId), eq(taskLists.workspaceId, workspaceId)),
+    )
     .limit(1)
 
   if (existingLists.length > 0) {
@@ -22,6 +25,7 @@ export async function seedDefaultTasksForUser(
     .values({
       name: 'Inbox',
       userId,
+      workspaceId,
       createdById: userId,
     })
     .returning({ id: taskLists.id })
@@ -33,11 +37,13 @@ export async function seedDefaultTasksForUser(
   await dbInstance.insert(tasks).values([
     {
       listId: inbox.id,
+      workspaceId,
       title: 'Review API contract',
       createdById: userId,
     },
     {
       listId: inbox.id,
+      workspaceId,
       title: 'Ship tasks reference',
       completed: true,
       createdById: userId,

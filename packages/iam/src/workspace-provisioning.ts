@@ -20,10 +20,6 @@ function defaultWorkspaceSlug(userId: string): string {
 
 export function createUserCreatedHook(db: Db) {
   return async (user: { email: string; id: string; name: string }) => {
-    if (env.NODE_ENV === 'development') {
-      await seedDefaultTasksForUser(db, user.id)
-    }
-
     if (!iamFeatures.workspace) {
       return
     }
@@ -45,5 +41,9 @@ export function createUserCreatedHook(db: Db) {
       role: 'owner',
       createdAt,
     })
+
+    if (env.NODE_ENV === 'development') {
+      await seedDefaultTasksForUser(db, user.id, workspaceId)
+    }
   }
 }

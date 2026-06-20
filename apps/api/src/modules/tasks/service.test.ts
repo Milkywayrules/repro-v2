@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { db } from '@repro-v2/db'
+import { PgDialect } from 'drizzle-orm/pg-core'
 
 import { http } from '@/libs/contract'
 
 import { tasksService } from './service'
 
+const pgDialect = new PgDialect()
+
 const userId = '00000000-0000-7000-8000-000000000002'
+const workspaceId = '00000000-0000-7000-8000-000000000099'
 const taskId = '00000000-0000-7000-8000-000000000003'
 const listId = '00000000-0000-7000-8000-000000000001'
 
@@ -71,16 +75,16 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    const deleted = await tasksService.delete(userId, taskId)
+    const deleted = await tasksService.delete(userId, workspaceId, taskId)
 
     expect(deleted.deletedAt).toBeInstanceOf(Date)
     expect(deleted.deletedById).toBe(userId)
 
-    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
-      {
-        code: http.codes.NOT_FOUND,
-      },
-    )
+    await expect(
+      tasksService.getForUser(userId, workspaceId, taskId),
+    ).rejects.toMatchObject({
+      code: http.codes.NOT_FOUND,
+    })
   })
 
   test('getTaskForUser returns 404 when parent list is deleted', async () => {
@@ -97,11 +101,11 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
-      {
-        code: http.codes.NOT_FOUND,
-      },
-    )
+    await expect(
+      tasksService.getForUser(userId, workspaceId, taskId),
+    ).rejects.toMatchObject({
+      code: http.codes.NOT_FOUND,
+    })
   })
 
   test('getTaskForUser returns 404 for another user task', async () => {
@@ -118,10 +122,45 @@ describe('tasks soft delete', () => {
         }) as never,
     )
 
-    await expect(tasksService.getForUser(userId, taskId)).rejects.toMatchObject(
-      {
-        code: http.codes.NOT_FOUND,
-      },
+    await expect(
+      tasksService.getForUser(userId, workspaceId, taskId),
+    ).rejects.toMatchObject({
+      code: http.codes.NOT_FOUND,
+    })
+  })
+
+  test('getTaskForUser returns 404 for task in another workspace', async () => {
+    let capturedWhere: unknown
+
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            innerJoin: () => ({
+              where: (where: unknown) => {
+                capturedWhere = where
+                return {
+                  limit: () => Promise.resolve([]),
+                }
+              },
+            }),
+          }),
+        }) as never,
     )
+
+    await expect(
+      tasksService.getForUser(
+        userId,
+        '00000000-0000-7000-8000-000000000088',
+        taskId,
+      ),
+    ).rejects.toMatchObject({
+      code: http.codes.NOT_FOUND,
+    })
+
+    const query = pgDialect.sqlToQuery(capturedWhere as never)
+    expect(query.sql).toContain('"tasks"."workspace_id"')
+    expect(query.sql).toContain('"task_lists"."workspace_id"')
+    expect(query.params).toContain('00000000-0000-7000-8000-000000000088')
   })
 })
