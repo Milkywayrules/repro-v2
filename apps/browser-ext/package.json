@@ -5,15 +5,14 @@
   "description": "manifest.json description",
   "type": "module",
   "scripts": {
-    "dev": "wxt --port 5555",
-    "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
-    "build:firefox": "wxt build -b firefox",
+    "dev": "wxt prepare && wxt --port 5555",
+    "dev:firefox": "wxt prepare && wxt -b firefox",
+    "build": "wxt prepare && wxt build",
+    "build:firefox": "wxt prepare && wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "check-types": "tsc --noEmit",
-    "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "compile": "tsc --noEmit"
   },
   "dependencies": {
     "@repro-v2/api-client": "workspace:*",
