@@ -86,6 +86,6 @@ if something is needed an answer, ask me using our QnA protocols (using picker, 
 
 ## after everything
 
-additionally give a very simple timestamp & agents report. just need the start + end + duration time and total subagents spawned/dispatched ONLY for this session (not the whole chat).
+additionally give a very simple timestamp & agents report. just need the start time + end time + duration time and total subagents spawned/dispatched ONLY for this session (not the whole chat).
 
 tells what to do next and what is your opinion after everything is done.
