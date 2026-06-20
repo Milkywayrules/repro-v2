@@ -10,10 +10,14 @@
     },
     "./session": {
       "default": "./src/session.ts"
+    },
+    "./workspace": {
+      "default": "./src/workspace.ts"
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "bun test src"
   },
   "dependencies": {
     "@repro-v2/db": "workspace:*",

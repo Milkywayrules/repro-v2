@@ -53,6 +53,18 @@ body {
   font-weight: 600;
 }
 
+.popup-account {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popup-account-name {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
 .popup-muted {
   font-size: 0.875rem;
   color: #888;

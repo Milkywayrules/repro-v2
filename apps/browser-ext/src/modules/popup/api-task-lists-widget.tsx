@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { taskListsQuery } from '@/lib/api-client'
 import { consoleLoginUrl } from '@/lib/console-login-url'
+import { iamClient } from '@/lib/iam-client'
 
 function treatyErrorPayload(error: unknown): unknown {
   if (typeof error === 'object' && error !== null && 'value' in error) {
@@ -26,10 +27,31 @@ function serializeQueryError(error: unknown): string {
   }
 }
 
-export function ApiTaskListsWidget() {
-  const { data, isPending, isError, error } = useQuery(taskListsQuery)
+interface ApiTaskListsWidgetProps {
+  workspaceError: string | null
+  workspaceReady: boolean
+}
 
-  if (isPending) {
+export function ApiTaskListsWidget({
+  workspaceError,
+  workspaceReady,
+}: ApiTaskListsWidgetProps) {
+  const { data: session } = iamClient.useSession()
+
+  const { data, isPending, isError, error } = useQuery({
+    ...taskListsQuery,
+    enabled: Boolean(session?.user && workspaceReady),
+  })
+
+  if (workspaceError) {
+    return (
+      <p className="popup-muted" role="alert">
+        {workspaceError}
+      </p>
+    )
+  }
+
+  if (!workspaceReady || isPending) {
     return (
       <p aria-live="polite" className="popup-muted" role="status">
         Loading task lists…

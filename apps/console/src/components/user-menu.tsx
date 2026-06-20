@@ -16,6 +16,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { useClientMounted } from '@/hooks/use-client-mounted'
 import { iamClient } from '@/lib/iam-client'
+import { SessionSwitcher } from '@/modules/iam/session-switcher'
 
 export default function UserMenu() {
   const router = useRouter()
@@ -45,6 +46,7 @@ export default function UserMenu() {
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <SessionSwitcher />
           <DropdownMenuItem
             onClick={() => {
               iamClient.signOut({
