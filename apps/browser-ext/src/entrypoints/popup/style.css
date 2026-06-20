@@ -1,69 +1,115 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: system-ui, sans-serif;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+  line-height: 1.5;
+  color: #213547;
+  color-scheme: light dark;
+  background-color: #ffffff;
+  text-rendering: optimizeLegibility;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #2563eb;
   text-decoration: inherit;
 }
+
 a:hover {
-  color: #535bf2;
+  color: #1d4ed8;
 }
 
 body {
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  min-width: 280px;
   margin: 0;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  padding: 0.75rem 1rem;
 }
 
-button {
-  padding: 0.6em 1.2em;
-  font-family: inherit;
-  font-size: 1em;
-  font-weight: 500;
-  cursor: pointer;
-  background-color: #1a1a1a;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  transition: border-color 0.25s;
+.popup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
 }
-button:hover {
-  border-color: #646cff;
+
+.popup-header {
+  display: flex;
+  justify-content: flex-end;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+.popup-muted {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.ready-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.ready-dot--pending {
+  background-color: #888;
+}
+
+.ready-dot--ready {
+  background-color: #22c55e;
+}
+
+.ready-dot--error {
+  background-color: #ef4444;
+}
+
+.task-list {
+  padding-left: 1.25rem;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.error-dump {
+  padding: 0.5rem;
+  margin: 0;
+  overflow-x: auto;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  background-color: rgba(127, 127, 127, 0.15);
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+  }
+
+  a {
+    color: #646cff;
+  }
+
+  a:hover {
+    color: #535bf2;
+  }
+
+  .popup-muted {
+    color: #888;
+  }
+
+  .error-dump {
+    background-color: rgba(127, 127, 127, 0.15);
+  }
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+  .popup-muted {
+    color: #666;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+
+  .error-dump {
+    background-color: #f4f4f5;
   }
 }

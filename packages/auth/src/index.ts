@@ -6,6 +6,12 @@ import { corsOrigins, env } from '@repro-v2/env/api'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 
+/** MV3 extension popups call Better Auth with a dynamic extension origin. */
+const extensionTrustedOrigins = [
+  'chrome-extension://*',
+  'moz-extension://*',
+] as const
+
 export function createAuth(db: Db) {
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -13,7 +19,7 @@ export function createAuth(db: Db) {
 
       schema,
     }),
-    trustedOrigins: [...corsOrigins],
+    trustedOrigins: [...corsOrigins, ...extensionTrustedOrigins],
     emailAndPassword: {
       enabled: true,
     },
