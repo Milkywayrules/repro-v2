@@ -2,7 +2,13 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "bun run --filter console build"
+    "buildCommand": "bun install --frozen-lockfile --filter console... && bun run --filter console build",
+    "watchPatterns": [
+      "apps/console/**",
+      "packages/**",
+      "package.json",
+      "bun.lock"
+    ]
   },
   "deploy": {
     "startCommand": "bun run --filter console start",
