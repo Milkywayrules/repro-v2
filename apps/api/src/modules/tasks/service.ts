@@ -50,19 +50,17 @@ function ownedTaskWhere(userId: string, workspaceId: string, taskId: string) {
 }
 
 function tasksListWhere(userId: string, workspaceId: string, listId?: string) {
-  if (listId) {
-    return and(
-      eq(tasks.listId, listId),
-      eq(tasks.workspaceId, workspaceId),
-      isNull(tasks.deletedAt),
-    )
-  }
-
-  return and(
+  const conditions = [
     eq(tasks.workspaceId, workspaceId),
     isNull(tasks.deletedAt),
     inArray(tasks.listId, ownedListIdsSubquery(userId, workspaceId)),
-  )
+  ]
+
+  if (listId) {
+    conditions.unshift(eq(tasks.listId, listId))
+  }
+
+  return and(...conditions)
 }
 
 async function list(

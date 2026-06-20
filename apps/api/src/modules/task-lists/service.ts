@@ -16,25 +16,18 @@ function toResponse(row: typeof taskLists.$inferSelect) {
   }
 }
 
-function activeOwnedTaskListWhere(
-  userId: string,
-  workspaceId: string,
-  id: string,
-) {
-  return and(
-    eq(taskLists.id, id),
+function ownedTaskListWhere(userId: string, workspaceId: string, id?: string) {
+  const conditions = [
     eq(taskLists.userId, userId),
     eq(taskLists.workspaceId, workspaceId),
     isNull(taskLists.deletedAt),
-  )
-}
+  ]
 
-function scopedTaskListsWhere(userId: string, workspaceId: string) {
-  return and(
-    eq(taskLists.userId, userId),
-    eq(taskLists.workspaceId, workspaceId),
-    isNull(taskLists.deletedAt),
-  )
+  if (id) {
+    conditions.push(eq(taskLists.id, id))
+  }
+
+  return and(...conditions)
 }
 
 async function list(
@@ -47,7 +40,7 @@ async function list(
   return await listWithOffset<typeof taskLists.$inferSelect>({
     db,
     table: taskLists,
-    where: scopedTaskListsWhere(userId, workspaceId),
+    where: ownedTaskListWhere(userId, workspaceId),
     orderBy: buildSortOrderBy(
       sort,
       { name: taskLists.name },
@@ -80,7 +73,7 @@ async function getForUser(userId: string, workspaceId: string, id: string) {
   const [row] = await db
     .select()
     .from(taskLists)
-    .where(activeOwnedTaskListWhere(userId, workspaceId, id))
+    .where(ownedTaskListWhere(userId, workspaceId, id))
     .limit(1)
 
   if (!row) {
@@ -104,7 +97,7 @@ async function update(
       name,
       updatedById: userId,
     })
-    .where(activeOwnedTaskListWhere(userId, workspaceId, id))
+    .where(ownedTaskListWhere(userId, workspaceId, id))
     .returning()
 
   if (!row) {
@@ -139,7 +132,7 @@ async function remove(userId: string, workspaceId: string, id: string) {
         deletedAt: now,
         deletedById: userId,
       })
-      .where(activeOwnedTaskListWhere(userId, workspaceId, id))
+      .where(ownedTaskListWhere(userId, workspaceId, id))
       .returning()
 
     if (!row) {
