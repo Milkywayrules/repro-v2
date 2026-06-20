@@ -2,6 +2,12 @@
 
 Scoped rules for this app. Root `AGENTS.md` applies otherwise.
 
+## Stack & port
+
+- Elysia + Bun; port **5000**
+- `bun --watch` for dev (not `--hot` — ghost listeners on reload)
+- `bun test src`; `check-types` emits `dist-types/` for `@repro-v2/api-client`
+
 ## Layout
 
 ```
@@ -107,3 +113,10 @@ No `features/` folder. No `routes/v1.ts` stub file — versioned lanes live in `
 - **No app→app imports** (console must not import from `apps/api/src/*`).
 - **No tsconfig path cheats** to reach sibling app source (no `"../api/src/*"` in console paths).
 - Frontends use `@repro-v2/api-client` and `@repro-v2/auth/react`; contract types from `@repro-v2/api-types/contract`.
+
+## Docs
+
+- App: `README.md`
+- Contract: `src/docs/contract.md`
+- Env: `apps/api/.env.example`
+- OpenAPI: regenerate via root `bun run generate:openapi`

@@ -22,15 +22,16 @@
 
 # Agent doc map
 
-| Need                             | Open                                                                                                     |
-| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Git commits (style + no trailer) | [.cursor/rules/verasic-git-commits.mdc](.cursor/rules/verasic-git-commits.mdc)                           |
-| JSDoc / code comments            | [.cursor/rules/verasic-jsdoc-and-comments.mdc](.cursor/rules/verasic-jsdoc-and-comments.mdc)             |
-| Human onboarding                 | [README.md](README.md)                                                                                   |
-| shadcn MCP                       | [.agents/skills/shadcn/mcp.md](.agents/skills/shadcn/mcp.md)                                             |
-| Better Auth                      | [.agents/skills/better-auth-best-practices/SKILL.md](.agents/skills/better-auth-best-practices/SKILL.md) |
-| Drizzle                          | [.agents/skills/drizzle-orm-patterns/SKILL.md](.agents/skills/drizzle-orm-patterns/SKILL.md)             |
-| Log debugging                    | [.agents/skills/analyze-logs/SKILL.md](.agents/skills/analyze-logs/SKILL.md)                             |
+| Need                             | Open                                                                                                                                                                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| App-scoped rules                 | [apps/api/AGENTS.md](apps/api/AGENTS.md), [apps/console/AGENTS.md](apps/console/AGENTS.md), [apps/browser-ext/AGENTS.md](apps/browser-ext/AGENTS.md), [apps/docs/AGENTS.md](apps/docs/AGENTS.md), [apps/marketing/AGENTS.md](apps/marketing/AGENTS.md) |
+| Git commits (style + no trailer) | [.cursor/rules/verasic-git-commits.mdc](.cursor/rules/verasic-git-commits.mdc)                                                                                                                                                                         |
+| JSDoc / code comments            | [.cursor/rules/verasic-jsdoc-and-comments.mdc](.cursor/rules/verasic-jsdoc-and-comments.mdc)                                                                                                                                                           |
+| Human onboarding                 | [README.md](README.md)                                                                                                                                                                                                                                 |
+| shadcn MCP                       | [.agents/skills/shadcn/mcp.md](.agents/skills/shadcn/mcp.md)                                                                                                                                                                                           |
+| Better Auth                      | [.agents/skills/better-auth-best-practices/SKILL.md](.agents/skills/better-auth-best-practices/SKILL.md)                                                                                                                                               |
+| Drizzle                          | [.agents/skills/drizzle-orm-patterns/SKILL.md](.agents/skills/drizzle-orm-patterns/SKILL.md)                                                                                                                                                           |
+| Log debugging                    | [.agents/skills/analyze-logs/SKILL.md](.agents/skills/analyze-logs/SKILL.md)                                                                                                                                                                           |
 
 Skills under `.agents/skills/` are reference — load when the task matches.
 
@@ -179,12 +180,12 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 
 ## App boundary (monorepo)
 
-| Package / app | Owns |
-| --- | --- |
-| `@repro-v2/api-schemas` | Zod request/input schemas |
-| `@repro-v2/api-types` | Contract types, HTTP constants, generated OpenAPI JSON |
-| `@repro-v2/api-client` | Eden Treaty client, route response types, TanStack Query helpers (`./queries`) |
-| `apps/api` | Server implementation (`createApp`, modules, services) |
+| Package / app           | Owns                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `@repro-v2/api-schemas` | Zod request/input schemas                                                      |
+| `@repro-v2/api-types`   | Contract types, HTTP constants, generated OpenAPI JSON                         |
+| `@repro-v2/api-client`  | Eden Treaty client, route response types, TanStack Query helpers (`./queries`) |
+| `apps/api`              | Server implementation (`createApp`, modules, services)                         |
 
 - **`apps/api/src/app.ts` exports `type App`** — the only cross-app type surface from the API app.
 - **`@repro-v2/api-client`** is the sole package that may `import type { App } from 'api/app'`.
