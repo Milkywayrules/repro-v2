@@ -69,11 +69,15 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
                     workspaceId: 'ws-1',
                     role: 'owner',
                     ownerUserId: userId,
+                    slug: `${userId}:duplicate-slug`,
+                    metadata: null,
                   },
                   {
                     workspaceId: 'ws-2',
                     role: 'member',
                     ownerUserId: 'other-user',
+                    slug: 'other-user:duplicate-slug',
+                    metadata: null,
                   },
                 ]),
             }),
@@ -87,5 +91,31 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
       code: http.codes.CONFLICT,
       status: http.status.CONFLICT,
     })
+  })
+
+  test('resolves storage slug to workspace id', async () => {
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            innerJoin: () => ({
+              where: () =>
+                Promise.resolve([
+                  {
+                    workspaceId,
+                    role: 'owner',
+                    ownerUserId: userId,
+                    slug: `${userId}:acme`,
+                    metadata: JSON.stringify({ publicSlug: 'acme' }),
+                  },
+                ]),
+            }),
+          }),
+        }) as never,
+    )
+
+    await expect(
+      workspaceService.resolveWorkspaceIdForSlug(userId, 'acme'),
+    ).resolves.toBe(workspaceId)
   })
 })

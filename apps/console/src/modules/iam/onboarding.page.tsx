@@ -5,6 +5,7 @@ import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
 import { WORKSPACE_LIMIT } from '@repro-v2/iam/workspace-limit'
+import { workspaceStorageSlug } from '@repro-v2/iam/workspace-storage-slug'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
@@ -28,8 +29,11 @@ export function OnboardingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
-  const { data: organizations, isPending: orgsPending } =
-    iamClient.useListOrganizations()
+  const {
+    data: organizations,
+    isPending: orgsPending,
+    refetch: refetchOrganizations,
+  } = iamClient.useListOrganizations()
   const { features, isPending: featuresPending } = useIamFeatures()
 
   useEffect(() => {
@@ -54,6 +58,15 @@ export function OnboardingPage() {
       )
     }
   }, [nextPath, router, session?.user, sessionPending])
+
+  useEffect(() => {
+    const userId = session?.user?.id
+    if (!userId) {
+      return
+    }
+
+    refetchOrganizations().catch(() => undefined)
+  }, [refetchOrganizations, session?.user?.id])
 
   useEffect(() => {
     if (featuresPending || orgsPending || !features?.workspace) {
@@ -82,11 +95,17 @@ export function OnboardingPage() {
     onSubmit: async ({ value }) => {
       setSubmitError(null)
       const name = value.name.trim()
-      const slug = workspaceSlugFromName(name)
+      const publicSlug = workspaceSlugFromName(name)
+      const userId = session?.user?.id
+      if (!userId) {
+        setSubmitError('Sign in to create a workspace')
+        return
+      }
 
       const { error } = await iamClient.organization.create({
         name,
-        slug,
+        slug: workspaceStorageSlug(userId, publicSlug),
+        metadata: { publicSlug },
       })
 
       if (error) {
@@ -96,7 +115,7 @@ export function OnboardingPage() {
 
       toast.success('Workspace created')
       if (features?.workspace) {
-        router.push(workspaceRoutes(slug).dashboard as Route)
+        router.push(workspaceRoutes(publicSlug).dashboard as Route)
         return
       }
 

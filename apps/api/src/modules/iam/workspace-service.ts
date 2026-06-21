@@ -1,6 +1,10 @@
 import { db } from '@repro-v2/db'
-import { and, eq } from '@repro-v2/db/drizzle'
+import { and, eq, or, sql } from '@repro-v2/db/drizzle'
 import { member, workspace } from '@repro-v2/db/schema/auth'
+import {
+  publicSlugFromStorageSlug,
+  workspaceStorageSlug,
+} from '@repro-v2/iam/workspace-storage-slug'
 
 import {
   conflictError,
@@ -24,29 +28,45 @@ async function resolveWorkspaceIdForSlug(
   userId: string,
   workspaceSlug: string,
 ) {
-  const slug = workspaceSlug.trim().toLowerCase()
+  const publicSlug = workspaceSlug.trim().toLowerCase()
+  const storageSlug = workspaceStorageSlug(userId, publicSlug)
 
   const rows = await db
     .select({
       workspaceId: member.workspace_id,
       role: member.role,
       ownerUserId: workspace.ownerUserId,
+      slug: workspace.slug,
+      metadata: workspace.metadata,
     })
     .from(member)
     .innerJoin(workspace, eq(member.workspace_id, workspace.id))
-    .where(and(eq(member.userId, userId), eq(workspace.slug, slug)))
+    .where(
+      and(
+        eq(member.userId, userId),
+        or(
+          eq(workspace.slug, publicSlug),
+          eq(workspace.slug, storageSlug),
+          sql`${workspace.slug} = concat(${workspace.ownerUserId}, ':', ${publicSlug})`,
+        ),
+      ),
+    )
 
-  if (rows.length === 0) {
+  const matchingRows = rows.filter(
+    row => publicSlugFromStorageSlug(row.slug, row.ownerUserId) === publicSlug,
+  )
+
+  if (matchingRows.length === 0) {
     throw notFoundError()
   }
 
-  if (rows.length > 1) {
+  if (matchingRows.length > 1) {
     throw conflictError(
       'Ambiguous workspace slug: multiple memberships match this slug for the user',
     )
   }
 
-  const [row] = rows
+  const [row] = matchingRows
   if (!row) {
     throw notFoundError()
   }

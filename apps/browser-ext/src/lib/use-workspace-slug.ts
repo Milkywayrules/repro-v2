@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 
+import { workspacePublicSlug } from '@repro-v2/iam/workspace-storage-slug'
+
 import { iamClient } from '@/lib/iam-client'
 import { readLastWorkspaceSlug } from '@/lib/last-workspace-slug'
 
@@ -20,17 +22,33 @@ const pendingState: WorkspaceSlugState = {
 }
 
 function pickWorkspaceSlug(
-  organizations: Array<{ slug?: string | null }>,
+  organizations: Array<{
+    slug?: string | null
+    metadata?: unknown
+    ownerUserId?: unknown
+  }>,
   lastSlug: string | null,
+  ownerUserId?: string,
 ): string | null {
+  const mapped = organizations.flatMap(org => {
+    if (typeof org.slug !== 'string') {
+      return []
+    }
+
+    const owner =
+      typeof org.ownerUserId === 'string' ? org.ownerUserId : ownerUserId
+
+    return [workspacePublicSlug(org.slug, org.metadata, owner)]
+  })
+
   if (lastSlug) {
-    const match = organizations.find(org => org.slug === lastSlug)
-    if (match?.slug) {
-      return match.slug
+    const match = mapped.find(slug => slug === lastSlug)
+    if (match) {
+      return match
     }
   }
 
-  return organizations[0]?.slug ?? null
+  return mapped[0] ?? null
 }
 
 export function useWorkspaceSlug(sessionUserId: string | undefined) {
@@ -76,7 +94,7 @@ export function useWorkspaceSlug(sessionUserId: string | undefined) {
       }
 
       const organizations = data ?? []
-      const slug = pickWorkspaceSlug(organizations, lastSlug)
+      const slug = pickWorkspaceSlug(organizations, lastSlug, sessionUserId)
       if (!slug) {
         setState({
           isReady: false,

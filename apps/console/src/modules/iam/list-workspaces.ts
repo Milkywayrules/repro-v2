@@ -1,3 +1,5 @@
+import { workspacePublicSlug } from '@repro-v2/iam/workspace-storage-slug'
+
 import { iamClient } from '@/lib/iam-client'
 import { readLastWorkspaceSlug } from '@/lib/last-workspace-cookie'
 
@@ -6,8 +8,15 @@ export interface WorkspaceSummary {
   slug: string
 }
 
+interface OrganizationRecord {
+  id: unknown
+  metadata?: unknown
+  ownerUserId?: unknown
+  slug: unknown
+}
+
 export function mapOrganizationsToWorkspaces(
-  organizations: Array<{ id: unknown; slug: unknown }> | null | undefined,
+  organizations: OrganizationRecord[] | null | undefined,
 ): WorkspaceSummary[] {
   return (
     organizations?.flatMap(org => {
@@ -15,7 +24,15 @@ export function mapOrganizationsToWorkspaces(
         return []
       }
 
-      return [{ id: org.id, slug: org.slug }]
+      const ownerUserId =
+        typeof org.ownerUserId === 'string' ? org.ownerUserId : undefined
+
+      return [
+        {
+          id: org.id,
+          slug: workspacePublicSlug(org.slug, org.metadata, ownerUserId),
+        },
+      ]
     }) ?? []
   )
 }

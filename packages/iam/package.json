@@ -22,6 +22,12 @@
     },
     "./last-workspace-slug-cookie": {
       "default": "./src/last-workspace-slug-cookie.ts"
+    },
+    "./workspace-storage-slug": {
+      "default": "./src/workspace-storage-slug.ts"
+    },
+    "./workspace-auth-errors": {
+      "default": "./src/workspace-auth-errors.ts"
     }
   },
   "scripts": {

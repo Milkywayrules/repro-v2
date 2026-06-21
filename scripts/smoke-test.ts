@@ -4,6 +4,10 @@
  * Smoke checks for IAM (features, sign-up/sign-in, captcha, social), tasks, and browser-ext builds.
  */
 
+import {
+  workspacePublicSlug,
+  workspaceStorageSlug,
+} from '@repro-v2/iam/workspace-storage-slug'
 import dotenv from 'dotenv'
 
 import { spawn } from 'node:child_process'
@@ -20,6 +24,8 @@ const consoleOrigin = 'http://localhost:5001'
 
 /** Cloudflare Turnstile always-pass test token (visible widget). */
 const TURNSTILE_TEST_TOKEN = '1x00000000000000000000AA'
+/** Cloudflare Turnstile always-pass test secret — pair with the test token above. */
+const TURNSTILE_TEST_SECRET = '1x0000000000000000000000000000000AA'
 
 const sleep = (ms: number) =>
   new Promise<void>(resolveSleep => {
@@ -75,6 +81,24 @@ function cookieHeaderFromSetCookies(setCookies: string[]): string {
 
 type IamFeatureFlags = Record<string, boolean>
 
+/** True when captcha is on and Turnstile accepts Cloudflare smoke test token/secret pair. */
+function captchaSmokeTestable(features: IamFeatureFlags): boolean {
+  if (!features.captcha) {
+    return false
+  }
+
+  const secret = process.env.TURNSTILE_SECRET_KEY
+  return !secret || secret === TURNSTILE_TEST_SECRET
+}
+
+function captchaTokenForSmoke(features: IamFeatureFlags): string | undefined {
+  if (!captchaSmokeTestable(features)) {
+    return
+  }
+
+  return TURNSTILE_TEST_TOKEN
+}
+
 function authJsonHeaders(
   sessionCookie: string,
   extra?: Record<string, string>,
@@ -100,6 +124,16 @@ async function ensureActiveWorkspace(
     origin: consoleOrigin,
   }
 
+  const session = await getSession(sessionCookie)
+  if (session.status !== 200) {
+    fail(`get-session failed before workspace setup (${session.status})`)
+  }
+
+  const userId = (session.body as { user?: { id?: string } } | null)?.user?.id
+  if (!userId) {
+    fail('get-session did not return user id for workspace setup')
+  }
+
   const list = await fetchJson(`${apiUrl}/api/auth/organization/list`, {
     headers: authHeaders,
   })
@@ -110,11 +144,27 @@ async function ensureActiveWorkspace(
     )
   }
 
-  const organizations = list.body as Array<{ id: string; slug?: string }> | null
+  const organizations = list.body as Array<{
+    id: string
+    slug?: string
+    metadata?: unknown
+  }> | null
+
   let firstOrg = organizations?.[0]
+  let workspaceSlug: string | null = null
+
+  if (firstOrg?.slug) {
+    workspaceSlug = workspacePublicSlug(
+      firstOrg.slug,
+      firstOrg.metadata,
+      userId,
+    )
+  }
 
   if (!firstOrg) {
-    const slug = `smoke-ws-${Date.now()}`
+    const publicSlug = `smoke-ws-${Date.now()}`
+    const storageSlug = workspaceStorageSlug(userId, publicSlug)
+
     const create = await fetchJson(`${apiUrl}/api/auth/organization/create`, {
       method: 'POST',
       headers: {
@@ -123,7 +173,8 @@ async function ensureActiveWorkspace(
       },
       body: JSON.stringify({
         name: 'Smoke workspace',
-        slug,
+        slug: storageSlug,
+        metadata: { publicSlug },
       }),
     })
 
@@ -138,14 +189,15 @@ async function ensureActiveWorkspace(
       fail('organization/create did not return workspace id')
     }
 
-    firstOrg = { id: created.id, slug: created.slug ?? slug }
+    firstOrg = { id: created.id, slug: created.slug ?? storageSlug }
+    workspaceSlug = publicSlug
   }
 
-  if (!firstOrg.slug) {
+  if (!workspaceSlug) {
     fail('organization/list did not return workspace slug')
   }
 
-  return { sessionCookie, workspaceSlug: firstOrg.slug }
+  return { sessionCookie, workspaceSlug }
 }
 
 function taskListsApiPath(workspaceSlug: string | null): string {
@@ -238,6 +290,10 @@ async function smokeCaptchaEndpoints(features: IamFeatureFlags) {
     return
   }
 
+  if (!captchaSmokeTestable(features)) {
+    return
+  }
+
   logStep('captcha enabled — checking auth endpoints reject missing token')
 
   const probeEmail = `captcha-probe-${Date.now()}@example.com`
@@ -295,7 +351,7 @@ async function smokeCaptchaEndpoints(features: IamFeatureFlags) {
 
   if (signUpWithTestToken.status !== 200) {
     fail(
-      `sign-up with Turnstile test token failed (${signUpWithTestToken.status}): ${JSON.stringify(signUpWithTestToken.body)} — use TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA for smoke`,
+      `sign-up with Turnstile test token failed (${signUpWithTestToken.status}): ${JSON.stringify(signUpWithTestToken.body)} — use TURNSTILE_SECRET_KEY=${TURNSTILE_TEST_SECRET} for smoke`,
     )
   }
 
@@ -315,8 +371,9 @@ async function smokeGithubSocial(features: IamFeatureFlags) {
     origin: consoleOrigin,
   }
 
-  if (features.captcha) {
-    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  const captchaToken = captchaTokenForSmoke(features)
+  if (captchaToken) {
+    headers['x-captcha-response'] = captchaToken
   }
 
   const social = await fetchJson(`${apiUrl}/api/auth/sign-in/social`, {
@@ -350,8 +407,9 @@ async function smokeMagicLink(features: IamFeatureFlags) {
     origin: consoleOrigin,
   }
 
-  if (features.captcha) {
-    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  const captchaToken = captchaTokenForSmoke(features)
+  if (captchaToken) {
+    headers['x-captcha-response'] = captchaToken
   }
 
   const magicLink = await fetchJson(`${apiUrl}/api/auth/sign-in/magic-link`, {
@@ -382,8 +440,9 @@ async function smokePasswordReset(features: IamFeatureFlags) {
     origin: consoleOrigin,
   }
 
-  if (features.captcha) {
-    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  const captchaToken = captchaTokenForSmoke(features)
+  if (captchaToken) {
+    headers['x-captcha-response'] = captchaToken
   }
 
   const reset = await fetchJson(`${apiUrl}/api/auth/request-password-reset`, {
@@ -500,6 +559,12 @@ try {
 
   const features = iamFeaturesBody.data
 
+  if (features.captcha && !captchaSmokeTestable(features)) {
+    logStep(
+      `captcha enabled with non-test Turnstile secret — skipping captcha tokens in auth calls (set TURNSTILE_SECRET_KEY=${TURNSTILE_TEST_SECRET} for full captcha smoke)`,
+    )
+  }
+
   await smokeCaptchaEndpoints(features)
   await smokePasswordReset(features)
   await smokeMagicLink(features)
@@ -522,7 +587,7 @@ try {
   const smokePassword = 'smoke-password-123'
   const smokeName = 'Smoke User'
 
-  const captchaToken = features.captcha ? TURNSTILE_TEST_TOKEN : undefined
+  const captchaToken = captchaTokenForSmoke(features)
 
   const signUp = await signUpEmail({
     email: smokeEmail,

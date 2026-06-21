@@ -8,6 +8,7 @@ export {
   eq,
   inArray,
   isNull,
+  or,
   type SQL,
   sql,
 } from 'drizzle-orm'

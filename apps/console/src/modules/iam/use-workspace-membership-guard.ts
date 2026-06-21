@@ -7,7 +7,10 @@ import { useRouter } from 'next/navigation'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 
-import { pickDefaultWorkspaceSlug } from './list-workspaces'
+import {
+  mapOrganizationsToWorkspaces,
+  pickDefaultWorkspaceSlug,
+} from './list-workspaces'
 import { useIamFeatures } from './use-iam-features'
 
 /** Redirects when the URL workspace slug is not in the signed-in user's org list. */
@@ -19,6 +22,8 @@ export function useWorkspaceMembershipGuard(workspaceSlug: string): boolean {
     iamClient.useListOrganizations()
 
   const workspaceEnabled = Boolean(features?.workspace)
+  const workspaces = mapOrganizationsToWorkspaces(organizations)
+
   const checking =
     featuresPending ||
     sessionPending ||
@@ -27,7 +32,7 @@ export function useWorkspaceMembershipGuard(workspaceSlug: string): boolean {
 
   const isMember =
     !workspaceEnabled ||
-    (organizations?.some(org => org.slug === workspaceSlug) ?? false)
+    (workspaces.some(workspace => workspace.slug === workspaceSlug) ?? false)
 
   useEffect(() => {
     if (checking || !workspaceEnabled) {

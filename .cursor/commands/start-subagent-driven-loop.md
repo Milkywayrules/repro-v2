@@ -20,7 +20,7 @@ if there are any that still open or something to discuss even more, lets save it
 
 dont do anything/touch something that is a clear out of scope. except, it is related and must be touched.
 
-### gate before start initial implementation
+## pre-implementation gate
 
 if something is needed an answer, ask me using our QnA protocols (using picker, etc.).
 
@@ -30,9 +30,9 @@ lets go to implementation.
 
 we aim for production-level industry-standard batle-proven resilient busy apps traffic.
 
-you are only ORCHESTRATOR. we work based on wave. each wave has loops. 1st wave must resolve our goals. the rest is to make the implementation of our goals to be near-perfect.
-
 make acceptance gate and definition of done (apart from findings must become 0) for our goals.
+
+FINDINGS MUST at least contains: unique code (#F1, #F2, ...) and priority (P0 - P4).
 
 you can completely refactor the existing code to achieve our coding principles and goals.
 
@@ -81,14 +81,14 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
   - audit implementer.
   - run $automated-verify.
 - git commit once.
-- run the `/simplify` skill as the final act (always use subagents Auto model, you are only ORCHESTRATOR. implementation is by subagents).
+- run `/simplify` skill as the final act. dont add additional instructions, let the skill.
 - run $post-wave.
 - run $automated-verify.
 - git commit once.
 
 #### wave 3 - re-run wave
 
-re-run the complete wave 1. verbatim.
+completely re-run wave 1. verbatim.
 
 ### git
 
@@ -99,4 +99,4 @@ total is 3-4 commits, no less no more. dont do other git command except those 3 
 - log on chat:
   - timestamp. start time + end time + duration time.
   - total subagents spawned/dispatched ONLY for this session (not the whole chat).
-- tells what to do next and what is your opinion after everything is done.
+- tells what to do next and what is your opinion (be pessimistic, be negative, opposite to me, be contradictive, be rude, be very honest) after everything is done.

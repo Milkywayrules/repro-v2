@@ -1,3 +1,4 @@
+import { mapWorkspaceAuthErrorResponse } from '@repro-v2/iam/workspace-auth-errors'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -24,7 +25,8 @@ export const iamModuleRoutes = new Elysia({ name: 'iam-module-routes' })
   .use(authRateLimit)
   .all('/*', async ({ request }) => {
     if (['POST', 'GET'].includes(request.method)) {
-      return await iam.handler(request)
+      const response = await iam.handler(request)
+      return mapWorkspaceAuthErrorResponse(request, response)
     }
 
     throw http.error({

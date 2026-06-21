@@ -15,6 +15,7 @@ import {
   workspaceSubPathFromPathname,
 } from '@/lib/routes'
 
+import { mapOrganizationsToWorkspaces } from './list-workspaces'
 import { useIamFeatures } from './use-iam-features'
 
 export function WorkspaceSwitcher() {
@@ -28,8 +29,8 @@ export function WorkspaceSwitcher() {
     return null
   }
 
-  const orgList = organizations ?? []
-  if (orgsPending || orgList.length === 0) {
+  const workspaces = mapOrganizationsToWorkspaces(organizations)
+  if (orgsPending || workspaces.length === 0) {
     return null
   }
 
@@ -48,19 +49,20 @@ export function WorkspaceSwitcher() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-      {orgList.map(org => {
-        const isActive = org.slug === activeSlug
+      {workspaces.map(workspace => {
+        const isActive = workspace.slug === activeSlug
+        const org = organizations?.find(item => item.id === workspace.id)
 
         return (
           <DropdownMenuItem
             aria-current={isActive ? 'true' : undefined}
             disabled={isActive}
-            key={org.id}
+            key={workspace.id}
             onClick={() => {
-              handleSwitch(org.slug)
+              handleSwitch(workspace.slug)
             }}
           >
-            {org.name}
+            {typeof org?.name === 'string' ? org.name : workspace.slug}
             {isActive ? ' — current' : null}
           </DropdownMenuItem>
         )
