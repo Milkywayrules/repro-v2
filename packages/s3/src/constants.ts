@@ -17,11 +17,17 @@ export const UPLOAD_HELPER_TEXT = `${UPLOAD_FILE_TYPES_MESSAGE} up to ${MAX_UPLO
 
 export const AVATAR_HELPER_TEXT = `${AVATAR_FILE_TYPES_MESSAGE} up to ${MAX_UPLOAD_SIZE_LABEL}`
 
-export const ALLOWED_CONTENT_TYPES = [
+export const AVATAR_CONTENT_TYPES = [
   'image/jpeg',
   'image/png',
   'image/webp',
   'image/gif',
+] as const
+
+export type AvatarContentType = (typeof AVATAR_CONTENT_TYPES)[number]
+
+export const ALLOWED_CONTENT_TYPES = [
+  ...AVATAR_CONTENT_TYPES,
   'application/pdf',
   'text/plain',
 ] as const
@@ -43,6 +49,12 @@ export function extensionForContentType(contentType: string): string | null {
   }
 
   return MIME_TO_EXT[contentType as AllowedContentType]
+}
+
+export function isAvatarContentType(
+  contentType: string,
+): contentType is AvatarContentType {
+  return (AVATAR_CONTENT_TYPES as readonly string[]).includes(contentType)
 }
 
 export function isAllowedContentType(

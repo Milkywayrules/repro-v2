@@ -7,10 +7,10 @@ import {
   AVATAR_HELPER_TEXT,
   completeAvatar,
   formatTreatyError,
-  inspectUploadFile,
+  inspectAvatarUploadFile,
   presignAvatar,
   uploadFileToPresignedUrl,
-  validateUploadFile,
+  validateAvatarUploadFile,
 } from '@repro-v2/api-client/queries'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
@@ -47,7 +47,7 @@ export function SettingsPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      const inspected = inspectUploadFile(file)
+      const inspected = inspectAvatarUploadFile(file)
       if ('error' in inspected) {
         throw new Error(inspected.error)
       }
@@ -83,7 +83,7 @@ export function SettingsPage() {
 
     setHasSelectedFile(true)
     setPreviewUrl(URL.createObjectURL(file))
-    setValidationError(validateUploadFile(file))
+    setValidationError(validateAvatarUploadFile(file))
   }
 
   function handleUpload() {
@@ -93,7 +93,7 @@ export function SettingsPage() {
       return
     }
 
-    const fileError = validateUploadFile(file)
+    const fileError = validateAvatarUploadFile(file)
     if (fileError) {
       setValidationError(fileError)
       return

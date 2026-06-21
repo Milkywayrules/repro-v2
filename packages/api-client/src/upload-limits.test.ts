@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  AVATAR_FILE_TYPES_MESSAGE,
+  AVATAR_UNSUPPORTED_TYPE_MESSAGE,
   MAX_OBJECT_BYTES,
   MAX_UPLOAD_SIZE_LABEL,
   UPLOAD_FILE_TYPES_MESSAGE,
@@ -8,7 +10,12 @@ import {
   UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
 } from '@repro-v2/s3/constants'
 
-import { inspectUploadFile, validateUploadFile } from './upload-limits'
+import {
+  inspectAvatarUploadFile,
+  inspectUploadFile,
+  validateAvatarUploadFile,
+  validateUploadFile,
+} from './upload-limits'
 
 function mockFile(sizeBytes: number, type = 'image/png', name = 'photo.png') {
   const buffer = new Uint8Array(sizeBytes)
@@ -43,6 +50,28 @@ describe('upload-limits', () => {
       meta: {
         filename: 'notes.pdf',
         contentType: 'application/pdf',
+        sizeBytes: 1024,
+      },
+    })
+  })
+
+  test('validateAvatarUploadFile rejects non-image content types', () => {
+    const file = mockFile(1024, 'application/pdf', 'notes.pdf')
+
+    expect(validateAvatarUploadFile(file)).toBe(AVATAR_UNSUPPORTED_TYPE_MESSAGE)
+  })
+
+  test('avatar unsupported type message mentions image file types', () => {
+    expect(AVATAR_UNSUPPORTED_TYPE_MESSAGE).toContain(AVATAR_FILE_TYPES_MESSAGE)
+  })
+
+  test('inspectAvatarUploadFile accepts image files', () => {
+    const file = mockFile(1024, 'image/png', 'avatar.png')
+
+    expect(inspectAvatarUploadFile(file)).toEqual({
+      meta: {
+        filename: 'avatar.png',
+        contentType: 'image/png',
         sizeBytes: 1024,
       },
     })

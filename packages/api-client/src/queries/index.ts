@@ -3,11 +3,16 @@ export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
 export {
   type AllowedContentType,
   AVATAR_HELPER_TEXT,
+  type AvatarContentType,
+  type AvatarUploadMeta,
+  inspectAvatarUploadFile,
   inspectUploadFile,
   isAllowedContentType,
+  isAvatarContentType,
   MAX_OBJECT_BYTES,
   UPLOAD_HELPER_TEXT,
   type UploadMeta,
+  validateAvatarUploadFile,
   validateUploadFile,
 } from '../upload-limits'
 export {

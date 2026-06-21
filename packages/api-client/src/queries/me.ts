@@ -1,10 +1,10 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
-import type { UploadMeta } from '../upload-limits'
+import type { AvatarUploadMeta } from '../upload-limits'
 import { unwrapTreatyResponse } from './treaty'
 
-export async function presignAvatar(client: ApiClient, body: UploadMeta) {
+export async function presignAvatar(client: ApiClient, body: AvatarUploadMeta) {
   const response = await client.api.v1.me.avatar.presign.post(body)
   return unwrapTreatyResponse(response)
 }
