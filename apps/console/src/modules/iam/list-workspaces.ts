@@ -6,6 +6,20 @@ export interface WorkspaceSummary {
   slug: string
 }
 
+export function mapOrganizationsToWorkspaces(
+  organizations: Array<{ id: unknown; slug: unknown }> | null | undefined,
+): WorkspaceSummary[] {
+  return (
+    organizations?.flatMap(org => {
+      if (typeof org.id !== 'string' || typeof org.slug !== 'string') {
+        return []
+      }
+
+      return [{ id: org.id, slug: org.slug }]
+    }) ?? []
+  )
+}
+
 export type ListWorkspacesResult =
   | { ok: true; workspaces: WorkspaceSummary[] }
   | { ok: false; error: string }
@@ -20,14 +34,7 @@ export async function listWorkspaces(): Promise<ListWorkspacesResult> {
     }
   }
 
-  const workspaces =
-    data?.flatMap(org => {
-      if (typeof org.id !== 'string' || typeof org.slug !== 'string') {
-        return []
-      }
-
-      return [{ id: org.id, slug: org.slug }]
-    }) ?? []
+  const workspaces = mapOrganizationsToWorkspaces(data)
 
   return { ok: true, workspaces }
 }

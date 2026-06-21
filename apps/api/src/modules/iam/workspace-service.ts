@@ -46,12 +46,12 @@ async function resolveWorkspaceIdForSlug(
     )
   }
 
-  const first = rows[0]
-  if (!first) {
+  const [row] = rows
+  if (!row) {
     throw notFoundError()
   }
 
-  return first.workspaceId
+  return row.workspaceId
 }
 
 export const workspaceService = {

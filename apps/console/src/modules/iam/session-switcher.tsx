@@ -16,7 +16,7 @@ import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 
 import { deviceSessionsQueryOptions } from './device-sessions'
-import { navigateAfterSessionSwitch } from './navigate-after-session-switch'
+import { switchDeviceSession } from './switch-device-session'
 import { useIamFeatures } from './use-iam-features'
 
 export function SessionSwitcher() {
@@ -47,16 +47,16 @@ export function SessionSwitcher() {
     setSwitchingToken(sessionToken)
 
     try {
-      const { error } = await iamClient.multiSession.setActive({ sessionToken })
+      const result = await switchDeviceSession(sessionToken, {
+        pathname,
+        queryClient,
+        refetchSession,
+        router,
+      })
 
-      if (error) {
-        setSwitchError(error.message ?? 'Could not switch session')
-        return
+      if (!result.ok) {
+        setSwitchError(result.error)
       }
-
-      await refetchSession()
-      queryClient.clear()
-      await navigateAfterSessionSwitch(router, pathname)
     } catch {
       setSwitchError('Could not switch session')
     } finally {

@@ -7,7 +7,30 @@ export const routes = {
   home: '/',
 } as const
 
-const FLAT_APP_SUB_PATHS = new Set(['dashboard', 'tasks', 'settings'])
+export type WorkspaceSubPath = keyof ReturnType<typeof workspaceRoutes>
+
+const FLAT_APP_SUB_PATHS = new Set<WorkspaceSubPath>([
+  'dashboard',
+  'tasks',
+  'settings',
+])
+
+export function isFlatAppSubPath(segment: string): segment is WorkspaceSubPath {
+  return FLAT_APP_SUB_PATHS.has(segment as WorkspaceSubPath)
+}
+
+/** Single-segment flat app path (/dashboard, /tasks, …), ignoring query string. */
+export function flatSubPathFromPath(path: string): WorkspaceSubPath | null {
+  const pathname = path.split('?')[0] ?? path
+  const segments = pathname.split('/').filter(Boolean)
+
+  if (segments.length !== 1) {
+    return null
+  }
+
+  const segment = segments[0]
+  return segment && isFlatAppSubPath(segment) ? segment : null
+}
 
 export function workspaceRoutes(workspaceSlug: string) {
   return {
@@ -34,7 +57,7 @@ export function workspaceSubPathFromPathname(pathname: string): string {
   }
 
   const first = segments[0]
-  if (segments.length === 1 && first && FLAT_APP_SUB_PATHS.has(first)) {
+  if (segments.length === 1 && first && isFlatAppSubPath(first)) {
     return first
   }
 

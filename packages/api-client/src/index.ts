@@ -92,6 +92,14 @@ function flatV1(client: ApiClient): FlatV1Api {
   return client.api.v1 as unknown as FlatV1Api
 }
 
+function taskApiSurface(client: ApiClient, workspaceSlug?: string) {
+  if (workspaceSlug) {
+    return workspaceTaskApi(client, workspaceSlug)
+  }
+
+  return flatV1(client)
+}
+
 /** Resolves workspace-scoped v1 task routes. */
 export function workspaceTaskApi(client: ApiClient, workspaceSlug: string) {
   return workspaceV1(client).workspaces({ workspaceSlug })
@@ -99,20 +107,12 @@ export function workspaceTaskApi(client: ApiClient, workspaceSlug: string) {
 
 /** Task list API — workspace-prefixed when slug is set, flat otherwise. */
 export function taskListsApi(client: ApiClient, workspaceSlug?: string) {
-  if (workspaceSlug) {
-    return workspaceTaskApi(client, workspaceSlug)['task-lists']
-  }
-
-  return flatV1(client)['task-lists']
+  return taskApiSurface(client, workspaceSlug)['task-lists']
 }
 
 /** Tasks API — workspace-prefixed when slug is set, flat otherwise. */
 export function tasksApi(client: ApiClient, workspaceSlug?: string) {
-  if (workspaceSlug) {
-    return workspaceTaskApi(client, workspaceSlug).tasks
-  }
-
-  return flatV1(client).tasks
+  return taskApiSurface(client, workspaceSlug).tasks
 }
 
 export interface TaskListListResponse {

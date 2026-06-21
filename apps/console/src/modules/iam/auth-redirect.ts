@@ -1,7 +1,12 @@
 import { env } from '@repro-v2/env/console'
 import { isReservedWorkspaceSlug } from '@repro-v2/iam/reserved-workspace-slugs'
 
-import { routes, workspaceRoutes } from '@/lib/routes'
+import {
+  flatSubPathFromPath,
+  isFlatAppSubPath,
+  routes,
+  workspaceRoutes,
+} from '@/lib/routes'
 
 import {
   listWorkspaces,
@@ -11,28 +16,19 @@ import {
 } from './list-workspaces'
 import type { PublicIamFeatures } from './types'
 
-type WorkspaceSubPath = keyof ReturnType<typeof workspaceRoutes>
-
-const FLAT_SUB_PATHS = new Set<WorkspaceSubPath>([
-  'dashboard',
-  'tasks',
-  'settings',
-])
-
-function flatSubPathFromPath(path: string): WorkspaceSubPath | null {
-  const pathname = path.split('?')[0] ?? path
-  const segments = pathname.split('/').filter(Boolean)
-
-  if (segments.length !== 1) {
-    return null
+function resolveDefaultSlug(
+  workspaces?: WorkspaceSummary[],
+  defaultSlug?: string | null,
+): Promise<string | null> {
+  if (defaultSlug) {
+    return Promise.resolve(defaultSlug)
   }
 
-  const segment = segments[0]
-  if (!(segment && FLAT_SUB_PATHS.has(segment as WorkspaceSubPath))) {
-    return null
+  if (workspaces) {
+    return Promise.resolve(pickSlugFromWorkspaces(workspaces))
   }
 
-  return segment as WorkspaceSubPath
+  return pickDefaultWorkspaceSlug()
 }
 
 /** Rewrites /dashboard-style paths to /{slug}/…; returns null when path is not flat. */
@@ -59,11 +55,7 @@ function rewriteWorkspaceScopedPath(
   }
 
   const first = segments[0]
-  if (
-    !first ||
-    isReservedWorkspaceSlug(first) ||
-    FLAT_SUB_PATHS.has(first as WorkspaceSubPath)
-  ) {
+  if (!first || isReservedWorkspaceSlug(first) || isFlatAppSubPath(first)) {
     return path
   }
 
@@ -89,11 +81,7 @@ async function scopePathForWorkspace(
 
   const flatSubPath = flatSubPathFromPath(path)
   if (flatSubPath) {
-    const slug =
-      defaultSlug ??
-      (workspaces
-        ? pickSlugFromWorkspaces(workspaces)
-        : await pickDefaultWorkspaceSlug())
+    const slug = await resolveDefaultSlug(workspaces, defaultSlug)
     if (!slug) {
       return routes.onboarding
     }
@@ -149,11 +137,7 @@ export async function resolvePostAuthPath(
     return '/dashboard'
   }
 
-  const slug =
-    defaultSlug ??
-    (workspaces
-      ? pickSlugFromWorkspaces(workspaces)
-      : await pickDefaultWorkspaceSlug())
+  const slug = await resolveDefaultSlug(workspaces, defaultSlug)
   if (!slug) {
     return routes.onboarding
   }

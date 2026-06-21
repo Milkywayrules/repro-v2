@@ -7,18 +7,16 @@ import { useRouter } from 'next/navigation'
 import { Loader } from '@/components/loader'
 import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
-import { routes, workspaceRoutes } from '@/lib/routes'
+import { routes, type WorkspaceSubPath, workspaceRoutes } from '@/lib/routes'
 import {
   listWorkspaces,
   pickSlugFromWorkspaces,
 } from '@/modules/iam/list-workspaces'
 import { useIamFeatures } from '@/modules/iam/use-iam-features'
 
-type FlatSubPath = keyof ReturnType<typeof workspaceRoutes>
-
 interface FlatRouteGuardProps {
   children: React.ReactNode
-  subPath: FlatSubPath
+  subPath: WorkspaceSubPath
 }
 
 type GuardState =

@@ -13,7 +13,7 @@ import {
   type DeviceSession,
   deviceSessionsQueryOptions,
 } from './device-sessions'
-import { navigateAfterSessionSwitch } from './navigate-after-session-switch'
+import { switchDeviceSession } from './switch-device-session'
 import { useIamFeatures } from './use-iam-features'
 
 const SESSION_INITIALS_SPLIT = /\s+/
@@ -57,18 +57,17 @@ export function SessionChips() {
     setSwitchingToken(sessionToken)
 
     try {
-      const { error } = await iamClient.multiSession.setActive({ sessionToken })
+      const result = await switchDeviceSession(sessionToken, {
+        pathname,
+        queryClient,
+        refetchSession,
+        router,
+      })
 
-      if (error) {
-        const message = error.message ?? 'Could not switch session'
-        setSwitchError(message)
-        toast.error(message)
-        return
+      if (!result.ok) {
+        setSwitchError(result.error)
+        toast.error(result.error)
       }
-
-      await refetchSession()
-      queryClient.clear()
-      await navigateAfterSessionSwitch(router, pathname)
     } catch {
       const message = 'Could not switch session'
       setSwitchError(message)
