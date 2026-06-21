@@ -12,7 +12,6 @@ import { buildCaptchaEndpoints } from './captcha-endpoints'
 import type { IamEmailHandlers } from './email-hooks'
 import { createWorkspaceCreateHooks } from './workspace-create-hooks'
 import { WORKSPACE_LIMIT } from './workspace-limit'
-import { createDemoSeedOnFirstWorkspaceHook } from './workspace-provisioning'
 
 const workspaceSchema = {
   organization: {
@@ -83,10 +82,7 @@ export function buildIamPlugins(
         schema: workspaceSchema,
         sendInvitationEmail: email?.sendInvitationEmail,
         teams: { enabled: false },
-        organizationHooks: {
-          ...createWorkspaceCreateHooks(db),
-          afterCreateOrganization: createDemoSeedOnFirstWorkspaceHook(db),
-        },
+        organizationHooks: createWorkspaceCreateHooks(db),
       }),
     )
   }

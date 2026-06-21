@@ -41,7 +41,6 @@
     "db:studio": "turbo -F @repro-v2/db db:studio",
     "db:generate": "turbo -F @repro-v2/db db:generate",
     "db:migrate": "turbo -F @repro-v2/db db:migrate",
-    "db:seed": "turbo -F @repro-v2/db db:seed",
     "generate:openapi": "bun run scripts/generate-openapi-spec.ts",
     "test": "bun run scripts/test-probes.ts",
     "smoke": "bun run scripts/smoke-test.ts",

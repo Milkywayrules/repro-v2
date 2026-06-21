@@ -156,14 +156,6 @@ function taskListsApiPath(workspaceSlug: string | null): string {
   return '/api/v1/task-lists'
 }
 
-function tasksApiPath(workspaceSlug: string | null, listId: string): string {
-  if (workspaceSlug) {
-    return `/api/v1/workspaces/${encodeURIComponent(workspaceSlug)}/tasks?listId=${encodeURIComponent(listId)}`
-  }
-
-  return `/api/v1/tasks?listId=${encodeURIComponent(listId)}`
-}
-
 async function signUpEmail(input: {
   email: string
   password: string
@@ -473,7 +465,6 @@ try {
 
   const nodeEnv = process.env.NODE_ENV ?? 'undefined'
   logStep(`NODE_ENV=${nodeEnv}`)
-  const expectDemoSeed = nodeEnv === 'development'
 
   const iamFeatures = await fetchJson(
     `${apiUrl}/api/v1/platform/iam-features`,
@@ -635,46 +626,6 @@ try {
     data?: Array<{ id: string; name: string }>
   }
 
-  let seededTaskCount = 0
-
-  if (expectDemoSeed) {
-    if (!listsBody.data || listsBody.data.length === 0) {
-      fail(
-        'expected first workspace to seed at least one task list in development',
-      )
-    }
-
-    const sampleList = listsBody.data.find(
-      list => list.name === 'Sample tasks (safe to delete)',
-    )
-    if (!sampleList) {
-      fail('expected sample task list from dev seed after onboarding')
-    }
-
-    const tasks = await fetchJson(
-      `${apiUrl}${tasksApiPath(workspaceSlug, sampleList.id)}`,
-      {
-        headers: {
-          cookie: sessionCookie,
-          origin: consoleOrigin,
-        },
-      },
-    )
-
-    if (tasks.status !== 200) {
-      fail(`tasks failed (${tasks.status}): ${JSON.stringify(tasks.body)}`)
-    }
-
-    const tasksBody = tasks.body as { data?: Array<{ title: string }> }
-    if (!tasksBody.data || tasksBody.data.length < 2) {
-      fail('expected at least two seeded tasks')
-    }
-
-    seededTaskCount = tasksBody.data.length
-  } else {
-    logStep('skipping demo seed assertions (NODE_ENV is not development)')
-  }
-
   const listCount = listsBody.data?.length ?? 0
 
   const chromeBuildCode = await runCommand(
@@ -713,7 +664,7 @@ try {
   }
 
   process.stdout.write(
-    `smoke: ok — iam-features, auth flows, user ${smokeEmail}, ${listCount} list(s)${expectDemoSeed ? `, ${seededTaskCount} seeded task(s)` : ''}, chrome+firefox builds\n`,
+    `smoke: ok — iam-features, auth flows, user ${smokeEmail}, ${listCount} list(s), chrome+firefox builds\n`,
   )
 } catch (error) {
   process.stderr.write(

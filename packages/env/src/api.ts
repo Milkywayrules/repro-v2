@@ -142,9 +142,6 @@ export const env = createEnv({
     // openapi
     OPENAPI_ENABLED: booleanEnv('OPENAPI_ENABLED', false),
 
-    // database seeding
-    ALLOW_SEED: booleanEnv('ALLOW_SEED', false),
-
     // rate limiting
     RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(15),
     RATE_LIMIT_AUTH_DURATION_MS: z.coerce

@@ -14,16 +14,14 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate",
-    "db:seed": "bun run src/seed.ts"
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@repro-v2/env": "workspace:*",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.17.1",
-    "uuidv7": "^1.2.1",
-    "zod": "catalog:"
+    "uuidv7": "^1.2.1"
   },
   "devDependencies": {
     "@repro-v2/config": "workspace:*",
