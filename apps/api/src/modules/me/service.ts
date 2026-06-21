@@ -3,6 +3,7 @@ import { eq } from '@repro-v2/db/drizzle'
 import { user } from '@repro-v2/db/schema/auth'
 import { env } from '@repro-v2/env/api'
 import {
+  AVATAR_UNSUPPORTED_TYPE_MESSAGE,
   avatarObjectKey,
   createS3ClientFromEnv,
   headObject,
@@ -13,6 +14,7 @@ import {
   presignPut,
   presignPutExpiresAt,
   publicObjectUrl,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
 } from '@repro-v2/s3'
 
 import { http } from '@/libs/contract'
@@ -28,13 +30,15 @@ function validationError(message: string) {
   })
 }
 
+const MAX_SIZE_MESSAGE = UPLOAD_SIZE_LIMIT_MESSAGE
+
 function assertAllowedUpload(contentType: string, sizeBytes: number) {
   if (!isAllowedContentType(contentType)) {
-    throw validationError('Unsupported content type')
+    throw validationError(AVATAR_UNSUPPORTED_TYPE_MESSAGE)
   }
 
   if (!isWithinSizeLimit(sizeBytes)) {
-    throw validationError('File exceeds maximum size')
+    throw validationError(MAX_SIZE_MESSAGE)
   }
 }
 
@@ -63,26 +67,28 @@ async function completeAvatar(userId: string, key: string, sizeBytes: number) {
   }
 
   if (!isWithinSizeLimit(sizeBytes)) {
-    throw validationError('File exceeds maximum size')
+    throw validationError(MAX_SIZE_MESSAGE)
   }
 
   const head = await headObject(s3Client, env.S3_BUCKET_PUBLIC, key)
 
   if (!head.exists) {
-    throw validationError('File was not uploaded successfully')
+    throw validationError('The file did not upload successfully. Try again.')
   }
 
   if (head.contentLength === undefined || head.contentLength !== sizeBytes) {
-    throw validationError('Uploaded object size does not match')
+    throw validationError(
+      'The uploaded file size does not match. Try uploading again.',
+    )
   }
 
   if (!head.contentType) {
-    throw validationError('Uploaded object has unsupported content type')
+    throw validationError(AVATAR_UNSUPPORTED_TYPE_MESSAGE)
   }
 
   const uploadedType = normalizeMimeType(head.contentType)
   if (!isAllowedContentType(uploadedType)) {
-    throw validationError('Uploaded object has unsupported content type')
+    throw validationError(AVATAR_UNSUPPORTED_TYPE_MESSAGE)
   }
 
   const image = publicObjectUrl(env.S3_PUBLIC_BASE_URL, key)

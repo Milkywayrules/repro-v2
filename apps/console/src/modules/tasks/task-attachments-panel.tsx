@@ -11,6 +11,7 @@ import {
   inspectUploadFile,
   presignTaskAttachment,
   taskAttachmentsQueryOptions,
+  UPLOAD_HELPER_TEXT,
   uploadFileToPresignedUrl,
   validateUploadFile,
 } from '@repro-v2/api-client/queries'
@@ -24,6 +25,8 @@ import { apiClient } from '@/lib/api-client'
 interface TaskAttachmentsPanelProps {
   taskId: string
 }
+
+type FailedAction = 'upload' | 'delete' | 'download'
 
 function triggerDownload(url: string, filename?: string) {
   const anchor = document.createElement('a')
@@ -57,8 +60,11 @@ function downloadPresignedFile(url: string, filename?: string) {
 export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const queryClient = useQueryClient()
   const attachmentInputRef = useRef<HTMLInputElement>(null)
+  const lastDeleteIdRef = useRef<string | null>(null)
+  const lastDownloadRef = useRef<{ id: string; filename: string } | null>(null)
   const [hasSelectedFile, setHasSelectedFile] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [failedAction, setFailedAction] = useState<FailedAction | null>(null)
 
   const attachmentsQuery = useQuery({
     ...taskAttachmentsQueryOptions(apiClient, taskId),
@@ -94,16 +100,26 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       await refreshAttachments()
       setHasSelectedFile(false)
       setValidationError(null)
+      setFailedAction(null)
       if (attachmentInputRef.current) {
         attachmentInputRef.current.value = ''
       }
+    },
+    onError: () => {
+      setFailedAction('upload')
     },
   })
 
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId: string) =>
       deleteTaskAttachment(apiClient, taskId, attachmentId),
-    onSuccess: refreshAttachments,
+    onSuccess: async () => {
+      await refreshAttachments()
+      setFailedAction(null)
+    },
+    onError: () => {
+      setFailedAction('delete')
+    },
   })
 
   const downloadAttachmentMutation = useMutation({
@@ -113,25 +129,57 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
         filename: attachment.filename,
       })),
     onSuccess: data => {
+      setFailedAction(null)
       downloadPresignedFile(data.data.downloadUrl, data.filename)
     },
+    onError: () => {
+      setFailedAction('download')
+    },
   })
+
+  function clearOtherMutationErrors(except: FailedAction) {
+    if (except !== 'upload') {
+      uploadAttachmentMutation.reset()
+    }
+    if (except !== 'delete') {
+      deleteAttachmentMutation.reset()
+    }
+    if (except !== 'download') {
+      downloadAttachmentMutation.reset()
+    }
+  }
 
   const isMutationPending =
     uploadAttachmentMutation.isPending ||
     deleteAttachmentMutation.isPending ||
     downloadAttachmentMutation.isPending
 
-  const activeError =
-    uploadAttachmentMutation.error ??
-    deleteAttachmentMutation.error ??
-    downloadAttachmentMutation.error
+  const mutationError = (() => {
+    if (failedAction === 'upload' && uploadAttachmentMutation.error) {
+      return formatTreatyError(
+        uploadAttachmentMutation.error,
+        'Could not upload attachment',
+      )
+    }
 
-  const error =
-    validationError ??
-    (activeError
-      ? formatTreatyError(activeError, 'Something went wrong')
-      : null)
+    if (failedAction === 'delete' && deleteAttachmentMutation.error) {
+      return formatTreatyError(
+        deleteAttachmentMutation.error,
+        'Could not delete attachment',
+      )
+    }
+
+    if (failedAction === 'download' && downloadAttachmentMutation.error) {
+      return formatTreatyError(
+        downloadAttachmentMutation.error,
+        'Could not download attachment',
+      )
+    }
+
+    return null
+  })()
+
+  const error = validationError ?? mutationError
 
   const attachmentsError = attachmentsQuery.isError
     ? formatTreatyError(attachmentsQuery.error, 'Failed to load attachments')
@@ -141,6 +189,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
     uploadAttachmentMutation.reset()
+    setFailedAction(current => (current === 'upload' ? null : current))
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -167,14 +216,55 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
     }
 
     setValidationError(null)
+    clearOtherMutationErrors('upload')
+    setFailedAction(null)
     uploadAttachmentMutation.mutate(file)
   }
 
-  function resetMutationErrors() {
-    uploadAttachmentMutation.reset()
-    deleteAttachmentMutation.reset()
-    downloadAttachmentMutation.reset()
+  function handleDeleteAttachment(attachmentId: string) {
+    lastDeleteIdRef.current = attachmentId
+    clearOtherMutationErrors('delete')
+    setFailedAction(null)
+    deleteAttachmentMutation.mutate(attachmentId)
   }
+
+  function handleDownloadAttachment(attachment: {
+    id: string
+    filename: string
+  }) {
+    lastDownloadRef.current = attachment
+    clearOtherMutationErrors('download')
+    setFailedAction(null)
+    downloadAttachmentMutation.mutate(attachment)
+  }
+
+  function handleRetryFailedAction() {
+    if (validationError) {
+      setValidationError(null)
+      handleUploadAttachment()
+      return
+    }
+
+    if (failedAction === 'upload') {
+      handleUploadAttachment()
+      return
+    }
+
+    if (failedAction === 'delete' && lastDeleteIdRef.current) {
+      deleteAttachmentMutation.mutate(lastDeleteIdRef.current)
+      return
+    }
+
+    if (failedAction === 'download' && lastDownloadRef.current) {
+      downloadAttachmentMutation.mutate(lastDownloadRef.current)
+    }
+  }
+
+  const canRetryFailedAction =
+    validationError !== null ||
+    (failedAction === 'upload' && uploadAttachmentMutation.error !== null) ||
+    (failedAction === 'delete' && deleteAttachmentMutation.error !== null) ||
+    (failedAction === 'download' && downloadAttachmentMutation.error !== null)
 
   return (
     <section className="flex flex-col gap-2">
@@ -197,9 +287,9 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       {error ? (
         <div className="space-y-2">
           <InlineErrorCallout>{error}</InlineErrorCallout>
-          {activeError ? (
+          {canRetryFailedAction ? (
             <Button
-              onClick={resetMutationErrors}
+              onClick={handleRetryFailedAction}
               type="button"
               variant="outline"
             >
@@ -222,12 +312,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
             <div className="flex gap-2">
               <Button
                 disabled={isMutationPending}
-                onClick={() =>
-                  downloadAttachmentMutation.mutate({
-                    id: attachment.id,
-                    filename: attachment.filename,
-                  })
-                }
+                onClick={() => handleDownloadAttachment(attachment)}
                 size="sm"
                 variant="outline"
               >
@@ -235,7 +320,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
               </Button>
               <Button
                 disabled={isMutationPending}
-                onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
+                onClick={() => handleDeleteAttachment(attachment.id)}
                 size="sm"
                 variant="destructive"
               >
@@ -245,24 +330,27 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
           </li>
         ))}
       </ul>
-      <div className="flex gap-2">
-        <Input
-          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain"
-          onChange={handleAttachmentFileChange}
-          ref={attachmentInputRef}
-          type="file"
-        />
-        <Button
-          disabled={
-            !hasSelectedFile ||
-            uploadAttachmentMutation.isPending ||
-            validationError !== null
-          }
-          onClick={handleUploadAttachment}
-          type="button"
-        >
-          Upload
-        </Button>
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <Input
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain"
+            onChange={handleAttachmentFileChange}
+            ref={attachmentInputRef}
+            type="file"
+          />
+          <Button
+            disabled={
+              !hasSelectedFile ||
+              uploadAttachmentMutation.isPending ||
+              validationError !== null
+            }
+            onClick={handleUploadAttachment}
+            type="button"
+          >
+            Upload
+          </Button>
+        </div>
+        <p className="text-muted-foreground text-sm">{UPLOAD_HELPER_TEXT}</p>
       </div>
     </section>
   )

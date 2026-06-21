@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
+import { normalizeUnknownNetworkError } from '../network-error'
 import type { UploadMeta } from '../upload-limits'
 import { attachmentKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
@@ -70,19 +71,27 @@ export async function uploadFileToPresignedUrl(
   uploadUrl: string,
   file: File,
 ): Promise<void> {
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': file.type,
-    },
-    body: file,
-  })
+  let response: Response
+
+  try {
+    response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': file.type,
+      },
+      body: file,
+    })
+  } catch (error) {
+    throw new Error(normalizeUnknownNetworkError(error))
+  }
 
   if (!response.ok) {
     if (response.status === 403) {
       throw new Error('Upload link expired or denied. Please try again.')
     }
 
-    throw new Error(`Upload failed with status ${response.status}`)
+    throw new Error(
+      'Could not upload the file. Check your connection and try again.',
+    )
   }
 }

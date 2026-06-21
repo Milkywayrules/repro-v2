@@ -1,15 +1,6 @@
-import { isAllowedContentType, MAX_OBJECT_BYTES } from '@repro-v2/s3/constants'
 import { z } from 'zod'
 
-const allowedContentTypeSchema = z
-  .string()
-  .refine(isAllowedContentType, 'Unsupported content type')
-
-const uploadMeta = z.object({
-  filename: z.string().trim().min(1).max(255),
-  contentType: allowedContentTypeSchema,
-  sizeBytes: z.coerce.number().int().positive().max(MAX_OBJECT_BYTES),
-})
+import { uploadMetaBody } from './upload-meta'
 
 export const taskIdPathParams = z.object({
   id: z.uuid(),
@@ -20,9 +11,9 @@ export const taskAttachmentPathParams = z.object({
   attachmentId: z.uuid(),
 })
 
-export const attachmentPresignBody = uploadMeta
+export const attachmentPresignBody = uploadMetaBody
 
-export const attachmentCompleteBody = uploadMeta.extend({
+export const attachmentCompleteBody = uploadMetaBody.extend({
   key: z.string().trim().min(1).max(1024),
 })
 

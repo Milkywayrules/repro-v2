@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { env } from '@repro-v2/env/api'
+import {
+  MAX_OBJECT_BYTES,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+  UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
+} from '@repro-v2/s3/constants'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -134,6 +139,64 @@ describe('task attachment routes', () => {
       data: { uploadUrl: string; key: string }
     }
     expect(body.data.uploadUrl).toContain('https://')
+  })
+
+  test('POST /api/v1/tasks/:taskId/attachments/presign returns 422 for invalid content type', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request(
+        `http://localhost/api/v1/tasks/${taskId}/attachments/presign`,
+        {
+          method: 'POST',
+          headers: {
+            Origin: env.CORS_ORIGIN[0],
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: 'installer.exe',
+            contentType: 'application/x-msdownload',
+            sizeBytes: 1024,
+          }),
+        },
+      ),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as {
+      error: { code: string; message: string }
+    }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+    expect(body.error.message).toBe(UPLOAD_UNSUPPORTED_TYPE_MESSAGE)
+  })
+
+  test('POST /api/v1/tasks/:taskId/attachments/presign returns 422 for oversize file', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request(
+        `http://localhost/api/v1/tasks/${taskId}/attachments/presign`,
+        {
+          method: 'POST',
+          headers: {
+            Origin: env.CORS_ORIGIN[0],
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: 'large.pdf',
+            contentType: 'application/pdf',
+            sizeBytes: MAX_OBJECT_BYTES + 1,
+          }),
+        },
+      ),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as {
+      error: { code: string; message: string }
+    }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+    expect(body.error.message).toBe(UPLOAD_SIZE_LIMIT_MESSAGE)
   })
 
   test('POST /api/v1/tasks/:taskId/attachments/complete returns attachment', async () => {

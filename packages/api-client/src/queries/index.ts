@@ -2,9 +2,11 @@
 export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
 export {
   type AllowedContentType,
+  AVATAR_HELPER_TEXT,
   inspectUploadFile,
   isAllowedContentType,
   MAX_OBJECT_BYTES,
+  UPLOAD_HELPER_TEXT,
   type UploadMeta,
   validateUploadFile,
 } from '../upload-limits'

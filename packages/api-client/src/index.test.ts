@@ -76,6 +76,12 @@ describe('formatTreatyError', () => {
     expect(formatTreatyError('network failure', 'Fallback')).toBe('Fallback')
   })
 
+  test('normalizes network fetch failures', () => {
+    expect(
+      formatTreatyError(new TypeError('Failed to fetch'), 'Fallback'),
+    ).toBe('Could not reach the server. Check your connection and try again.')
+  })
+
   test('returns Error message when present', () => {
     expect(formatTreatyError(new Error('Upload failed'), 'Fallback')).toBe(
       'Upload failed',

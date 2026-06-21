@@ -7,10 +7,13 @@ export {
 export {
   ALLOWED_CONTENT_TYPES,
   type AllowedContentType,
+  AVATAR_UNSUPPORTED_TYPE_MESSAGE,
   extensionForContentType,
   isAllowedContentType,
   isWithinSizeLimit,
   MAX_OBJECT_BYTES,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+  UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
 } from './constants'
 export { resolveS3Endpoint } from './endpoint'
 export { type HeadObjectResult, headObject } from './head'

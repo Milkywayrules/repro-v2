@@ -13,6 +13,8 @@ import {
   presignGet,
   presignPut,
   presignPutExpiresAt,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+  UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
 } from '@repro-v2/s3'
 
 import { http } from '@/libs/contract'
@@ -30,13 +32,15 @@ function validationError(message: string) {
   })
 }
 
+const MAX_SIZE_MESSAGE = UPLOAD_SIZE_LIMIT_MESSAGE
+
 function assertAllowedUpload(contentType: string, sizeBytes: number) {
   if (!isAllowedContentType(contentType)) {
-    throw validationError('Unsupported content type')
+    throw validationError(UPLOAD_UNSUPPORTED_TYPE_MESSAGE)
   }
 
   if (!isWithinSizeLimit(sizeBytes)) {
-    throw validationError('File exceeds maximum size')
+    throw validationError(MAX_SIZE_MESSAGE)
   }
 }
 
@@ -116,21 +120,25 @@ async function completeUpload(
   const head = await headObject(s3Client, env.S3_BUCKET_PRIVATE, input.key)
 
   if (!head.exists) {
-    throw validationError('File was not uploaded successfully')
+    throw validationError('The file did not upload successfully. Try again.')
   }
 
   if (
     head.contentLength === undefined ||
     head.contentLength !== input.sizeBytes
   ) {
-    throw validationError('Uploaded object size does not match')
+    throw validationError(
+      'The uploaded file size does not match. Try uploading again.',
+    )
   }
 
   if (
     !head.contentType ||
     normalizeMimeType(head.contentType) !== input.contentType
   ) {
-    throw validationError('Uploaded object content type does not match')
+    throw validationError(
+      'The uploaded file type does not match. Try uploading again.',
+    )
   }
 
   const [row] = await db

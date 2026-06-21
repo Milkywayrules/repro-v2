@@ -1,6 +1,8 @@
 import type { ErrorEnvelope } from '@repro-v2/api-types'
 import { errorCodes, httpStatus } from '@repro-v2/api-types/constants'
 
+import { normalizeNetworkErrorMessage } from './network-error'
+
 function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return (
     typeof value === 'object' &&
@@ -60,7 +62,8 @@ export function formatTreatyError(error: unknown, fallback: string): string {
   }
 
   if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message.trim()
+    const message = error.message.trim()
+    return normalizeNetworkErrorMessage(message) ?? message
   }
 
   return fallback

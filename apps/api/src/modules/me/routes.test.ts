@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { env } from '@repro-v2/env/api'
+import {
+  AVATAR_UNSUPPORTED_TYPE_MESSAGE,
+  MAX_OBJECT_BYTES,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+} from '@repro-v2/s3/constants'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -98,6 +103,58 @@ describe('me avatar routes', () => {
     }
     expect(body.data.uploadUrl).toContain('https://')
     expect(body.data.key).toContain(`avatars/${mockUser.id}`)
+  })
+
+  test('POST /api/v1/me/avatar/presign returns 422 for invalid content type', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/me/avatar/presign', {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: 'installer.exe',
+          contentType: 'application/x-msdownload',
+          sizeBytes: 1024,
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as {
+      error: { code: string; message: string }
+    }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+    expect(body.error.message).toBe(AVATAR_UNSUPPORTED_TYPE_MESSAGE)
+  })
+
+  test('POST /api/v1/me/avatar/presign returns 422 for oversize file', async () => {
+    mockAuthedSession()
+
+    const response = await createApp().handle(
+      new Request('http://localhost/api/v1/me/avatar/presign', {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: 'large.png',
+          contentType: 'image/png',
+          sizeBytes: MAX_OBJECT_BYTES + 1,
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
+    const body = (await response.json()) as {
+      error: { code: string; message: string }
+    }
+    expect(body.error.code).toBe(http.codes.VALIDATION_ERROR)
+    expect(body.error.message).toBe(UPLOAD_SIZE_LIMIT_MESSAGE)
   })
 
   test('POST /api/v1/me/avatar/complete updates avatar', async () => {

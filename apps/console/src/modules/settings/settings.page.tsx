@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import {
+  AVATAR_HELPER_TEXT,
   completeAvatar,
   formatTreatyError,
   inspectUploadFile,
@@ -102,6 +103,13 @@ export function SettingsPage() {
     uploadMutation.mutate(file)
   }
 
+  function handleRetryUpload() {
+    if (validationError) {
+      setValidationError(null)
+    }
+    handleUpload()
+  }
+
   const error =
     validationError ??
     (uploadMutation.error
@@ -149,9 +157,9 @@ export function SettingsPage() {
         {error ? (
           <div className="space-y-2">
             <InlineErrorCallout>{error}</InlineErrorCallout>
-            {uploadMutation.error ? (
+            {uploadMutation.error || validationError ? (
               <Button
-                onClick={() => uploadMutation.reset()}
+                onClick={handleRetryUpload}
                 type="button"
                 variant="outline"
               >
@@ -170,6 +178,7 @@ export function SettingsPage() {
             ref={fileInputRef}
             type="file"
           />
+          <p className="text-muted-foreground text-sm">{AVATAR_HELPER_TEXT}</p>
         </div>
 
         <Button

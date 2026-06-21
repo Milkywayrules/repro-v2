@@ -2,13 +2,20 @@ import {
   type AllowedContentType,
   isAllowedContentType,
   MAX_OBJECT_BYTES,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+  UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
 } from '@repro-v2/s3/constants'
 
 // biome-ignore lint/performance/noBarrelFile: client-safe upload limits from s3/constants subpath
 export {
   type AllowedContentType,
+  AVATAR_HELPER_TEXT,
+  AVATAR_UNSUPPORTED_TYPE_MESSAGE,
   isAllowedContentType,
   MAX_OBJECT_BYTES,
+  UPLOAD_HELPER_TEXT,
+  UPLOAD_SIZE_LIMIT_MESSAGE,
+  UPLOAD_UNSUPPORTED_TYPE_MESSAGE,
 } from '@repro-v2/s3/constants'
 
 export interface UploadMeta {
@@ -25,11 +32,11 @@ export function inspectUploadFile(
   }
 
   if (file.size > MAX_OBJECT_BYTES) {
-    return { error: 'File exceeds maximum size' }
+    return { error: UPLOAD_SIZE_LIMIT_MESSAGE }
   }
 
   if (!isAllowedContentType(file.type)) {
-    return { error: 'Unsupported file type' }
+    return { error: UPLOAD_UNSUPPORTED_TYPE_MESSAGE }
   }
 
   return {
