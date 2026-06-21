@@ -2,7 +2,11 @@ import { db } from '@repro-v2/db'
 import { and, eq } from '@repro-v2/db/drizzle'
 import { member, workspace } from '@repro-v2/db/schema/auth'
 
-import { forbiddenError, notFoundError } from '@/libs/contract/errors'
+import {
+  conflictError,
+  forbiddenError,
+  notFoundError,
+} from '@/libs/contract/errors'
 
 async function assertMembership(userId: string, workspaceId: string) {
   const [row] = await db
@@ -36,15 +40,18 @@ async function resolveWorkspaceIdForSlug(
     throw notFoundError()
   }
 
-  const owned = rows.find(row => row.ownerUserId === userId)
+  if (rows.length > 1) {
+    throw conflictError(
+      'Ambiguous workspace slug: multiple memberships match this slug for the user',
+    )
+  }
+
   const first = rows[0]
   if (!first) {
     throw notFoundError()
   }
 
-  const preferred = rows.find(row => row.role === 'owner') ?? owned ?? first
-
-  return preferred.workspaceId
+  return first.workspaceId
 }
 
 export const workspaceService = {

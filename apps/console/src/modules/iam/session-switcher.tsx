@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 
 import {
   DropdownMenuItem,
@@ -15,9 +16,12 @@ import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 
 import { deviceSessionsQueryOptions } from './device-sessions'
+import { navigateAfterSessionSwitch } from './navigate-after-session-switch'
 import { useIamFeatures } from './use-iam-features'
 
 export function SessionSwitcher() {
+  const router = useRouter()
+  const pathname = usePathname()
   const queryClient = useQueryClient()
   const { features } = useIamFeatures()
   const { data: session, refetch: refetchSession } = iamClient.useSession()
@@ -52,6 +56,7 @@ export function SessionSwitcher() {
 
       await refetchSession()
       queryClient.clear()
+      await navigateAfterSessionSwitch(router, pathname)
     } catch {
       setSwitchError('Could not switch session')
     } finally {

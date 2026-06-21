@@ -10,7 +10,7 @@
     }
   },
   "scripts": {
-    "prepare": "tsc -b",
+    "prepare": "find dist-types -name '*.test.*' -delete 2>/dev/null || true; tsc -b",
     "check-types": "tsc -b",
     "test": "bun test src",
     "build:tsdown": "tsdown",

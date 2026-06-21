@@ -4,6 +4,7 @@ import {
   parseWorkspaceFromPathname,
   routes,
   workspaceRoutes,
+  workspaceSubPathFromPathname,
 } from '@/lib/routes'
 
 describe('routes', () => {
@@ -22,5 +23,13 @@ describe('routes', () => {
     expect(parseWorkspaceFromPathname('/dashboard')).toBeNull()
     expect(parseWorkspaceFromPathname('/login')).toBeNull()
     expect(parseWorkspaceFromPathname('/acme/dashboard')).toBe('acme')
+  })
+
+  test('workspaceSubPathFromPathname preserves flat app routes', () => {
+    expect(workspaceSubPathFromPathname('/tasks')).toBe('tasks')
+    expect(workspaceSubPathFromPathname('/settings')).toBe('settings')
+    expect(workspaceSubPathFromPathname('/dashboard')).toBe('dashboard')
+    expect(workspaceSubPathFromPathname('/acme/tasks')).toBe('tasks')
+    expect(workspaceSubPathFromPathname('/acme')).toBe('dashboard')
   })
 })

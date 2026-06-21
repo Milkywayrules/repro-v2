@@ -24,6 +24,14 @@ export function forbiddenError() {
   })
 }
 
+export function conflictError(message: string) {
+  return http.error({
+    code: http.codes.CONFLICT,
+    message,
+    status: http.status.CONFLICT,
+  })
+}
+
 export function internalServerError() {
   return http.error({
     code: http.codes.INTERNAL_SERVER_ERROR,

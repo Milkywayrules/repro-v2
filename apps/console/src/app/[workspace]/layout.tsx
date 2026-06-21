@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 
 import { ClientOnly } from '@/components/client-only'
 import { Loader } from '@/components/loader'
+import { useWorkspaceMembershipGuard } from '@/modules/iam/use-workspace-membership-guard'
 import {
   useTrackLastWorkspaceSlug,
   useWorkspaceSlugParam,
@@ -26,6 +27,11 @@ export default function WorkspaceLayout({
 function WorkspaceLayoutClient({ children }: { children: React.ReactNode }) {
   const workspaceSlug = useWorkspaceSlugParam()
   useTrackLastWorkspaceSlug(workspaceSlug)
+  const allowed = useWorkspaceMembershipGuard(workspaceSlug)
+
+  if (!allowed) {
+    return <Loader />
+  }
 
   return children
 }

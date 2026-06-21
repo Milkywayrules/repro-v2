@@ -51,3 +51,41 @@ describe('workspaceService.assertMembership', () => {
     })
   })
 })
+
+describe('workspaceService.resolveWorkspaceIdForSlug', () => {
+  afterEach(() => {
+    spyOn(db, 'select').mockRestore()
+  })
+
+  test('throws 409 when multiple memberships match the same slug', async () => {
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            innerJoin: () => ({
+              where: () =>
+                Promise.resolve([
+                  {
+                    workspaceId: 'ws-1',
+                    role: 'owner',
+                    ownerUserId: userId,
+                  },
+                  {
+                    workspaceId: 'ws-2',
+                    role: 'member',
+                    ownerUserId: 'other-user',
+                  },
+                ]),
+            }),
+          }),
+        }) as never,
+    )
+
+    await expect(
+      workspaceService.resolveWorkspaceIdForSlug(userId, 'duplicate-slug'),
+    ).rejects.toMatchObject({
+      code: http.codes.CONFLICT,
+      status: http.status.CONFLICT,
+    })
+  })
+})

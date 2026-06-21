@@ -7,6 +7,8 @@ export const routes = {
   home: '/',
 } as const
 
+const FLAT_APP_SUB_PATHS = new Set(['dashboard', 'tasks', 'settings'])
+
 export function workspaceRoutes(workspaceSlug: string) {
   return {
     dashboard: `/${workspaceSlug}/dashboard`,
@@ -27,6 +29,15 @@ export function parseWorkspaceFromPathname(pathname: string): string | null {
 
 export function workspaceSubPathFromPathname(pathname: string): string {
   const segments = pathname.split('/').filter(Boolean)
+  if (segments.length === 0) {
+    return 'dashboard'
+  }
+
+  const first = segments[0]
+  if (segments.length === 1 && first && FLAT_APP_SUB_PATHS.has(first)) {
+    return first
+  }
+
   if (segments.length <= 1) {
     return 'dashboard'
   }

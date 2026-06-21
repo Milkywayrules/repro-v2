@@ -264,11 +264,31 @@
         "operationId": "getApiV1PlatformIam-features"
       }
     },
-    "/api/v1/task-lists/": {
+    "/api/v1/workspaces/{workspaceSlug}/task-lists/": {
       "get": {
-        "operationId": "getApiV1Task-lists"
+        "parameters": [
+          {
+            "name": "workspaceSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTask-lists"
       },
       "post": {
+        "parameters": [
+          {
+            "name": "workspaceSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -325,10 +345,10 @@
             }
           }
         },
-        "operationId": "postApiV1Task-lists"
+        "operationId": "postApiV1WorkspacesByWorkspaceSlugTask-lists"
       }
     },
-    "/api/v1/task-lists/{id}": {
+    "/api/v1/workspaces/{workspaceSlug}/task-lists/{id}": {
       "get": {
         "parameters": [
           {
@@ -342,7 +362,7 @@
             }
           }
         ],
-        "operationId": "getApiV1Task-listsById"
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTask-listsById"
       },
       "patch": {
         "parameters": [
@@ -404,7 +424,7 @@
             }
           }
         },
-        "operationId": "patchApiV1Task-listsById"
+        "operationId": "patchApiV1WorkspacesByWorkspaceSlugTask-listsById"
       },
       "delete": {
         "parameters": [
@@ -419,10 +439,10 @@
             }
           }
         ],
-        "operationId": "deleteApiV1Task-listsById"
+        "operationId": "deleteApiV1WorkspacesByWorkspaceSlugTask-listsById"
       }
     },
-    "/api/v1/tasks/{id}/attachments": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}/attachments": {
       "get": {
         "parameters": [
           {
@@ -436,10 +456,10 @@
             }
           }
         ],
-        "operationId": "getApiV1TasksByIdAttachments"
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTasksByIdAttachments"
       }
     },
-    "/api/v1/tasks/{id}/attachments/presign": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}/attachments/presign": {
       "post": {
         "parameters": [
           {
@@ -539,10 +559,10 @@
             }
           }
         },
-        "operationId": "postApiV1TasksByIdAttachmentsPresign"
+        "operationId": "postApiV1WorkspacesByWorkspaceSlugTasksByIdAttachmentsPresign"
       }
     },
-    "/api/v1/tasks/{id}/attachments/complete": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}/attachments/complete": {
       "post": {
         "parameters": [
           {
@@ -660,10 +680,10 @@
             }
           }
         },
-        "operationId": "postApiV1TasksByIdAttachmentsComplete"
+        "operationId": "postApiV1WorkspacesByWorkspaceSlugTasksByIdAttachmentsComplete"
       }
     },
-    "/api/v1/tasks/{id}/attachments/{attachmentId}/download": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}/attachments/{attachmentId}/download": {
       "get": {
         "parameters": [
           {
@@ -687,10 +707,10 @@
             }
           }
         ],
-        "operationId": "getApiV1TasksByIdAttachmentsByAttachmentIdDownload"
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTasksByIdAttachmentsByAttachmentIdDownload"
       }
     },
-    "/api/v1/tasks/{id}/attachments/{attachmentId}": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}/attachments/{attachmentId}": {
       "delete": {
         "parameters": [
           {
@@ -714,12 +734,20 @@
             }
           }
         ],
-        "operationId": "deleteApiV1TasksByIdAttachmentsByAttachmentId"
+        "operationId": "deleteApiV1WorkspacesByWorkspaceSlugTasksByIdAttachmentsByAttachmentId"
       }
     },
-    "/api/v1/tasks/": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/": {
       "get": {
         "parameters": [
+          {
+            "name": "workspaceSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "listId",
             "in": "query",
@@ -731,9 +759,19 @@
             }
           }
         ],
-        "operationId": "getApiV1Tasks"
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTasks"
       },
       "post": {
+        "parameters": [
+          {
+            "name": "workspaceSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -808,10 +846,10 @@
             }
           }
         },
-        "operationId": "postApiV1Tasks"
+        "operationId": "postApiV1WorkspacesByWorkspaceSlugTasks"
       }
     },
-    "/api/v1/tasks/{id}": {
+    "/api/v1/workspaces/{workspaceSlug}/tasks/{id}": {
       "get": {
         "parameters": [
           {
@@ -825,7 +863,7 @@
             }
           }
         ],
-        "operationId": "getApiV1TasksById"
+        "operationId": "getApiV1WorkspacesByWorkspaceSlugTasksById"
       },
       "patch": {
         "parameters": [
@@ -896,7 +934,7 @@
             }
           }
         },
-        "operationId": "patchApiV1TasksById"
+        "operationId": "patchApiV1WorkspacesByWorkspaceSlugTasksById"
       },
       "delete": {
         "parameters": [
@@ -911,7 +949,7 @@
             }
           }
         ],
-        "operationId": "deleteApiV1TasksById"
+        "operationId": "deleteApiV1WorkspacesByWorkspaceSlugTasksById"
       }
     },
     "/": {

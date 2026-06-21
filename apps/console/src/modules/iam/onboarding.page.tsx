@@ -33,6 +33,16 @@ export function OnboardingPage() {
   const { features, isPending: featuresPending } = useIamFeatures()
 
   useEffect(() => {
+    if (featuresPending) {
+      return
+    }
+
+    if (!features?.workspace) {
+      router.replace('/dashboard' as Route)
+    }
+  }, [features?.workspace, featuresPending, router])
+
+  useEffect(() => {
     if (sessionPending) {
       return
     }
@@ -99,13 +109,11 @@ export function OnboardingPage() {
     },
   })
 
-  if (
-    sessionPending ||
-    featuresPending ||
-    orgsPending ||
-    !session?.user ||
-    !features?.workspace
-  ) {
+  if (sessionPending || featuresPending || orgsPending || !session?.user) {
+    return <Loader />
+  }
+
+  if (!features?.workspace) {
     return <Loader />
   }
 

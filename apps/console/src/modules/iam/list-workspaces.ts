@@ -32,6 +32,23 @@ export async function listWorkspaces(): Promise<ListWorkspacesResult> {
   return { ok: true, workspaces }
 }
 
+/** Picks last-used cookie slug when still a member, otherwise the first workspace. */
+export function pickSlugFromWorkspaces(
+  workspaces: WorkspaceSummary[],
+): string | null {
+  if (workspaces.length === 0) {
+    return null
+  }
+
+  const lastSlug = readLastWorkspaceSlug()
+  const lastMatch = workspaces.find(ws => ws.slug === lastSlug)
+  if (lastMatch) {
+    return lastMatch.slug
+  }
+
+  return workspaces[0]?.slug ?? null
+}
+
 export async function resolveWorkspaceSlugById(
   workspaceId: string,
 ): Promise<string | null> {
@@ -49,11 +66,5 @@ export async function pickDefaultWorkspaceSlug(): Promise<string | null> {
     return null
   }
 
-  const lastSlug = readLastWorkspaceSlug()
-  const lastMatch = listed.workspaces.find(ws => ws.slug === lastSlug)
-  if (lastMatch) {
-    return lastMatch.slug
-  }
-
-  return listed.workspaces[0]?.slug ?? null
+  return pickSlugFromWorkspaces(listed.workspaces)
 }

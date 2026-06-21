@@ -14,6 +14,7 @@ import { Loader } from '@/components/loader'
 import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
+import { searchParams } from '@/lib/search-params'
 
 import { EmailSignInForm, EmailSignUpForm } from './email-auth-forms'
 import { GitHubOAuthButton } from './github-oauth-button'
@@ -23,7 +24,7 @@ import type { PublicIamFeatures } from './types'
 import { useIamFeatures } from './use-iam-features'
 import {
   type PostAuthRedirectResult,
-  usePostAuthRedirect,
+  runPostAuthRedirect,
 } from './use-post-auth-redirect'
 
 function hasAnyAuthMethod(features: PublicIamFeatures | undefined): boolean {
@@ -188,7 +189,7 @@ function LoginAuthForms({
 export function LoginPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const redirectAfterAuth = usePostAuthRedirect()
+  const [nextPath] = useQueryState(searchParams.next, parseAsString)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const {
     features,
@@ -267,8 +268,8 @@ export function LoginPage() {
     let cancelled = false
     setRedirectState({ status: 'pending' })
 
-    async function runPostAuthRedirect() {
-      const result = await redirectAfterAuth(features)
+    async function runRedirect() {
+      const result = await runPostAuthRedirect(router, nextPath, features)
 
       if (cancelled) {
         return
@@ -277,7 +278,7 @@ export function LoginPage() {
       finishRedirect(setRedirectState, result)
     }
 
-    runPostAuthRedirect().catch(() => {
+    runRedirect().catch(() => {
       if (!cancelled) {
         failRedirect(setRedirectState)
       }
@@ -289,7 +290,8 @@ export function LoginPage() {
   }, [
     features,
     featuresPending,
-    redirectAfterAuth,
+    nextPath,
+    router,
     session?.user,
     sessionPending,
     addingAccount,
@@ -308,7 +310,7 @@ export function LoginPage() {
 
   function handleRetry() {
     setRedirectState({ status: 'pending' })
-    redirectAfterAuth(features)
+    runPostAuthRedirect(router, nextPath, features)
       .then(result => finishRedirect(setRedirectState, result))
       .catch(() => failRedirect(setRedirectState))
   }
