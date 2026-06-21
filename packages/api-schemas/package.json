@@ -11,6 +11,12 @@
     "./modules/tasks": {
       "default": "./src/modules/tasks.ts"
     },
+    "./modules/me": {
+      "default": "./src/modules/me.ts"
+    },
+    "./modules/attachments": {
+      "default": "./src/modules/attachments.ts"
+    },
     "./shared/envelope": {
       "default": "./src/shared/envelope.ts"
     },
@@ -22,6 +28,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@repro-v2/s3": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {

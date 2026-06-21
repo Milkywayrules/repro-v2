@@ -1,6 +1,24 @@
 // biome-ignore lint/performance/noBarrelFile: intentional queries subpath export surface
 export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
-export { taskKeys, taskListKeys } from './keys'
+export {
+  completeTaskAttachment,
+  deleteTaskAttachment,
+  downloadTaskAttachment,
+  presignTaskAttachment,
+  taskAttachmentsQueryOptions,
+  uploadFileToPresignedUrl,
+} from './attachments'
+export {
+  attachmentKeys,
+  meKeys,
+  taskKeys,
+  taskListKeys,
+} from './keys'
+export {
+  completeAvatar,
+  meProfileQueryOptions,
+  presignAvatar,
+} from './me'
 export {
   healthQueryOptions,
   iamFeaturesQueryOptions,

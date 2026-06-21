@@ -28,6 +28,7 @@
     "@repro-v2/iam": "workspace:*",
     "@repro-v2/db": "workspace:*",
     "@repro-v2/env": "workspace:*",
+    "@repro-v2/s3": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "elysia": "^1.4.28",

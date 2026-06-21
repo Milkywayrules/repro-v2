@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { booleanEnv } from './boolean-env'
 import { skipEnvValidation } from './skip-env-validation'
 
+const TRAILING_SLASH = /\/$/
+
 function parseOriginList(value: string): string[] {
   return value
     .split(',')
@@ -157,6 +159,22 @@ export const env = createEnv({
       .positive()
       .default(60_000),
     RATE_LIMIT_DEV_MULTIPLIER: z.coerce.number().int().positive().default(10),
+
+    // s3 / r2 object storage
+    S3_ACCOUNT_ID: z.string().min(1),
+    S3_ACCESS_KEY_ID: z.string().min(1),
+    S3_SECRET_ACCESS_KEY: z.string().min(1),
+    S3_ENDPOINT: z
+      .string()
+      .url()
+      .optional()
+      .transform(value => value?.replace(TRAILING_SLASH, '')),
+    S3_BUCKET_PUBLIC: z.string().min(1),
+    S3_BUCKET_PRIVATE: z.string().min(1),
+    S3_PUBLIC_BASE_URL: z
+      .string()
+      .url()
+      .transform(value => value.replace(TRAILING_SLASH, '')),
   },
   runtimeEnv: process.env,
   skipValidation: skipEnvValidation,
@@ -192,6 +210,13 @@ export const iamFeatures = {
   multiSession: env.IAM_MULTI_SESSION_ENABLED,
   captcha: env.IAM_CAPTCHA_ENABLED,
 } as const
+
+/** Resolved S3 endpoint (explicit or derived from account id). */
+export function resolveS3EndpointFromEnv(
+  accountId = env.S3_ACCOUNT_ID,
+): string {
+  return env.S3_ENDPOINT ?? `https://${accountId}.r2.cloudflarestorage.com`
+}
 
 /** Whether Turnstile verification is enabled at the platform level. */
 export const turnstileEnabled = env.TURNSTILE_ENABLED
