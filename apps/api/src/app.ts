@@ -57,7 +57,12 @@ function createOpenApiPlugin() {
 const corsPlugin = cors({
   origin: corsOrigins,
   methods: ['GET', 'POST', 'OPTIONS', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'x-captcha-response',
+  ],
   exposeHeaders: ['X-Request-Id'],
   credentials: true,
 })

@@ -27,6 +27,30 @@ describe('full app wiring', () => {
     )
   })
 
+  test('OPTIONS /api/auth/sign-in/email allows x-captcha-response preflight', async () => {
+    const { createApp } = await import('./app')
+    const app = createApp()
+
+    const response = await app.handle(
+      new Request('http://localhost/api/auth/sign-in/email', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type,x-captcha-response',
+        },
+      }),
+    )
+
+    expect(response.status).toBe(204)
+    expect(response.headers.get('access-control-allow-origin')).toBe(
+      env.CORS_ORIGIN[0],
+    )
+    expect(response.headers.get('access-control-allow-headers')).toContain(
+      'x-captcha-response',
+    )
+  })
+
   test('GET / returns success envelope with X-Request-Id', async () => {
     const { createApp } = await import('./app')
     const app = createApp()
