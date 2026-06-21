@@ -80,6 +80,7 @@ function LoginAuthForms({
   captchaRequired,
   captchaToken,
   captchaMisconfigured,
+  captchaResetKey,
   clearCaptcha,
   features,
   onCaptchaToken,
@@ -91,6 +92,7 @@ function LoginAuthForms({
   captchaRequired: boolean
   captchaToken: string | null
   captchaMisconfigured: boolean
+  captchaResetKey: number
   clearCaptcha: () => void
   features: PublicIamFeatures
   onCaptchaToken: (token: string) => void
@@ -118,7 +120,11 @@ function LoginAuthForms({
       ) : null}
 
       {captchaRequired ? (
-        <TurnstileWidget onExpire={clearCaptcha} onToken={onCaptchaToken} />
+        <TurnstileWidget
+          key={captchaResetKey}
+          onExpire={clearCaptcha}
+          onToken={onCaptchaToken}
+        />
       ) : null}
 
       <GitHubOAuthButton
@@ -193,6 +199,7 @@ export function LoginPage() {
   const { features, isError, isPending: featuresPending } = useIamFeatures()
   const [showSignIn, setShowSignIn] = useState(true)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const [redirectState, setRedirectState] = useState<RedirectState | null>(null)
 
   const captchaEnabled = Boolean(features?.captcha)
@@ -203,6 +210,7 @@ export function LoginPage() {
 
   function clearCaptcha() {
     setCaptchaToken(null)
+    setCaptchaResetKey(key => key + 1)
   }
 
   function showSignInForm() {
@@ -317,6 +325,7 @@ export function LoginPage() {
       authBlocked={authBlocked}
       captchaMisconfigured={captchaMisconfigured}
       captchaRequired={captchaRequired}
+      captchaResetKey={captchaResetKey}
       captchaToken={captchaToken}
       clearCaptcha={clearCaptcha}
       features={features}

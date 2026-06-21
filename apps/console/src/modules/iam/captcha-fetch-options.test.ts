@@ -9,10 +9,8 @@ describe('captchaFetchOptions', () => {
 
   test('returns x-captcha-response header when token is set', () => {
     expect(captchaFetchOptions('turnstile-token')).toEqual({
-      fetchOptions: {
-        headers: {
-          'x-captcha-response': 'turnstile-token',
-        },
+      headers: {
+        'x-captcha-response': 'turnstile-token',
       },
     })
   })
