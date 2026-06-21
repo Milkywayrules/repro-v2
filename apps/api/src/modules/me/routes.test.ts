@@ -115,6 +115,7 @@ describe('me avatar routes', () => {
         },
         body: JSON.stringify({
           key: `avatars/${mockUser.id}/file.png`,
+          sizeBytes: 1024,
         }),
       }),
     )

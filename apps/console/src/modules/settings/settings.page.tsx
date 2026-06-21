@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import {
   completeAvatar,
   formatTreatyError,
+  isAllowedContentType,
+  MAX_OBJECT_BYTES,
   presignAvatar,
   uploadFileToPresignedUrl,
 } from '@repro-v2/api-client/queries'
-import { isAllowedContentType } from '@repro-v2/s3'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
@@ -22,12 +23,29 @@ import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
 
+function validateAvatarFile(file: File): string | null {
+  if (file.size === 0) {
+    return 'File is empty'
+  }
+
+  if (file.size > MAX_OBJECT_BYTES) {
+    return 'File exceeds maximum size'
+  }
+
+  if (!isAllowedContentType(file.type)) {
+    return 'Unsupported file type'
+  }
+
+  return null
+}
+
 export function SettingsPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [hasSelectedFile, setHasSelectedFile] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   useEffect(() => {
     if (sessionPending) {
@@ -44,6 +62,11 @@ export function SettingsPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
+      const fileError = validateAvatarFile(file)
+      if (fileError) {
+        throw new Error(fileError)
+      }
+
       if (!isAllowedContentType(file.type)) {
         throw new Error('Unsupported file type')
       }
@@ -55,12 +78,16 @@ export function SettingsPage() {
       })
 
       await uploadFileToPresignedUrl(presign.data.uploadUrl, file)
-      return await completeAvatar(apiClient, { key: presign.data.key })
+      return await completeAvatar(apiClient, {
+        key: presign.data.key,
+        sizeBytes: file.size,
+      })
     },
     onSuccess: async () => {
       await iamClient.getSession({ query: { disableCookieCache: true } })
       setPreviewUrl(null)
       setHasSelectedFile(false)
+      setValidationError(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -69,28 +96,42 @@ export function SettingsPage() {
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
+    uploadMutation.reset()
+
     if (!file) {
       setPreviewUrl(null)
       setHasSelectedFile(false)
+      setValidationError(null)
       return
     }
 
     setHasSelectedFile(true)
     setPreviewUrl(URL.createObjectURL(file))
+    setValidationError(validateAvatarFile(file))
   }
 
   function handleUpload() {
     const file = fileInputRef.current?.files?.[0]
     if (!file) {
+      setValidationError('Choose a file first')
       return
     }
 
+    const fileError = validateAvatarFile(file)
+    if (fileError) {
+      setValidationError(fileError)
+      return
+    }
+
+    setValidationError(null)
     uploadMutation.mutate(file)
   }
 
-  const error = uploadMutation.error
-    ? formatTreatyError(uploadMutation.error, 'Avatar upload failed')
-    : null
+  const error =
+    validationError ??
+    (uploadMutation.error
+      ? formatTreatyError(uploadMutation.error, 'Avatar upload failed')
+      : null)
 
   if (sessionPending || !session?.user || onboardingChecking) {
     return <p className="p-4">Loading…</p>
@@ -130,7 +171,20 @@ export function SettingsPage() {
           <p className="text-muted-foreground text-sm">No avatar set</p>
         )}
 
-        {error ? <InlineErrorCallout>{error}</InlineErrorCallout> : null}
+        {error ? (
+          <div className="space-y-2">
+            <InlineErrorCallout>{error}</InlineErrorCallout>
+            {uploadMutation.error ? (
+              <Button
+                onClick={() => uploadMutation.reset()}
+                type="button"
+                variant="outline"
+              >
+                Try again
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="avatar-file">Choose image</Label>
@@ -144,7 +198,11 @@ export function SettingsPage() {
         </div>
 
         <Button
-          disabled={!hasSelectedFile || uploadMutation.isPending}
+          disabled={
+            !hasSelectedFile ||
+            uploadMutation.isPending ||
+            validationError !== null
+          }
           onClick={handleUpload}
           type="button"
         >

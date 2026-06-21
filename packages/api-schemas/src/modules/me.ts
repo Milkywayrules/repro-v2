@@ -1,4 +1,4 @@
-import { isAllowedContentType, MAX_OBJECT_BYTES } from '@repro-v2/s3'
+import { isAllowedContentType, MAX_OBJECT_BYTES } from '@repro-v2/s3/constants'
 import { z } from 'zod'
 
 const allowedContentTypeSchema = z
@@ -15,6 +15,7 @@ export const avatarPresignBody = uploadMeta
 
 export const avatarCompleteBody = z.object({
   key: z.string().trim().min(1).max(1024),
+  sizeBytes: z.coerce.number().int().positive().max(MAX_OBJECT_BYTES),
 })
 
 export const avatarPresignResponse = z.object({

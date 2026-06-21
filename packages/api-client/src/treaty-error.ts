@@ -58,5 +58,9 @@ export function formatTreatyError(error: unknown, fallback: string): string {
     return messageFromEnvelope(error) ?? fallback
   }
 
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message.trim()
+  }
+
   return fallback
 }

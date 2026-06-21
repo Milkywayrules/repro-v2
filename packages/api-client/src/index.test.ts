@@ -75,6 +75,12 @@ describe('formatTreatyError', () => {
     expect(formatTreatyError(null, 'Fallback')).toBe('Fallback')
     expect(formatTreatyError('network failure', 'Fallback')).toBe('Fallback')
   })
+
+  test('returns Error message when present', () => {
+    expect(formatTreatyError(new Error('Upload failed'), 'Fallback')).toBe(
+      'Upload failed',
+    )
+  })
 })
 
 describe('isTreatyUnauthorized', () => {

@@ -119,7 +119,7 @@ async function completeUpload(
   const head = await headObject(s3Client, env.S3_BUCKET_PRIVATE, input.key)
 
   if (!head.exists) {
-    throw notFoundError()
+    throw validationError('File was not uploaded successfully')
   }
 
   if (

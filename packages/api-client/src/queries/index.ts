@@ -1,6 +1,12 @@
 // biome-ignore lint/performance/noBarrelFile: intentional queries subpath export surface
 export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
 export {
+  type AllowedContentType,
+  isAllowedContentType,
+  MAX_OBJECT_BYTES,
+} from '../upload-limits'
+export type { UploadMeta } from './attachments'
+export {
   completeTaskAttachment,
   deleteTaskAttachment,
   downloadTaskAttachment,

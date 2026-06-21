@@ -8,11 +8,12 @@ import {
   deleteTaskAttachment,
   downloadTaskAttachment,
   formatTreatyError,
+  isAllowedContentType,
+  MAX_OBJECT_BYTES,
   presignTaskAttachment,
   taskAttachmentsQueryOptions,
   uploadFileToPresignedUrl,
 } from '@repro-v2/api-client/queries'
-import { isAllowedContentType } from '@repro-v2/s3'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -24,10 +25,40 @@ interface TaskAttachmentsPanelProps {
   taskId: string
 }
 
+function triggerDownload(url: string, filename?: string) {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.rel = 'noopener noreferrer'
+  if (filename) {
+    anchor.download = filename
+  }
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+}
+
+function openDownloadFallback(url: string) {
+  const popup = window.open(url, '_blank', 'noopener,noreferrer')
+  if (popup === null) {
+    throw new Error(
+      'Download was blocked. Allow pop-ups for this site and try again.',
+    )
+  }
+}
+
+function downloadPresignedFile(url: string, filename?: string) {
+  try {
+    triggerDownload(url, filename)
+  } catch {
+    openDownloadFallback(url)
+  }
+}
+
 export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const queryClient = useQueryClient()
   const attachmentInputRef = useRef<HTMLInputElement>(null)
   const [hasSelectedFile, setHasSelectedFile] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const attachmentsQuery = useQuery({
     ...taskAttachmentsQueryOptions(apiClient, taskId),
@@ -43,6 +74,14 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
 
   const uploadAttachmentMutation = useMutation({
     mutationFn: async (file: File) => {
+      if (file.size === 0) {
+        throw new Error('File is empty')
+      }
+
+      if (file.size > MAX_OBJECT_BYTES) {
+        throw new Error('File exceeds maximum size')
+      }
+
       if (!isAllowedContentType(file.type)) {
         throw new Error('Unsupported file type')
       }
@@ -63,6 +102,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
     onSuccess: async () => {
       await refreshAttachments()
       setHasSelectedFile(false)
+      setValidationError(null)
       if (attachmentInputRef.current) {
         attachmentInputRef.current.value = ''
       }
@@ -76,21 +116,31 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   })
 
   const downloadAttachmentMutation = useMutation({
-    mutationFn: (attachmentId: string) =>
-      downloadTaskAttachment(apiClient, taskId, attachmentId),
+    mutationFn: (attachment: { id: string; filename: string }) =>
+      downloadTaskAttachment(apiClient, taskId, attachment.id).then(data => ({
+        ...data,
+        filename: attachment.filename,
+      })),
     onSuccess: data => {
-      window.open(data.data.downloadUrl, '_blank', 'noopener,noreferrer')
+      downloadPresignedFile(data.data.downloadUrl, data.filename)
     },
   })
+
+  const isMutationPending =
+    uploadAttachmentMutation.isPending ||
+    deleteAttachmentMutation.isPending ||
+    downloadAttachmentMutation.isPending
 
   const activeError =
     uploadAttachmentMutation.error ??
     deleteAttachmentMutation.error ??
     downloadAttachmentMutation.error
 
-  const error = activeError
-    ? formatTreatyError(activeError, 'Something went wrong')
-    : null
+  const error =
+    validationError ??
+    (activeError
+      ? formatTreatyError(activeError, 'Something went wrong')
+      : null)
 
   const attachmentsError = attachmentsQuery.isError
     ? formatTreatyError(attachmentsQuery.error, 'Failed to load attachments')
@@ -99,15 +149,58 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   function handleAttachmentFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
   ) {
-    setHasSelectedFile(Boolean(event.target.files?.[0]))
+    uploadAttachmentMutation.reset()
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      setHasSelectedFile(false)
+      setValidationError(null)
+      return
+    }
+
+    setHasSelectedFile(true)
+
+    if (file.size === 0) {
+      setValidationError('File is empty')
+      return
+    }
+
+    if (file.size > MAX_OBJECT_BYTES) {
+      setValidationError('File exceeds maximum size')
+      return
+    }
+
+    if (!isAllowedContentType(file.type)) {
+      setValidationError('Unsupported file type')
+      return
+    }
+
+    setValidationError(null)
   }
 
   function handleUploadAttachment() {
     const file = attachmentInputRef.current?.files?.[0]
     if (!file) {
+      setValidationError('Choose a file first')
       return
     }
 
+    if (file.size === 0) {
+      setValidationError('File is empty')
+      return
+    }
+
+    if (file.size > MAX_OBJECT_BYTES) {
+      setValidationError('File exceeds maximum size')
+      return
+    }
+
+    if (!isAllowedContentType(file.type)) {
+      setValidationError('Unsupported file type')
+      return
+    }
+
+    setValidationError(null)
     uploadAttachmentMutation.mutate(file)
   }
 
@@ -124,15 +217,34 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
         <p className="text-muted-foreground text-sm">Loading attachments…</p>
       ) : null}
       {attachmentsError ? (
-        <InlineErrorCallout>{attachmentsError}</InlineErrorCallout>
+        <div className="space-y-2">
+          <InlineErrorCallout>{attachmentsError}</InlineErrorCallout>
+          <Button
+            onClick={() => attachmentsQuery.refetch()}
+            type="button"
+            variant="outline"
+          >
+            Try again
+          </Button>
+        </div>
       ) : null}
       {error ? (
         <div className="space-y-2">
           <InlineErrorCallout>{error}</InlineErrorCallout>
-          <Button onClick={resetMutationErrors} type="button" variant="outline">
-            Try again
-          </Button>
+          {activeError ? (
+            <Button
+              onClick={resetMutationErrors}
+              type="button"
+              variant="outline"
+            >
+              Try again
+            </Button>
+          ) : null}
         </div>
+      ) : null}
+      {!(attachmentsQuery.isPending || attachmentsQuery.isError) &&
+      attachments.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No attachments yet</p>
       ) : null}
       <ul className="flex flex-col gap-2">
         {attachments.map(attachment => (
@@ -143,13 +255,20 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
             <span className="text-sm">{attachment.filename}</span>
             <div className="flex gap-2">
               <Button
-                onClick={() => downloadAttachmentMutation.mutate(attachment.id)}
+                disabled={isMutationPending}
+                onClick={() =>
+                  downloadAttachmentMutation.mutate({
+                    id: attachment.id,
+                    filename: attachment.filename,
+                  })
+                }
                 size="sm"
                 variant="outline"
               >
                 Download
               </Button>
               <Button
+                disabled={isMutationPending}
                 onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
                 size="sm"
                 variant="destructive"
@@ -168,7 +287,11 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
           type="file"
         />
         <Button
-          disabled={!hasSelectedFile || uploadAttachmentMutation.isPending}
+          disabled={
+            !hasSelectedFile ||
+            uploadAttachmentMutation.isPending ||
+            validationError !== null
+          }
           onClick={handleUploadAttachment}
           type="button"
         >

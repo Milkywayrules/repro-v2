@@ -22,7 +22,11 @@ export const meRoutes = new Elysia({ name: 'me-routes' })
   .post(
     '/avatar/complete',
     async ({ user, body }) => {
-      const data = await meService.completeAvatar(user.id, body.key)
+      const data = await meService.completeAvatar(
+        user.id,
+        body.key,
+        body.sizeBytes,
+      )
       return http.okV1(data)
     },
     { body: avatarCompleteBody },

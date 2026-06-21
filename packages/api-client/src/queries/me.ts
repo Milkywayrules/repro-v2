@@ -9,7 +9,10 @@ export async function presignAvatar(client: ApiClient, body: UploadMeta) {
   return unwrapTreatyResponse(response)
 }
 
-export async function completeAvatar(client: ApiClient, body: { key: string }) {
+export async function completeAvatar(
+  client: ApiClient,
+  body: { key: string; sizeBytes: number },
+) {
   const response = await client.api.v1.me.avatar.complete.post(body)
   return unwrapTreatyResponse(response)
 }

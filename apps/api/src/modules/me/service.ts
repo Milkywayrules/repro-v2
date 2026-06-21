@@ -16,7 +16,7 @@ import {
 } from '@repro-v2/s3'
 
 import { http } from '@/libs/contract'
-import { internalServerError, notFoundError } from '@/libs/contract/errors'
+import { internalServerError } from '@/libs/contract/errors'
 
 const s3Client = createS3ClientFromEnv()
 
@@ -53,22 +53,23 @@ async function presignAvatar(
   return { uploadUrl, key, publicUrl, expiresAt: presignPutExpiresAt() }
 }
 
-async function completeAvatar(userId: string, key: string) {
+async function completeAvatar(userId: string, key: string, sizeBytes: number) {
   if (!isAvatarKeyForUser(key, userId)) {
     throw validationError('Invalid storage key')
+  }
+
+  if (!isWithinSizeLimit(sizeBytes)) {
+    throw validationError('File exceeds maximum size')
   }
 
   const head = await headObject(s3Client, env.S3_BUCKET_PUBLIC, key)
 
   if (!head.exists) {
-    throw notFoundError()
+    throw validationError('File was not uploaded successfully')
   }
 
-  if (
-    head.contentLength === undefined ||
-    !isWithinSizeLimit(head.contentLength)
-  ) {
-    throw validationError('Uploaded object exceeds maximum size')
+  if (head.contentLength === undefined || head.contentLength !== sizeBytes) {
+    throw validationError('Uploaded object size does not match')
   }
 
   if (

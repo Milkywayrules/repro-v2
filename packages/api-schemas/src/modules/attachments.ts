@@ -1,4 +1,4 @@
-import { isAllowedContentType, MAX_OBJECT_BYTES } from '@repro-v2/s3'
+import { isAllowedContentType, MAX_OBJECT_BYTES } from '@repro-v2/s3/constants'
 import { z } from 'zod'
 
 const allowedContentTypeSchema = z

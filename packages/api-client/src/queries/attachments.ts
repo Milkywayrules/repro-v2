@@ -1,7 +1,7 @@
-import type { AllowedContentType } from '@repro-v2/s3'
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
+import type { AllowedContentType } from '../upload-limits'
 import { attachmentKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
 
@@ -83,6 +83,10 @@ export async function uploadFileToPresignedUrl(
   })
 
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('Upload link expired or denied. Please try again.')
+    }
+
     throw new Error(`Upload failed with status ${response.status}`)
   }
 }
