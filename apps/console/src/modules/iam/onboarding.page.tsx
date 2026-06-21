@@ -114,12 +114,7 @@ export function OnboardingPage() {
       }
 
       toast.success('Workspace created')
-      if (features?.workspace) {
-        router.push(workspaceRoutes(publicSlug).dashboard as Route)
-        return
-      }
-
-      router.push((await resolvePostAuthPath(nextPath, features)) as Route)
+      router.push(workspaceRoutes(publicSlug).dashboard as Route)
     },
     validators: {
       onSubmit: z.object({
@@ -128,11 +123,13 @@ export function OnboardingPage() {
     },
   })
 
-  if (sessionPending || featuresPending || orgsPending || !session?.user) {
-    return <Loader />
-  }
-
-  if (!features?.workspace) {
+  if (
+    sessionPending ||
+    featuresPending ||
+    orgsPending ||
+    !session?.user ||
+    !features?.workspace
+  ) {
     return <Loader />
   }
 

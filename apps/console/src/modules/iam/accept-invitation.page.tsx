@@ -45,6 +45,14 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
+function errorMessageIncludes(message: string, ...needles: string[]): boolean {
+  const lowerMessage = message.toLowerCase()
+  return needles.some(
+    needle =>
+      message.includes(needle) || lowerMessage.includes(needle.toLowerCase()),
+  )
+}
+
 function parseExpiresAt(value: unknown): Date | null {
   if (value instanceof Date) {
     return value
@@ -169,20 +177,14 @@ function resolveAcceptErrorState(
   message: string,
   invitation: InvitationDetails,
 ): PageState | null {
-  if (
-    message.includes('ALREADY_A_MEMBER') ||
-    message.toLowerCase().includes('already a member')
-  ) {
+  if (errorMessageIncludes(message, 'ALREADY_A_MEMBER', 'already a member')) {
     return {
       status: 'already_member',
       invitation,
     }
   }
 
-  if (
-    message.includes('NOT_THE_RECIPIENT') ||
-    message.toLowerCase().includes('recipient')
-  ) {
+  if (errorMessageIncludes(message, 'NOT_THE_RECIPIENT', 'recipient')) {
     return {
       status: 'wrong_email',
       invitation,
@@ -269,10 +271,7 @@ export function AcceptInvitationPage() {
 
       if (error || !data) {
         const message = error?.message ?? 'Could not load invitation'
-        if (
-          message.includes('NOT_FOUND') ||
-          message.toLowerCase().includes('not found')
-        ) {
+        if (errorMessageIncludes(message, 'NOT_FOUND', 'not found')) {
           setPageState({
             status: 'invalid',
             message: 'This invitation link is invalid or has expired.',
@@ -358,13 +357,20 @@ export function AcceptInvitationPage() {
     organizationSlug?: string,
   ) {
     setIsContinuing(true)
-    await navigateAfterJoin(organizationId, organizationSlug)
-    setIsContinuing(false)
+    try {
+      await navigateAfterJoin(organizationId, organizationSlug)
+    } finally {
+      setIsContinuing(false)
+    }
   }
 
   async function goToDefaultDashboard() {
     const destination = await resolvePostAuthPath(null, features)
     router.push(destination as Route)
+  }
+
+  function handleGoToDashboard() {
+    goToDefaultDashboard().catch(() => undefined)
   }
 
   if (sessionPending || !session?.user || pageState.status === 'loading') {
@@ -377,9 +383,7 @@ export function AcceptInvitationPage() {
         actions={
           <Button
             className="w-full"
-            onClick={() => {
-              goToDefaultDashboard().catch(() => undefined)
-            }}
+            onClick={handleGoToDashboard}
             type="button"
             variant="outline"
           >
@@ -420,9 +424,7 @@ export function AcceptInvitationPage() {
         actions={
           <Button
             className="w-full"
-            onClick={() => {
-              goToDefaultDashboard().catch(() => undefined)
-            }}
+            onClick={handleGoToDashboard}
             type="button"
             variant="outline"
           >
@@ -453,9 +455,7 @@ export function AcceptInvitationPage() {
         <InvitationSummary invitation={pageState.invitation} />
         <Button
           className="w-full"
-          onClick={() => {
-            goToDefaultDashboard().catch(() => undefined)
-          }}
+          onClick={handleGoToDashboard}
           type="button"
           variant="outline"
         >

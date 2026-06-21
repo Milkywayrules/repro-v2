@@ -43,14 +43,6 @@ export function parseWorkspaceMetadata(metadata: unknown): {
     return {}
   }
 
-  if (typeof metadata === 'object' && metadata !== null) {
-    const record = metadata as { publicSlug?: unknown }
-    if (typeof record.publicSlug === 'string') {
-      return { publicSlug: record.publicSlug.trim().toLowerCase() }
-    }
-    return {}
-  }
-
   if (typeof metadata === 'string') {
     try {
       return parseWorkspaceMetadata(JSON.parse(metadata))
@@ -59,7 +51,16 @@ export function parseWorkspaceMetadata(metadata: unknown): {
     }
   }
 
-  return {}
+  if (typeof metadata !== 'object' || metadata === null) {
+    return {}
+  }
+
+  const record = metadata as { publicSlug?: unknown }
+  if (typeof record.publicSlug !== 'string') {
+    return {}
+  }
+
+  return { publicSlug: record.publicSlug.trim().toLowerCase() }
 }
 
 export function workspacePublicSlug(

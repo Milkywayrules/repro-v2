@@ -57,8 +57,10 @@ function isOrganizationAuthPath(pathname: string, basePath: string): boolean {
   const normalizedBase = basePath.endsWith('/')
     ? basePath.slice(0, -1)
     : basePath
-  const prefix = `${normalizedBase}/organization`
-  return pathname === prefix || pathname.startsWith(`${prefix}/`)
+  const organizationPath = `${normalizedBase}/organization`
+  return (
+    pathname === organizationPath || pathname.startsWith(`${organizationPath}/`)
+  )
 }
 
 export async function mapWorkspaceAuthErrorResponse(

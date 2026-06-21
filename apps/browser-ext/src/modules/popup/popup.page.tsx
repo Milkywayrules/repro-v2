@@ -8,6 +8,37 @@ import { useWorkspaceSlug } from '@/lib/use-workspace-slug'
 import { ApiReadyDot } from './api-ready-dot'
 import { ApiTaskListsWidget } from './api-task-lists-widget'
 
+function findWorkspaceName(
+  organizations:
+    | Array<{
+        name?: string | null
+        slug?: string | null
+        metadata?: unknown
+        ownerUserId?: unknown
+      }>
+    | null
+    | undefined,
+  workspaceSlug: string | null,
+  sessionUserId?: string,
+): string | undefined {
+  if (!workspaceSlug) {
+    return
+  }
+
+  return organizations?.find(org => {
+    if (typeof org.slug !== 'string') {
+      return false
+    }
+
+    const ownerUserId =
+      typeof org.ownerUserId === 'string' ? org.ownerUserId : sessionUserId
+
+    return (
+      workspacePublicSlug(org.slug, org.metadata, ownerUserId) === workspaceSlug
+    )
+  })?.name
+}
+
 export function PopupPage() {
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const { features } = useIamFeatures()
@@ -18,26 +49,11 @@ export function PopupPage() {
     workspaceSlug,
   } = useWorkspaceSlug(session?.user?.id)
 
-  const workspaceName = organizations?.find(org => {
-    if (typeof org.slug !== 'string' || !workspaceSlug) {
-      return false
-    }
-
-    const orgRecord = org as {
-      slug: string
-      metadata?: unknown
-      ownerUserId?: unknown
-    }
-    const ownerUserId =
-      typeof orgRecord.ownerUserId === 'string'
-        ? orgRecord.ownerUserId
-        : session?.user?.id
-
-    return (
-      workspacePublicSlug(orgRecord.slug, orgRecord.metadata, ownerUserId) ===
-      workspaceSlug
-    )
-  })?.name
+  const workspaceName = findWorkspaceName(
+    organizations,
+    workspaceSlug,
+    session?.user?.id,
+  )
 
   return (
     <main className="popup">
