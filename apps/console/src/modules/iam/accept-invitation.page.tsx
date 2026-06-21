@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
+import { activeWorkspaceId } from '@repro-v2/iam/session'
 import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
@@ -201,26 +202,11 @@ function organizationIdFromAcceptResponse(
   return fallbackOrganizationId
 }
 
-function activeOrganizationIdFromSession(session: unknown): string | null {
-  if (
-    session &&
-    typeof session === 'object' &&
-    'activeOrganizationId' in session &&
-    typeof session.activeOrganizationId === 'string'
-  ) {
-    return session.activeOrganizationId
-  }
-
-  return null
-}
-
 async function setActiveOrganizationIfNeeded(
   session: unknown,
   organizationId: string,
 ): Promise<boolean> {
-  const activeOrganizationId = activeOrganizationIdFromSession(session)
-
-  if (activeOrganizationId === organizationId) {
+  if (activeWorkspaceId(session) === organizationId) {
     return true
   }
 

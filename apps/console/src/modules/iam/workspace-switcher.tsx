@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { activeWorkspaceId } from '@repro-v2/iam/session'
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -31,12 +32,7 @@ export function WorkspaceSwitcher() {
     return null
   }
 
-  const activeOrganizationId =
-    session?.session &&
-    'activeOrganizationId' in session.session &&
-    typeof session.session.activeOrganizationId === 'string'
-      ? session.session.activeOrganizationId
-      : null
+  const activeOrganizationId = activeWorkspaceId(session?.session)
 
   async function handleSwitch(organizationId: string) {
     if (organizationId === activeOrganizationId || switchingId) {
