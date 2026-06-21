@@ -1,15 +1,23 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { ApiClient } from '../index'
+import {
+  type ApiClient,
+  type TaskListItemResponse,
+  type TaskListListResponse,
+  taskListsApi,
+} from '../index'
 import { taskListKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
 
-export function taskListQueryOptions(client: ApiClient) {
+export function taskListQueryOptions(
+  client: ApiClient,
+  workspaceSlug?: string,
+) {
   return queryOptions({
-    queryKey: taskListKeys.lists(),
+    queryKey: taskListKeys.lists(workspaceSlug),
     queryFn: async () => {
-      const response = await client.api.v1['task-lists'].get()
-      return unwrapTreatyResponse(response)
+      const response = await taskListsApi(client, workspaceSlug).get()
+      return unwrapTreatyResponse(response) as TaskListListResponse
     },
   })
 }
@@ -17,7 +25,8 @@ export function taskListQueryOptions(client: ApiClient) {
 export async function createTaskList(
   client: ApiClient,
   body: { name: string },
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1['task-lists'].post(body)
-  return unwrapTreatyResponse(response)
+  const response = await taskListsApi(client, workspaceSlug).post(body)
+  return unwrapTreatyResponse(response) as TaskListItemResponse
 }

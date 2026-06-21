@@ -89,12 +89,17 @@ export const workspace = pgTable(
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
-    slug: text('slug').notNull().unique(),
+    slug: text('slug').notNull(),
     logo: text('logo'),
+    ownerUserId: text('owner_user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
     createdAt: timestamptz('created_at').notNull(),
     metadata: text('metadata'),
   },
-  table => [uniqueIndex('workspace_slug_uidx').on(table.slug)],
+  table => [
+    uniqueIndex('workspace_owner_slug_uidx').on(table.ownerUserId, table.slug),
+  ],
 )
 
 export const member = pgTable(
@@ -159,7 +164,11 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }))
 
-export const workspaceRelations = relations(workspace, ({ many }) => ({
+export const workspaceRelations = relations(workspace, ({ one, many }) => ({
+  owner: one(user, {
+    fields: [workspace.ownerUserId],
+    references: [user.id],
+  }),
   members: many(member),
   invitations: many(invitation),
 }))

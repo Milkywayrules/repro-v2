@@ -39,6 +39,7 @@ export async function seedWorkspaceForUser(
     id: workspaceId,
     name: defaultWorkspaceName(userId),
     slug: defaultWorkspaceSlug(userId),
+    ownerUserId: userId,
     createdAt,
   })
 

@@ -20,10 +20,11 @@ import { Input } from '@repro-v2/ui/components/input'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { InlineErrorCallout } from '@/components/inline-error-callout'
-import { apiClient } from '@/lib/api-client'
+import { getApiClient } from '@/lib/api-client'
 
 interface TaskAttachmentsPanelProps {
   taskId: string
+  workspaceSlug?: string
 }
 
 type FailedAction = 'upload' | 'delete' | 'download'
@@ -57,8 +58,12 @@ function downloadPresignedFile(url: string, filename?: string) {
   }
 }
 
-export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
+export function TaskAttachmentsPanel({
+  taskId,
+  workspaceSlug,
+}: TaskAttachmentsPanelProps) {
   const queryClient = useQueryClient()
+  const client = getApiClient()
   const attachmentInputRef = useRef<HTMLInputElement>(null)
   const lastDeleteIdRef = useRef<string | null>(null)
   const lastDownloadRef = useRef<{ id: string; filename: string } | null>(null)
@@ -67,14 +72,14 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const [failedAction, setFailedAction] = useState<FailedAction | null>(null)
 
   const attachmentsQuery = useQuery({
-    ...taskAttachmentsQueryOptions(apiClient, taskId),
+    ...taskAttachmentsQueryOptions(client, taskId, workspaceSlug),
     enabled: Boolean(taskId),
   })
   const attachments = attachmentsQuery.data?.data ?? []
 
   async function refreshAttachments() {
     await queryClient.invalidateQueries({
-      queryKey: attachmentKeys.list(taskId),
+      queryKey: attachmentKeys.list(taskId, workspaceSlug),
     })
   }
 
@@ -86,15 +91,21 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       }
 
       const presign = await presignTaskAttachment(
-        apiClient,
+        client,
         taskId,
         inspected.meta,
+        workspaceSlug,
       )
       await uploadFileToPresignedUrl(presign.data.uploadUrl, file)
-      return await completeTaskAttachment(apiClient, taskId, {
-        key: presign.data.key,
-        ...inspected.meta,
-      })
+      return await completeTaskAttachment(
+        client,
+        taskId,
+        {
+          key: presign.data.key,
+          ...inspected.meta,
+        },
+        workspaceSlug,
+      )
     },
     onSuccess: async () => {
       await refreshAttachments()
@@ -112,7 +123,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
 
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId: string) =>
-      deleteTaskAttachment(apiClient, taskId, attachmentId),
+      deleteTaskAttachment(client, taskId, attachmentId, workspaceSlug),
     onSuccess: async () => {
       await refreshAttachments()
       setFailedAction(null)
@@ -124,10 +135,12 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
 
   const downloadAttachmentMutation = useMutation({
     mutationFn: (attachment: { id: string; filename: string }) =>
-      downloadTaskAttachment(apiClient, taskId, attachment.id).then(data => ({
-        ...data,
-        filename: attachment.filename,
-      })),
+      downloadTaskAttachment(client, taskId, attachment.id, workspaceSlug).then(
+        data => ({
+          ...data,
+          filename: attachment.filename,
+        }),
+      ),
     onSuccess: data => {
       setFailedAction(null)
       downloadPresignedFile(data.data.downloadUrl, data.filename)

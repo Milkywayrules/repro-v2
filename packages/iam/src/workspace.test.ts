@@ -40,7 +40,7 @@ describe('ensureActiveWorkspace', () => {
     expect(result).toEqual({ ok: true, workspaceId: 'ws-existing' })
   })
 
-  it('sets first organization when session has no active workspace', async () => {
+  it('returns first organization when session has no active workspace', async () => {
     const client = mockClient({
       session: {
         session: {},

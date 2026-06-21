@@ -1,17 +1,23 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { ApiClient } from '../index'
+import { type ApiClient, type TaskListResponse, tasksApi } from '../index'
 import { taskKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
 
-export function tasksByListQueryOptions(client: ApiClient, listId: string) {
+export function tasksByListQueryOptions(
+  client: ApiClient,
+  listId: string,
+  workspaceSlug?: string,
+) {
   return queryOptions({
-    queryKey: taskKeys.list(listId),
+    queryKey: taskKeys.list(listId, workspaceSlug),
     queryFn: async () => {
-      const response = await client.api.v1.tasks.get({
+      const response = await tasksApi(client, workspaceSlug).get({
         query: { listId },
       })
-      return unwrapTreatyResponse(response)
+      return unwrapTreatyResponse(
+        response,
+      ) as TaskListResponse as TaskListResponse
     },
   })
 }
@@ -19,21 +25,27 @@ export function tasksByListQueryOptions(client: ApiClient, listId: string) {
 export async function createTask(
   client: ApiClient,
   body: { title: string; listId: string },
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1.tasks.post(body)
-  return unwrapTreatyResponse(response)
+  const response = await tasksApi(client, workspaceSlug).post(body)
+  return unwrapTreatyResponse(response) as TaskListResponse
 }
 
 export async function patchTask(
   client: ApiClient,
   id: string,
   body: { completed: boolean },
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1.tasks({ id }).patch(body)
-  return unwrapTreatyResponse(response)
+  const response = await tasksApi(client, workspaceSlug)({ id }).patch(body)
+  return unwrapTreatyResponse(response) as TaskListResponse
 }
 
-export async function deleteTask(client: ApiClient, id: string) {
-  const response = await client.api.v1.tasks({ id }).delete()
-  return unwrapTreatyResponse(response)
+export async function deleteTask(
+  client: ApiClient,
+  id: string,
+  workspaceSlug?: string,
+) {
+  const response = await tasksApi(client, workspaceSlug)({ id }).delete()
+  return unwrapTreatyResponse(response) as TaskListResponse
 }

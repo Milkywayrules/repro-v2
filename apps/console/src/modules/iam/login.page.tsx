@@ -7,6 +7,7 @@ import { env } from '@repro-v2/env/console'
 import { Button } from '@repro-v2/ui/components/button'
 import { Skeleton } from '@repro-v2/ui/components/skeleton'
 import { useQueryClient } from '@tanstack/react-query'
+import { parseAsString, useQueryState } from 'nuqs'
 
 import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
@@ -202,6 +203,8 @@ export function LoginPage() {
   const [captchaResetKey, setCaptchaResetKey] = useState(0)
   const [captchaError, setCaptchaError] = useState<string | null>(null)
   const [redirectState, setRedirectState] = useState<RedirectState | null>(null)
+  const [addAccount] = useQueryState('addAccount', parseAsString)
+  const addingAccount = addAccount === '1'
 
   const captchaEnabled = Boolean(features?.captcha)
   const hasTurnstileSiteKey = Boolean(env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
@@ -252,7 +255,7 @@ export function LoginPage() {
   }, [featuresPending])
 
   useEffect(() => {
-    if (sessionPending || !session?.user) {
+    if (sessionPending || !session?.user || addingAccount) {
       setRedirectState(null)
       return
     }
@@ -289,6 +292,7 @@ export function LoginPage() {
     redirectAfterAuth,
     session?.user,
     sessionPending,
+    addingAccount,
   ])
 
   function handleSignOut() {
@@ -313,7 +317,7 @@ export function LoginPage() {
     return <Loader />
   }
 
-  if (session?.user) {
+  if (session?.user && !addingAccount) {
     if (redirectState?.status === 'error') {
       return (
         <PageErrorState

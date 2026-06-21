@@ -17,12 +17,13 @@ import { useQueryState } from 'nuqs'
 
 import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { PageErrorState } from '@/components/page-error-state'
-import { apiClient } from '@/lib/api-client'
+import { getApiClient } from '@/lib/api-client'
 import { iamClient } from '@/lib/iam-client'
 import { parseAsListId } from '@/lib/list-id-parser'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
+import { useScopedWorkspaceSlug } from '@/modules/iam/use-scoped-workspace-slug'
 
 import { TaskAttachmentsPanel } from './task-attachments-panel'
 import { TaskItemsSection } from './task-items-section'
@@ -31,13 +32,15 @@ import { useSyncSelectedListId } from './use-sync-selected-list-id'
 export function TasksPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const workspaceSlug = useScopedWorkspaceSlug()
+  const client = getApiClient()
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const [listId, setListId] = useQueryState(searchParams.listId, parseAsListId)
   const [newListName, setNewListName] = useState('')
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
 
   const listsQuery = useQuery({
-    ...taskListQueryOptions(apiClient),
+    ...taskListQueryOptions(client, workspaceSlug),
     enabled: Boolean(session?.user),
   })
   const lists = listsQuery.data?.data ?? []
@@ -63,7 +66,8 @@ export function TasksPage() {
   })
 
   const createListMutation = useMutation({
-    mutationFn: (name: string) => createTaskList(apiClient, { name }),
+    mutationFn: (name: string) =>
+      createTaskList(client, { name }, workspaceSlug),
     onSuccess: async created => {
       await queryClient.invalidateQueries({ queryKey: taskListKeys.all })
       setListId(created.data.id).then(() => undefined)
@@ -192,9 +196,15 @@ export function TasksPage() {
         onSelectTask={handleSelectTask}
         onTaskDeleted={handleTaskDeleted}
         selectedTaskId={selectedTaskId}
+        workspaceSlug={workspaceSlug}
       />
 
-      {selectedTaskId ? <TaskAttachmentsPanel taskId={selectedTaskId} /> : null}
+      {selectedTaskId ? (
+        <TaskAttachmentsPanel
+          taskId={selectedTaskId}
+          workspaceSlug={workspaceSlug}
+        />
+      ) : null}
     </main>
   )
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
-import { env } from '@repro-v2/env/api'
+import { env, iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -50,6 +50,16 @@ function createApp() {
   return new Elysia().use(http.plugin()).use(v1Routes)
 }
 
+const workspaceSlug = 'test-workspace'
+
+function taskListsUrl(suffix = '') {
+  const base = iamFeatures.workspace
+    ? `/api/v1/workspaces/${workspaceSlug}/task-lists`
+    : '/api/v1/task-lists'
+
+  return `http://localhost${base}${suffix}`
+}
+
 function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
   spyOn(iamService, 'getSession').mockResolvedValue({
     user: mockUser,
@@ -58,12 +68,20 @@ function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
       activeOrganizationId,
     },
   } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
-  spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
+
+  if (iamFeatures.workspace) {
+    spyOn(workspaceService, 'resolveWorkspaceIdForSlug').mockResolvedValue(
+      workspaceId,
+    )
+  } else {
+    spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
+  }
 }
 
 describe('task-lists routes', () => {
   afterEach(() => {
     spyOn(iamService, 'getSession').mockRestore()
+    spyOn(workspaceService, 'resolveWorkspaceIdForSlug').mockRestore()
     spyOn(workspaceService, 'assertMembership').mockRestore()
     spyOn(taskListsService, 'list').mockRestore()
     spyOn(taskListsService, 'create').mockRestore()
@@ -75,9 +93,7 @@ describe('task-lists routes', () => {
   test('GET /api/v1/task-lists returns 401 without session', async () => {
     spyOn(iamService, 'getSession').mockResolvedValue(null)
 
-    const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists'),
-    )
+    const response = await createApp().handle(new Request(taskListsUrl()))
 
     expect(response.status).toBe(http.status.UNAUTHORIZED)
     expect(await response.json()).toEqual({
@@ -88,12 +104,50 @@ describe('task-lists routes', () => {
     })
   })
 
-  test('GET /api/v1/task-lists returns 403 without active workspace', async () => {
+  test('returns 403 or 404 when workspace access is denied', async () => {
+    spyOn(iamService, 'getSession').mockResolvedValue({
+      user: mockUser,
+      session: {
+        ...mockSession,
+        activeOrganizationId: workspaceId,
+      },
+    } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
+
+    if (iamFeatures.workspace) {
+      spyOn(workspaceService, 'resolveWorkspaceIdForSlug').mockRejectedValue(
+        http.error({
+          code: http.codes.NOT_FOUND,
+          message: http.messages.NOT_FOUND,
+          status: http.status.NOT_FOUND,
+        }),
+      )
+    } else {
+      spyOn(workspaceService, 'assertMembership').mockRejectedValue(
+        http.error({
+          code: http.codes.FORBIDDEN,
+          message: http.messages.FORBIDDEN,
+          status: http.status.FORBIDDEN,
+        }),
+      )
+    }
+
+    const response = await createApp().handle(new Request(taskListsUrl()))
+
+    if (iamFeatures.workspace) {
+      expect(response.status).toBe(http.status.NOT_FOUND)
+    } else {
+      expect(response.status).toBe(http.status.FORBIDDEN)
+    }
+  })
+
+  test('GET task-lists returns 403 without active workspace when feature disabled', async () => {
+    if (iamFeatures.workspace) {
+      return
+    }
+
     mockAuthedSession(null)
 
-    const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists'),
-    )
+    const response = await createApp().handle(new Request(taskListsUrl()))
 
     expect(response.status).toBe(http.status.FORBIDDEN)
     expect(await response.json()).toEqual({
@@ -104,7 +158,11 @@ describe('task-lists routes', () => {
     })
   })
 
-  test('GET /api/v1/task-lists returns 403 when user is not a workspace member', async () => {
+  test('GET task-lists returns 403 when user is not a workspace member', async () => {
+    if (iamFeatures.workspace) {
+      return
+    }
+
     spyOn(iamService, 'getSession').mockResolvedValue({
       user: mockUser,
       session: {
@@ -120,9 +178,7 @@ describe('task-lists routes', () => {
       }),
     )
 
-    const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists'),
-    )
+    const response = await createApp().handle(new Request(taskListsUrl()))
 
     expect(response.status).toBe(http.status.FORBIDDEN)
     expect(await response.json()).toEqual({
@@ -140,9 +196,7 @@ describe('task-lists routes', () => {
       total: 1,
     })
 
-    const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists'),
-    )
+    const response = await createApp().handle(new Request(taskListsUrl()))
 
     expect(response.status).toBe(http.status.OK)
     const body = (await response.json()) as {
@@ -161,9 +215,7 @@ describe('task-lists routes', () => {
       total: 0,
     })
 
-    const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists'),
-    )
+    const response = await createApp().handle(new Request(taskListsUrl()))
 
     expect(response.status).toBe(http.status.OK)
     const body = (await response.json()) as {
@@ -182,7 +234,7 @@ describe('task-lists routes', () => {
     mockAuthedSession()
 
     const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists/not-a-uuid'),
+      new Request(taskListsUrl('/not-a-uuid')),
     )
 
     expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
@@ -195,7 +247,7 @@ describe('task-lists routes', () => {
     spyOn(taskListsService, 'create').mockResolvedValue(mockTaskListRow)
 
     const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -219,7 +271,7 @@ describe('task-lists routes', () => {
     mockAuthedSession()
 
     const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -238,7 +290,7 @@ describe('task-lists routes', () => {
     mockAuthedSession()
 
     const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -261,7 +313,7 @@ describe('task-lists routes', () => {
     })
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`), {
         method: 'PATCH',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -283,7 +335,7 @@ describe('task-lists routes', () => {
     spyOn(taskListsService, 'getForUser').mockResolvedValue(mockTaskListRow)
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`), {
         method: 'PATCH',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -309,7 +361,7 @@ describe('task-lists routes', () => {
     })
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`), {
         method: 'DELETE',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -329,7 +381,7 @@ describe('task-lists routes', () => {
     spyOn(taskListsService, 'getForUser').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`),
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`)),
     )
 
     expect(response.status).toBe(http.status.NOT_FOUND)
@@ -343,7 +395,7 @@ describe('task-lists routes', () => {
 
   test('POST /api/v1/task-lists rejects disallowed Origin with 403', async () => {
     const response = await createApp().handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: 'https://evil.example',
@@ -364,7 +416,7 @@ describe('task-lists routes', () => {
 
   test('PATCH /api/v1/task-lists/:id rejects disallowed Origin with 403', async () => {
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`), {
         method: 'PATCH',
         headers: {
           Origin: 'https://evil.example',
@@ -379,7 +431,7 @@ describe('task-lists routes', () => {
 
   test('DELETE /api/v1/task-lists/:id rejects disallowed Origin with 403', async () => {
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/task-lists/${mockTaskListRow.id}`, {
+      new Request(taskListsUrl(`/${mockTaskListRow.id}`), {
         method: 'DELETE',
         headers: {
           Origin: 'https://evil.example',

@@ -1,6 +1,6 @@
 import { describe, expect, mock, spyOn, test } from 'bun:test'
 
-import { env } from '@repro-v2/env/api'
+import { env, iamFeatures } from '@repro-v2/env/api'
 
 import { http } from './libs/contract'
 
@@ -117,8 +117,17 @@ describe('full app wiring', () => {
       }
       security?: unknown[]
     }
-    expect(spec.paths).toHaveProperty('/api/v1/task-lists/')
-    expect(spec.paths).toHaveProperty('/api/v1/tasks/')
+    if (iamFeatures.workspace) {
+      expect(spec.paths).toHaveProperty(
+        '/api/v1/workspaces/{workspaceSlug}/task-lists/',
+      )
+      expect(spec.paths).toHaveProperty(
+        '/api/v1/workspaces/{workspaceSlug}/tasks/',
+      )
+    } else {
+      expect(spec.paths).toHaveProperty('/api/v1/task-lists/')
+      expect(spec.paths).toHaveProperty('/api/v1/tasks/')
+    }
     expect(spec.paths).toHaveProperty('/api/v1/platform/iam-features/')
     expect(spec.paths).not.toHaveProperty('/health')
     expect(spec.paths).not.toHaveProperty('/ready')

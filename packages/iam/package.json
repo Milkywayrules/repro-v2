@@ -16,6 +16,12 @@
     },
     "./workspace-limit": {
       "default": "./src/workspace-limit.ts"
+    },
+    "./reserved-workspace-slugs": {
+      "default": "./src/reserved-workspace-slugs.ts"
+    },
+    "./last-workspace-slug-cookie": {
+      "default": "./src/last-workspace-slug-cookie.ts"
     }
   },
   "scripts": {

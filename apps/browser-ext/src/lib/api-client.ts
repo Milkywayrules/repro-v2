@@ -8,4 +8,7 @@ import { env } from '@repro-v2/env/browser-ext'
 export const apiClient = createApiClient(env.WXT_API_URL)
 
 export const readyQuery = readyQueryOptions(apiClient)
-export const taskListsQuery = taskListQueryOptions(apiClient)
+
+export function taskListsQuery(workspaceSlug?: string) {
+  return taskListQueryOptions(apiClient, workspaceSlug)
+}

@@ -1,7 +1,9 @@
 import { iamClient } from '@/lib/iam-client'
+import { readLastWorkspaceSlug } from '@/lib/last-workspace-cookie'
 
 export interface WorkspaceSummary {
   id: string
+  slug: string
 }
 
 export type ListWorkspacesResult =
@@ -18,5 +20,40 @@ export async function listWorkspaces(): Promise<ListWorkspacesResult> {
     }
   }
 
-  return { ok: true, workspaces: data ?? [] }
+  const workspaces =
+    data?.flatMap(org => {
+      if (typeof org.id !== 'string' || typeof org.slug !== 'string') {
+        return []
+      }
+
+      return [{ id: org.id, slug: org.slug }]
+    }) ?? []
+
+  return { ok: true, workspaces }
+}
+
+export async function resolveWorkspaceSlugById(
+  workspaceId: string,
+): Promise<string | null> {
+  const listed = await listWorkspaces()
+  if (!listed.ok) {
+    return null
+  }
+
+  return listed.workspaces.find(ws => ws.id === workspaceId)?.slug ?? null
+}
+
+export async function pickDefaultWorkspaceSlug(): Promise<string | null> {
+  const listed = await listWorkspaces()
+  if (!listed.ok || listed.workspaces.length === 0) {
+    return null
+  }
+
+  const lastSlug = readLastWorkspaceSlug()
+  const lastMatch = listed.workspaces.find(ws => ws.slug === lastSlug)
+  if (lastMatch) {
+    return lastMatch.slug
+  }
+
+  return listed.workspaces[0]?.slug ?? null
 }

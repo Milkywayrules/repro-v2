@@ -30,7 +30,7 @@ export function MagicLinkForm({
   captchaRequired: boolean
   captchaToken: string | null
   clearCaptcha: () => void
-  features: { magicLink: boolean } | undefined
+  features: { magicLink: boolean; workspace?: boolean } | undefined
 }) {
   const [sent, setSent] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -45,7 +45,9 @@ export function MagicLinkForm({
       await iamClient.signIn.magicLink(
         {
           email: value.email,
-          callbackURL: buildAuthCallbackUrl(nextPath),
+          callbackURL: buildAuthCallbackUrl(nextPath, {
+            workspace: features?.workspace,
+          }),
           errorCallbackURL: `${env.NEXT_PUBLIC_CONSOLE_URL}${routes.login}`,
         },
         {

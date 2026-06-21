@@ -18,13 +18,14 @@ import { Label } from '@repro-v2/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { InlineErrorCallout } from '@/components/inline-error-callout'
-import { apiClient } from '@/lib/api-client'
+import { getApiClient } from '@/lib/api-client'
 
 interface TaskItemsSectionProps {
   listId: string | null
   onSelectTask: (task: Task) => void
   onTaskDeleted: (taskId: string) => void
   selectedTaskId: string | null
+  workspaceSlug?: string
 }
 
 export function TaskItemsSection({
@@ -32,12 +33,14 @@ export function TaskItemsSection({
   selectedTaskId,
   onSelectTask,
   onTaskDeleted,
+  workspaceSlug,
 }: TaskItemsSectionProps) {
   const queryClient = useQueryClient()
+  const client = getApiClient()
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
   const tasksQuery = useQuery({
-    ...tasksByListQueryOptions(apiClient, listId ?? ''),
+    ...tasksByListQueryOptions(client, listId ?? '', workspaceSlug),
     enabled: Boolean(listId),
   })
   const tasks = tasksQuery.data?.data ?? []
@@ -50,7 +53,7 @@ export function TaskItemsSection({
 
   const createTaskMutation = useMutation({
     mutationFn: (input: { title: string; listId: string }) =>
-      createTask(apiClient, input),
+      createTask(client, input, workspaceSlug),
     onSuccess: async (_data, variables) => {
       await invalidateTaskList(variables.listId)
       setNewTaskTitle('')
@@ -59,7 +62,12 @@ export function TaskItemsSection({
 
   const patchTaskMutation = useMutation({
     mutationFn: (input: { id: string; completed: boolean; listId: string }) =>
-      patchTask(apiClient, input.id, { completed: input.completed }),
+      patchTask(
+        client,
+        input.id,
+        { completed: input.completed },
+        workspaceSlug,
+      ),
     onSuccess: async (_data, variables) => {
       await invalidateTaskList(variables.listId)
     },
@@ -67,7 +75,7 @@ export function TaskItemsSection({
 
   const deleteTaskMutation = useMutation({
     mutationFn: (input: { id: string; listId: string }) =>
-      deleteTask(apiClient, input.id),
+      deleteTask(client, input.id, workspaceSlug),
     onSuccess: async (_data, variables) => {
       onTaskDeleted(variables.id)
       await invalidateTaskList(variables.listId)

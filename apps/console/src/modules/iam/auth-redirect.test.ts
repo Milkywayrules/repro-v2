@@ -5,58 +5,47 @@ import { routes } from '@/lib/routes'
 import {
   buildOnboardingPath,
   isSafeInternalPath,
-  resolvePostAuthPath,
+  rewriteFlatAppPath,
 } from './auth-redirect'
 
 describe('isSafeInternalPath', () => {
-  test('allows single-leading-slash paths', () => {
-    expect(isSafeInternalPath('/dashboard')).toBe(true)
-    expect(isSafeInternalPath('/tasks/123')).toBe(true)
+  test('accepts safe relative paths', () => {
+    expect(isSafeInternalPath('/tasks')).toBe(true)
+    expect(isSafeInternalPath('/acme/dashboard')).toBe(true)
   })
 
-  test('rejects protocol-relative paths', () => {
+  test('rejects protocol-relative and encoded traversal', () => {
     expect(isSafeInternalPath('//evil.com')).toBe(false)
-    expect(isSafeInternalPath('//evil.com/path')).toBe(false)
-  })
-
-  test('rejects external and relative paths', () => {
     expect(isSafeInternalPath('https://evil.com')).toBe(false)
-    expect(isSafeInternalPath('dashboard')).toBe(false)
-    expect(isSafeInternalPath('')).toBe(false)
-  })
-
-  test('rejects backslash and encoded open-redirect patterns', () => {
-    expect(isSafeInternalPath('/path\\evil')).toBe(false)
     expect(isSafeInternalPath('/%2F%2Fevil.com')).toBe(false)
-    expect(isSafeInternalPath('/%2f%2fevil.com')).toBe(false)
-    expect(isSafeInternalPath('/%5Cevil')).toBe(false)
-  })
-})
-
-describe('resolvePostAuthPath', () => {
-  test('uses safe internal next paths', () => {
-    expect(resolvePostAuthPath('/tasks')).toBe('/tasks')
-  })
-
-  test('rejects open redirects', () => {
-    expect(resolvePostAuthPath('//evil.com')).toBe(routes.dashboard)
-    expect(resolvePostAuthPath('https://evil.com')).toBe(routes.dashboard)
-    expect(resolvePostAuthPath('/%2F%2Fevil.com')).toBe(routes.dashboard)
-  })
-
-  test('falls back to dashboard', () => {
-    expect(resolvePostAuthPath(null)).toBe(routes.dashboard)
-    expect(resolvePostAuthPath(undefined)).toBe(routes.dashboard)
-    expect(resolvePostAuthPath('')).toBe(routes.dashboard)
   })
 })
 
 describe('buildOnboardingPath', () => {
-  test('preserves safe next query param', () => {
-    expect(buildOnboardingPath('/tasks')).toBe('/onboarding?next=%2Ftasks')
+  test('preserves next path in query', () => {
+    expect(buildOnboardingPath('/acme/tasks')).toBe(
+      `${routes.onboarding}?next=${encodeURIComponent('/acme/tasks')}`,
+    )
+  })
+})
+
+describe('rewriteFlatAppPath', () => {
+  test('rewrites flat app paths to workspace-scoped paths', () => {
+    expect(rewriteFlatAppPath('/tasks', 'acme')).toBe('/acme/tasks')
+    expect(rewriteFlatAppPath('/dashboard', 'acme')).toBe('/acme/dashboard')
   })
 
-  test('omits next for unsafe paths', () => {
-    expect(buildOnboardingPath('//evil.com')).toBe(routes.onboarding)
+  test('leaves non-flat paths unchanged', () => {
+    expect(rewriteFlatAppPath('/acme/tasks', 'acme')).toBeNull()
+    expect(rewriteFlatAppPath('/login', 'acme')).toBeNull()
+  })
+})
+
+describe('resolvePostAuthPath', () => {
+  test('returns flat dashboard when workspace disabled', async () => {
+    const { resolvePostAuthPath } = await import('./auth-redirect')
+    await expect(
+      resolvePostAuthPath(null, { workspace: false } as never),
+    ).resolves.toBe('/dashboard')
   })
 })

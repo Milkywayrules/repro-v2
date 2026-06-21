@@ -1,7 +1,7 @@
 import { consoleHomeUrl, consoleLoginUrl } from '@/lib/console-login-url'
 import { iamClient } from '@/lib/iam-client'
-import { useEnsureActiveWorkspace } from '@/lib/use-ensure-active-workspace'
 import { useIamFeatures } from '@/lib/use-iam-features'
+import { useWorkspaceSlug } from '@/lib/use-workspace-slug'
 
 import { ApiReadyDot } from './api-ready-dot'
 import { ApiTaskListsWidget } from './api-task-lists-widget'
@@ -13,10 +13,12 @@ export function PopupPage() {
   const {
     error: workspaceError,
     isReady: workspaceReady,
-    workspaceId,
-  } = useEnsureActiveWorkspace(session?.user?.id)
+    workspaceSlug,
+  } = useWorkspaceSlug(session?.user?.id)
 
-  const workspaceName = organizations?.find(org => org.id === workspaceId)?.name
+  const workspaceName = organizations?.find(
+    org => org.slug === workspaceSlug,
+  )?.name
 
   return (
     <main className="popup">
@@ -64,6 +66,7 @@ export function PopupPage() {
         <ApiTaskListsWidget
           workspaceError={workspaceError}
           workspaceReady={workspaceReady}
+          workspaceSlug={workspaceSlug}
         />
       ) : null}
     </main>

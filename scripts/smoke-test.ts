@@ -73,37 +73,6 @@ function cookieHeaderFromSetCookies(setCookies: string[]): string {
     .join('; ')
 }
 
-function mergeCookieHeader(
-  existingCookie: string,
-  setCookies: string[],
-): string {
-  const jar = new Map<string, string>()
-
-  for (const part of existingCookie.split(';')) {
-    const trimmed = part.trim()
-    const separator = trimmed.indexOf('=')
-    if (separator > 0) {
-      jar.set(trimmed.slice(0, separator), trimmed.slice(separator + 1))
-    }
-  }
-
-  for (const setCookie of setCookies) {
-    const pair = setCookie.split(';')[0]?.trim()
-    if (!pair) {
-      continue
-    }
-
-    const separator = pair.indexOf('=')
-    if (separator > 0) {
-      jar.set(pair.slice(0, separator), pair.slice(separator + 1))
-    }
-  }
-
-  return [...jar.entries()]
-    .map(([name, value]) => `${name}=${value}`)
-    .join('; ')
-}
-
 type IamFeatureFlags = Record<string, boolean>
 
 function authJsonHeaders(
@@ -121,9 +90,9 @@ function authJsonHeaders(
 async function ensureActiveWorkspace(
   sessionCookie: string,
   workspaceEnabled: boolean,
-): Promise<string> {
+): Promise<{ sessionCookie: string; workspaceSlug: string | null }> {
   if (!workspaceEnabled) {
-    return sessionCookie
+    return { sessionCookie, workspaceSlug: null }
   }
 
   const authHeaders = {
@@ -141,7 +110,7 @@ async function ensureActiveWorkspace(
     )
   }
 
-  const organizations = list.body as Array<{ id: string }> | null
+  const organizations = list.body as Array<{ id: string; slug?: string }> | null
   let firstOrg = organizations?.[0]
 
   if (!firstOrg) {
@@ -164,33 +133,35 @@ async function ensureActiveWorkspace(
       )
     }
 
-    const created = create.body as { id?: string } | null
+    const created = create.body as { id?: string; slug?: string } | null
     if (!created?.id) {
       fail('organization/create did not return workspace id')
     }
 
-    firstOrg = { id: created.id }
+    firstOrg = { id: created.id, slug: created.slug ?? slug }
   }
 
-  const setActive = await fetchJson(
-    `${apiUrl}/api/auth/organization/set-active`,
-    {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ organizationId: firstOrg.id }),
-    },
-  )
-
-  if (setActive.status !== 200) {
-    fail(
-      `organization/set-active failed (${setActive.status}): ${JSON.stringify(setActive.body)}`,
-    )
+  if (!firstOrg.slug) {
+    fail('organization/list did not return workspace slug')
   }
 
-  return mergeCookieHeader(sessionCookie, collectSetCookie(setActive.headers))
+  return { sessionCookie, workspaceSlug: firstOrg.slug }
+}
+
+function taskListsApiPath(workspaceSlug: string | null): string {
+  if (workspaceSlug) {
+    return `/api/v1/workspaces/${encodeURIComponent(workspaceSlug)}/task-lists`
+  }
+
+  return '/api/v1/task-lists'
+}
+
+function tasksApiPath(workspaceSlug: string | null, listId: string): string {
+  if (workspaceSlug) {
+    return `/api/v1/workspaces/${encodeURIComponent(workspaceSlug)}/tasks?listId=${encodeURIComponent(listId)}`
+  }
+
+  return `/api/v1/tasks?listId=${encodeURIComponent(listId)}`
 }
 
 async function signUpEmail(input: {
@@ -543,9 +514,12 @@ try {
   await smokeMagicLink(features)
   await smokeGithubSocial(features)
 
-  const taskListsUnauthed = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
-    headers: { origin: consoleOrigin },
-  })
+  const taskListsUnauthed = await fetchJson(
+    `${apiUrl}${taskListsApiPath(features.workspace ? 'probe-slug' : null)}`,
+    {
+      headers: { origin: consoleOrigin },
+    },
+  )
 
   if (taskListsUnauthed.status !== 401) {
     fail(
@@ -634,17 +608,22 @@ try {
 
   logStep('sign-in ok')
 
-  sessionCookie = await ensureActiveWorkspace(
+  const workspaceContext = await ensureActiveWorkspace(
     sessionCookie,
     features.workspace ?? false,
   )
+  sessionCookie = workspaceContext.sessionCookie
+  const workspaceSlug = workspaceContext.workspaceSlug
 
-  const taskLists = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
-    headers: {
-      cookie: sessionCookie,
-      origin: consoleOrigin,
+  const taskLists = await fetchJson(
+    `${apiUrl}${taskListsApiPath(workspaceSlug)}`,
+    {
+      headers: {
+        cookie: sessionCookie,
+        origin: consoleOrigin,
+      },
     },
-  })
+  )
 
   if (taskLists.status !== 200) {
     fail(
@@ -673,7 +652,7 @@ try {
     }
 
     const tasks = await fetchJson(
-      `${apiUrl}/api/v1/tasks?listId=${encodeURIComponent(sampleList.id)}`,
+      `${apiUrl}${tasksApiPath(workspaceSlug, sampleList.id)}`,
       {
         headers: {
           cookie: sessionCookie,

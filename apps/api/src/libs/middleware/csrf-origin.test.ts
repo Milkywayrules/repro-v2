@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { env } from '@repro-v2/env/api'
+import { env, iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
@@ -9,9 +9,17 @@ import { v1Routes } from '@/routes/v1'
 describe('csrf origin validation', () => {
   const app = new Elysia().use(http.plugin()).use(v1Routes)
 
+  function taskListsUrl() {
+    const base = iamFeatures.workspace
+      ? '/api/v1/workspaces/test-workspace/task-lists'
+      : '/api/v1/task-lists'
+
+    return `http://localhost${base}`
+  }
+
   test('POST /api/v1/task-lists rejects disallowed Origin with 403', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: 'https://evil.example',
@@ -32,7 +40,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists rejects disallowed Referer when Origin absent', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Referer: 'https://evil.example/page',
@@ -53,7 +61,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists allows configured Referer when Origin absent', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Referer: `${env.CORS_ORIGIN[0]}/tasks`,
@@ -68,7 +76,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists allows configured CORS_ORIGIN', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           Origin: env.CORS_ORIGIN[0],
@@ -83,7 +91,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists rejects missing Origin, Referer, and X-Requested-With', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +111,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists allows X-Requested-With when Origin and Referer absent', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +126,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists allows X-Requested-With when Referer is unparseable', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,7 +142,7 @@ describe('csrf origin validation', () => {
 
   test('POST /api/v1/task-lists rejects unparseable Referer without X-Requested-With', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +163,7 @@ describe('csrf origin validation', () => {
 
   test('GET /api/v1/task-lists ignores disallowed Origin', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/v1/task-lists', {
+      new Request(taskListsUrl(), {
         headers: {
           Origin: 'https://evil.example',
         },

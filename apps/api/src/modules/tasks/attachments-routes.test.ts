@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
-import { env } from '@repro-v2/env/api'
+import { env, iamFeatures } from '@repro-v2/env/api'
 import {
   MAX_OBJECT_BYTES,
   UPLOAD_SIZE_LIMIT_MESSAGE,
@@ -60,6 +60,16 @@ function createApp() {
   return new Elysia().use(http.plugin()).use(v1Routes)
 }
 
+const workspaceSlug = 'test-workspace'
+
+function attachmentsUrl(taskIdParam: string, suffix = '') {
+  const base = iamFeatures.workspace
+    ? `/api/v1/workspaces/${workspaceSlug}/tasks/${taskIdParam}/attachments`
+    : `/api/v1/tasks/${taskIdParam}/attachments`
+
+  return `http://localhost${base}${suffix}`
+}
+
 function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
   spyOn(iamService, 'getSession').mockResolvedValue({
     user: mockUser,
@@ -68,12 +78,20 @@ function mockAuthedSession(activeOrganizationId: string | null = workspaceId) {
       activeOrganizationId,
     },
   } as NonNullable<Awaited<ReturnType<typeof iamService.getSession>>>)
-  spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
+
+  if (iamFeatures.workspace) {
+    spyOn(workspaceService, 'resolveWorkspaceIdForSlug').mockResolvedValue(
+      workspaceId,
+    )
+  } else {
+    spyOn(workspaceService, 'assertMembership').mockResolvedValue(undefined)
+  }
 }
 
 describe('task attachment routes', () => {
   afterEach(() => {
     spyOn(iamService, 'getSession').mockRestore()
+    spyOn(workspaceService, 'resolveWorkspaceIdForSlug').mockRestore()
     spyOn(workspaceService, 'assertMembership').mockRestore()
     spyOn(attachmentsService, 'listForTask').mockRestore()
     spyOn(attachmentsService, 'presignUpload').mockRestore()
@@ -82,11 +100,15 @@ describe('task attachment routes', () => {
     spyOn(attachmentsService, 'delete').mockRestore()
   })
 
-  test('GET /api/v1/tasks/:taskId/attachments returns 403 without workspace', async () => {
+  test('GET attachments returns 403 without workspace when feature disabled', async () => {
+    if (iamFeatures.workspace) {
+      return
+    }
+
     mockAuthedSession(null)
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/tasks/${taskId}/attachments`),
+      new Request(attachmentsUrl(taskId)),
     )
 
     expect(response.status).toBe(http.status.FORBIDDEN)
@@ -99,7 +121,7 @@ describe('task attachment routes', () => {
     ])
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/tasks/${taskId}/attachments`),
+      new Request(attachmentsUrl(taskId)),
     )
 
     expect(response.status).toBe(http.status.OK)
@@ -117,21 +139,18 @@ describe('task attachment routes', () => {
     })
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/presign`,
-        {
-          method: 'POST',
-          headers: {
-            Origin: env.CORS_ORIGIN[0],
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: 'file.pdf',
-            contentType: 'application/pdf',
-            sizeBytes: 1024,
-          }),
+      new Request(attachmentsUrl(taskId, '/presign'), {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
         },
-      ),
+        body: JSON.stringify({
+          filename: 'file.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 1024,
+        }),
+      }),
     )
 
     expect(response.status).toBe(http.status.OK)
@@ -145,21 +164,18 @@ describe('task attachment routes', () => {
     mockAuthedSession()
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/presign`,
-        {
-          method: 'POST',
-          headers: {
-            Origin: env.CORS_ORIGIN[0],
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: 'installer.exe',
-            contentType: 'application/x-msdownload',
-            sizeBytes: 1024,
-          }),
+      new Request(attachmentsUrl(taskId, '/presign'), {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
         },
-      ),
+        body: JSON.stringify({
+          filename: 'installer.exe',
+          contentType: 'application/x-msdownload',
+          sizeBytes: 1024,
+        }),
+      }),
     )
 
     expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
@@ -174,21 +190,18 @@ describe('task attachment routes', () => {
     mockAuthedSession()
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/presign`,
-        {
-          method: 'POST',
-          headers: {
-            Origin: env.CORS_ORIGIN[0],
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: 'large.pdf',
-            contentType: 'application/pdf',
-            sizeBytes: MAX_OBJECT_BYTES + 1,
-          }),
+      new Request(attachmentsUrl(taskId, '/presign'), {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
         },
-      ),
+        body: JSON.stringify({
+          filename: 'large.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: MAX_OBJECT_BYTES + 1,
+        }),
+      }),
     )
 
     expect(response.status).toBe(http.status.UNPROCESSABLE_ENTITY)
@@ -206,22 +219,19 @@ describe('task attachment routes', () => {
     )
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/complete`,
-        {
-          method: 'POST',
-          headers: {
-            Origin: env.CORS_ORIGIN[0],
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            key: mockAttachmentRow.storageKey,
-            filename: 'file.pdf',
-            contentType: 'application/pdf',
-            sizeBytes: 1024,
-          }),
+      new Request(attachmentsUrl(taskId, '/complete'), {
+        method: 'POST',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
+          'Content-Type': 'application/json',
         },
-      ),
+        body: JSON.stringify({
+          key: mockAttachmentRow.storageKey,
+          filename: 'file.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 1024,
+        }),
+      }),
     )
 
     expect(response.status).toBe(http.status.OK)
@@ -236,9 +246,7 @@ describe('task attachment routes', () => {
     })
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/${attachmentId}/download`,
-      ),
+      new Request(attachmentsUrl(taskId, `/${attachmentId}/download`)),
     )
 
     expect(response.status).toBe(http.status.OK)
@@ -254,15 +262,12 @@ describe('task attachment routes', () => {
     })
 
     const response = await createApp().handle(
-      new Request(
-        `http://localhost/api/v1/tasks/${taskId}/attachments/${attachmentId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Origin: env.CORS_ORIGIN[0],
-          },
+      new Request(attachmentsUrl(taskId, `/${attachmentId}`), {
+        method: 'DELETE',
+        headers: {
+          Origin: env.CORS_ORIGIN[0],
         },
-      ),
+      }),
     )
 
     expect(response.status).toBe(http.status.OK)
@@ -277,7 +282,7 @@ describe('task attachment routes', () => {
     spyOn(attachmentsService, 'listForTask').mockRejectedValue(notFoundError())
 
     const response = await createApp().handle(
-      new Request(`http://localhost/api/v1/tasks/${taskId}/attachments`),
+      new Request(attachmentsUrl(taskId)),
     )
 
     expect(response.status).toBe(http.status.NOT_FOUND)

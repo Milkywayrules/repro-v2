@@ -1,8 +1,8 @@
 import { db } from '@repro-v2/db'
 import { and, eq } from '@repro-v2/db/drizzle'
-import { member } from '@repro-v2/db/schema/auth'
+import { member, workspace } from '@repro-v2/db/schema/auth'
 
-import { forbiddenError } from '@/libs/contract/errors'
+import { forbiddenError, notFoundError } from '@/libs/contract/errors'
 
 async function assertMembership(userId: string, workspaceId: string) {
   const [row] = await db
@@ -16,6 +16,38 @@ async function assertMembership(userId: string, workspaceId: string) {
   }
 }
 
+async function resolveWorkspaceIdForSlug(
+  userId: string,
+  workspaceSlug: string,
+) {
+  const slug = workspaceSlug.trim().toLowerCase()
+
+  const rows = await db
+    .select({
+      workspaceId: member.workspace_id,
+      role: member.role,
+      ownerUserId: workspace.ownerUserId,
+    })
+    .from(member)
+    .innerJoin(workspace, eq(member.workspace_id, workspace.id))
+    .where(and(eq(member.userId, userId), eq(workspace.slug, slug)))
+
+  if (rows.length === 0) {
+    throw notFoundError()
+  }
+
+  const owned = rows.find(row => row.ownerUserId === userId)
+  const first = rows[0]
+  if (!first) {
+    throw notFoundError()
+  }
+
+  const preferred = rows.find(row => row.role === 'owner') ?? owned ?? first
+
+  return preferred.workspaceId
+}
+
 export const workspaceService = {
   assertMembership,
+  resolveWorkspaceIdForSlug,
 }

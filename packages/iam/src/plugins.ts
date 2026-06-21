@@ -10,11 +10,21 @@ import {
 
 import { buildCaptchaEndpoints } from './captcha-endpoints'
 import type { IamEmailHandlers } from './email-hooks'
+import { createWorkspaceCreateHooks } from './workspace-create-hooks'
 import { WORKSPACE_LIMIT } from './workspace-limit'
 import { createDemoSeedOnFirstWorkspaceHook } from './workspace-provisioning'
 
 const workspaceSchema = {
-  organization: { modelName: 'workspace' },
+  organization: {
+    modelName: 'workspace',
+    additionalFields: {
+      ownerUserId: {
+        type: 'string',
+        required: true,
+        input: false,
+      },
+    },
+  },
   member: {
     fields: {
       organizationId: 'workspace_id',
@@ -74,6 +84,7 @@ export function buildIamPlugins(
         sendInvitationEmail: email?.sendInvitationEmail,
         teams: { enabled: false },
         organizationHooks: {
+          ...createWorkspaceCreateHooks(db),
           afterCreateOrganization: createDemoSeedOnFirstWorkspaceHook(db),
         },
       }),

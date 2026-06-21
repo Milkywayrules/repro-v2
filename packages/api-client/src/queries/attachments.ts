@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 
-import type { ApiClient } from '../index'
+import { type ApiClient, tasksApi } from '../index'
 import { normalizeUnknownNetworkError } from '../network-error'
 import type { UploadMeta } from '../upload-limits'
 import { attachmentKeys } from './keys'
@@ -8,14 +8,45 @@ import { unwrapTreatyResponse } from './treaty'
 
 export type { UploadMeta } from '../upload-limits'
 
-export function taskAttachmentsQueryOptions(client: ApiClient, taskId: string) {
+export interface TaskAttachmentsListResponse {
+  data: Array<{
+    id: string
+    filename: string
+    contentType: string
+    sizeBytes: number
+  }>
+}
+
+export interface AttachmentPresignResponse {
+  data: {
+    uploadUrl: string
+    key: string
+  }
+}
+
+export interface AttachmentCompleteResponse {
+  data: TaskAttachmentsListResponse['data'][number]
+}
+
+export interface AttachmentDownloadResponse {
+  data: {
+    downloadUrl: string
+  }
+}
+
+export function taskAttachmentsQueryOptions(
+  client: ApiClient,
+  taskId: string,
+  workspaceSlug?: string,
+) {
   return queryOptions({
-    queryKey: attachmentKeys.list(taskId),
+    queryKey: attachmentKeys.list(taskId, workspaceSlug),
     queryFn: async () => {
-      const response = await client.api.v1
-        .tasks({ id: taskId })
-        .attachments.get()
-      return unwrapTreatyResponse(response)
+      const response = await tasksApi(
+        client,
+        workspaceSlug,
+      )({ id: taskId }).attachments.get()
+      return unwrapTreatyResponse(response) as TaskAttachmentsListResponse
     },
     enabled: Boolean(taskId),
   })
@@ -25,46 +56,56 @@ export async function presignTaskAttachment(
   client: ApiClient,
   taskId: string,
   body: UploadMeta,
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1
-    .tasks({ id: taskId })
-    .attachments.presign.post(body)
-  return unwrapTreatyResponse(response)
+  const response = await tasksApi(
+    client,
+    workspaceSlug,
+  )({ id: taskId }).attachments.presign.post(body)
+  return unwrapTreatyResponse(response) as AttachmentPresignResponse
 }
 
 export async function completeTaskAttachment(
   client: ApiClient,
   taskId: string,
   body: UploadMeta & { key: string },
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1
-    .tasks({ id: taskId })
-    .attachments.complete.post(body)
-  return unwrapTreatyResponse(response)
+  const response = await tasksApi(
+    client,
+    workspaceSlug,
+  )({ id: taskId }).attachments.complete.post(body)
+  return unwrapTreatyResponse(response) as AttachmentCompleteResponse
 }
 
 export async function downloadTaskAttachment(
   client: ApiClient,
   taskId: string,
   attachmentId: string,
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1
-    .tasks({ id: taskId })
+  const response = await tasksApi(
+    client,
+    workspaceSlug,
+  )({ id: taskId })
     .attachments({ attachmentId })
     .download.get()
-  return unwrapTreatyResponse(response)
+  return unwrapTreatyResponse(response) as AttachmentDownloadResponse
 }
 
 export async function deleteTaskAttachment(
   client: ApiClient,
   taskId: string,
   attachmentId: string,
+  workspaceSlug?: string,
 ) {
-  const response = await client.api.v1
-    .tasks({ id: taskId })
+  const response = await tasksApi(
+    client,
+    workspaceSlug,
+  )({ id: taskId })
     .attachments({ attachmentId })
     .delete()
-  return unwrapTreatyResponse(response)
+  return unwrapTreatyResponse(response) as AttachmentCompleteResponse
 }
 
 export async function uploadFileToPresignedUrl(

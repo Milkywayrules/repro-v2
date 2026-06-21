@@ -1,30 +1,69 @@
 'use client'
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
+import { useEffect } from 'react'
+import type { Route } from 'next'
+import { useRouter } from 'next/navigation'
 
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `
+import { iamFeaturesQueryOptions } from '@repro-v2/api-client/queries'
+import { useQuery } from '@tanstack/react-query'
 
-export default function Home() {
+import { ClientOnly } from '@/components/client-only'
+import { Loader } from '@/components/loader'
+import { apiClient } from '@/lib/api-client'
+import { routes } from '@/lib/routes'
+import { pickDefaultWorkspaceSlug } from '@/modules/iam/list-workspaces'
+
+export default function HomePage() {
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-2">
-      <pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-      <div className="grid gap-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-2 font-medium">API Status</h2>
-        </section>
-      </div>
-    </div>
+    <ClientOnly fallback={<Loader />}>
+      <HomeRedirect />
+    </ClientOnly>
   )
+}
+
+function HomeRedirect() {
+  const router = useRouter()
+  const { data: featuresResponse, isPending } = useQuery(
+    iamFeaturesQueryOptions(apiClient),
+  )
+
+  useEffect(() => {
+    if (isPending) {
+      return
+    }
+
+    let cancelled = false
+
+    async function redirectHome() {
+      const features = featuresResponse?.data
+
+      if (!features?.workspace) {
+        if (!cancelled) {
+          router.replace('/dashboard' as Route)
+        }
+        return
+      }
+
+      const slug = await pickDefaultWorkspaceSlug()
+      if (!cancelled) {
+        if (slug) {
+          router.replace(`/${slug}/dashboard` as Route)
+        } else {
+          router.replace(routes.onboarding as Route)
+        }
+      }
+    }
+
+    redirectHome().catch(() => {
+      if (!cancelled) {
+        router.replace(routes.login as Route)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [featuresResponse?.data, isPending, router])
+
+  return <Loader />
 }

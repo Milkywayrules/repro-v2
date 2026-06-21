@@ -21,7 +21,7 @@ export function usePostAuthRedirect() {
     features: PublicIamFeatures | undefined,
   ): Promise<PostAuthRedirectResult> {
     if (!features?.workspace) {
-      router.push(resolvePostAuthPath(nextPath) as Route)
+      router.push((await resolvePostAuthPath(nextPath, features)) as Route)
       return { ok: true }
     }
 
@@ -36,7 +36,7 @@ export function usePostAuthRedirect() {
       return { ok: true }
     }
 
-    router.push(resolvePostAuthPath(nextPath) as Route)
+    router.push((await resolvePostAuthPath(nextPath, features)) as Route)
     return { ok: true }
   }
 

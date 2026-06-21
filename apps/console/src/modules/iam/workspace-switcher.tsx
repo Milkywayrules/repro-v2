@@ -1,28 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import type { Route } from 'next'
+import { usePathname, useRouter } from 'next/navigation'
 
-import { activeWorkspaceId } from '@repro-v2/iam/session'
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@repro-v2/ui/components/dropdown-menu'
-import { useQueryClient } from '@tanstack/react-query'
 
-import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { iamClient } from '@/lib/iam-client'
+import {
+  parseWorkspaceFromPathname,
+  workspaceSubPathFromPathname,
+} from '@/lib/routes'
 
 import { useIamFeatures } from './use-iam-features'
 
 export function WorkspaceSwitcher() {
-  const queryClient = useQueryClient()
+  const router = useRouter()
+  const pathname = usePathname()
   const { features } = useIamFeatures()
-  const { data: session, refetch: refetchSession } = iamClient.useSession()
   const { data: organizations, isPending: orgsPending } =
     iamClient.useListOrganizations()
-  const [switchError, setSwitchError] = useState<string | null>(null)
-  const [switchingId, setSwitchingId] = useState<string | null>(null)
 
   if (!features?.workspace) {
     return null
@@ -33,62 +33,35 @@ export function WorkspaceSwitcher() {
     return null
   }
 
-  const activeOrganizationId = activeWorkspaceId(session?.session)
+  const activeSlug = parseWorkspaceFromPathname(pathname)
+  const subPath = workspaceSubPathFromPathname(pathname)
 
-  async function handleSwitch(organizationId: string) {
-    if (organizationId === activeOrganizationId || switchingId) {
+  function handleSwitch(slug: string) {
+    if (slug === activeSlug) {
       return
     }
 
-    setSwitchError(null)
-    setSwitchingId(organizationId)
-
-    try {
-      const { error } = await iamClient.organization.setActive({
-        organizationId,
-      })
-
-      if (error) {
-        setSwitchError(error.message ?? 'Could not switch workspace')
-        return
-      }
-
-      await refetchSession()
-      queryClient.clear()
-    } catch {
-      setSwitchError('Could not switch workspace')
-    } finally {
-      setSwitchingId(null)
-    }
+    router.push(`/${slug}/${subPath}` as Route)
   }
 
   return (
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
-      {switchError ? (
-        <div className="px-2 py-1">
-          <InlineErrorCallout className="px-2 py-1.5 text-left text-xs">
-            {switchError}
-          </InlineErrorCallout>
-        </div>
-      ) : null}
       {orgList.map(org => {
-        const isActive = org.id === activeOrganizationId
-        const isSwitching = switchingId === org.id && !isActive
+        const isActive = org.slug === activeSlug
 
         return (
           <DropdownMenuItem
             aria-current={isActive ? 'true' : undefined}
-            disabled={isActive || isSwitching}
+            disabled={isActive}
             key={org.id}
             onClick={() => {
-              handleSwitch(org.id)
+              handleSwitch(org.slug)
             }}
           >
             {org.name}
-            {isActive ? ' — active' : null}
-            {isSwitching ? ' — switching…' : null}
+            {isActive ? ' — current' : null}
           </DropdownMenuItem>
         )
       })}

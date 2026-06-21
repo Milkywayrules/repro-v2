@@ -1,4 +1,7 @@
-import { isTreatyUnauthorized } from '@repro-v2/api-client'
+import {
+  isTreatyUnauthorized,
+  type TaskListListResponse,
+} from '@repro-v2/api-client'
 import { useQuery } from '@tanstack/react-query'
 
 import { taskListsQuery } from '@/lib/api-client'
@@ -30,17 +33,19 @@ function serializeQueryError(error: unknown): string {
 interface ApiTaskListsWidgetProps {
   workspaceError: string | null
   workspaceReady: boolean
+  workspaceSlug: string | null
 }
 
 export function ApiTaskListsWidget({
   workspaceError,
   workspaceReady,
+  workspaceSlug,
 }: ApiTaskListsWidgetProps) {
   const { data: session } = iamClient.useSession()
 
   const { data, isPending, isError, error } = useQuery({
-    ...taskListsQuery,
-    enabled: Boolean(session?.user && workspaceReady),
+    ...taskListsQuery(workspaceSlug ?? undefined),
+    enabled: Boolean(session?.user && workspaceReady && workspaceSlug),
   })
 
   if (workspaceError) {
@@ -77,7 +82,7 @@ export function ApiTaskListsWidget({
     )
   }
 
-  const lists = data?.data ?? []
+  const lists = (data as TaskListListResponse | undefined)?.data ?? []
 
   if (lists.length === 0) {
     return <p className="popup-muted">No task lists</p>

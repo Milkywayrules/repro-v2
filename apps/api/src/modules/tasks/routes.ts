@@ -4,16 +4,22 @@ import {
   taskListFilterQuery,
   updateTaskBody,
 } from '@repro-v2/api-schemas/modules/tasks'
+import { iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { paginatedList } from '@/libs/queries/paginated-list'
 import { requireActiveWorkspace } from '@/modules/iam/require-active-workspace'
+import { requireWorkspaceFromPath } from '@/modules/iam/require-workspace-from-path'
 
 import { tasksService } from './service'
 
+const workspaceGuard = iamFeatures.workspace
+  ? requireWorkspaceFromPath
+  : requireActiveWorkspace
+
 export const tasksRoutes = new Elysia({ name: 'tasks-routes' })
-  .use(requireActiveWorkspace)
+  .use(workspaceGuard)
   .get(
     '/',
     async ({ user, workspaceId, query, request }) => {

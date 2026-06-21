@@ -3,16 +3,22 @@ import {
   taskListIdParams,
   updateTaskListBody,
 } from '@repro-v2/api-schemas/modules/task-lists'
+import { iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { paginatedList } from '@/libs/queries/paginated-list'
 import { requireActiveWorkspace } from '@/modules/iam/require-active-workspace'
+import { requireWorkspaceFromPath } from '@/modules/iam/require-workspace-from-path'
 
 import { taskListsService } from './service'
 
+const workspaceGuard = iamFeatures.workspace
+  ? requireWorkspaceFromPath
+  : requireActiveWorkspace
+
 export const taskListsRoutes = new Elysia({ name: 'task-lists-routes' })
-  .use(requireActiveWorkspace)
+  .use(workspaceGuard)
   .get('/', async ({ user, workspaceId, request }) => {
     const searchParams = new URL(request.url).searchParams
     const { rows, meta } = await paginatedList({

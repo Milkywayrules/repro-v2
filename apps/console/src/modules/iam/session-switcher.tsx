@@ -1,84 +1,38 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
 
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@repro-v2/ui/components/dropdown-menu'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { iamClient } from '@/lib/iam-client'
+import { routes } from '@/lib/routes'
 
+import { deviceSessionsQueryOptions } from './device-sessions'
 import { useIamFeatures } from './use-iam-features'
-
-interface DeviceSession {
-  session: {
-    token: string
-  }
-  user: {
-    email: string
-    name: string
-  }
-}
-
-async function listDeviceSessions(): Promise<DeviceSession[]> {
-  try {
-    const { data } = await iamClient.multiSession.listDeviceSessions()
-    return data ?? []
-  } catch {
-    return []
-  }
-}
 
 export function SessionSwitcher() {
   const queryClient = useQueryClient()
   const { features } = useIamFeatures()
   const { data: session, refetch: refetchSession } = iamClient.useSession()
-  const [deviceSessions, setDeviceSessions] = useState<DeviceSession[]>([])
-  const [loading, setLoading] = useState(false)
+  const { data: deviceSessions = [], isPending: loading } = useQuery({
+    ...deviceSessionsQueryOptions(),
+    enabled: Boolean(features?.multiSession),
+  })
   const [switchError, setSwitchError] = useState<string | null>(null)
   const [switchingToken, setSwitchingToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!features?.multiSession) {
-      return
-    }
-
-    let cancelled = false
-    setLoading(true)
-
-    async function loadSessions() {
-      try {
-        const sessions = await listDeviceSessions()
-        if (!cancelled) {
-          setDeviceSessions(sessions)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    loadSessions()
-
-    return () => {
-      cancelled = true
-    }
-  }, [features?.multiSession])
 
   if (!features?.multiSession) {
     return null
   }
 
   const activeToken = session?.session.token
-
-  async function reloadSessions() {
-    setDeviceSessions(await listDeviceSessions())
-  }
 
   async function handleSwitch(sessionToken: string) {
     if (sessionToken === activeToken || switchingToken) {
@@ -98,7 +52,6 @@ export function SessionSwitcher() {
 
       await refetchSession()
       queryClient.clear()
-      await reloadSessions()
     } catch {
       setSwitchError('Could not switch session')
     } finally {
@@ -110,6 +63,9 @@ export function SessionSwitcher() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel>Sessions</DropdownMenuLabel>
+      <DropdownMenuItem render={<Link href={`${routes.login}?addAccount=1`} />}>
+        Add account
+      </DropdownMenuItem>
       {loading ? (
         <DropdownMenuItem disabled>Loading sessions…</DropdownMenuItem>
       ) : null}

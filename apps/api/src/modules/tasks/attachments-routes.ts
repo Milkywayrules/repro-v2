@@ -4,17 +4,23 @@ import {
   taskAttachmentPathParams,
   taskIdPathParams,
 } from '@repro-v2/api-schemas/modules/attachments'
+import { iamFeatures } from '@repro-v2/env/api'
 import { Elysia } from 'elysia'
 
 import { http } from '@/libs/contract'
 import { requireActiveWorkspace } from '@/modules/iam/require-active-workspace'
+import { requireWorkspaceFromPath } from '@/modules/iam/require-workspace-from-path'
 
 import { attachmentsService } from './attachments-service'
+
+const workspaceGuard = iamFeatures.workspace
+  ? requireWorkspaceFromPath
+  : requireActiveWorkspace
 
 export const taskAttachmentsRoutes = new Elysia({
   name: 'task-attachments-routes',
 })
-  .use(requireActiveWorkspace)
+  .use(workspaceGuard)
   .get(
     '/:id/attachments',
     async ({ user, workspaceId, params }) => {

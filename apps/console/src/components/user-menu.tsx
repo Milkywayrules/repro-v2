@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 import { WORKSPACE_LIMIT } from '@repro-v2/iam/workspace-limit'
 import { Button } from '@repro-v2/ui/components/button'
@@ -17,7 +17,7 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { useClientMounted } from '@/hooks/use-client-mounted'
 import { iamClient } from '@/lib/iam-client'
-import { routes } from '@/lib/routes'
+import { parseWorkspaceFromPathname, routes } from '@/lib/routes'
 import { SessionSwitcher } from '@/modules/iam/session-switcher'
 import { useIamFeatures } from '@/modules/iam/use-iam-features'
 import { WorkspaceSwitcher } from '@/modules/iam/workspace-switcher'
@@ -28,6 +28,7 @@ function AuthenticatedUserMenu({
   session: NonNullable<ReturnType<typeof iamClient.useSession>['data']>
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const queryClient = useQueryClient()
   const { features } = useIamFeatures()
   const { data: organizations } = iamClient.useListOrganizations()
@@ -35,6 +36,11 @@ function AuthenticatedUserMenu({
   const orgCount = organizations?.length ?? 0
   const canCreateWorkspace =
     features?.workspace && orgCount > 0 && orgCount < WORKSPACE_LIMIT
+  const workspaceSlug = parseWorkspaceFromPathname(pathname)
+  const onboardingHref =
+    features?.workspace && workspaceSlug
+      ? `${routes.onboarding}?next=${encodeURIComponent(pathname)}`
+      : routes.onboarding
 
   return (
     <DropdownMenu>
@@ -48,7 +54,9 @@ function AuthenticatedUserMenu({
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
           <WorkspaceSwitcher />
           {canCreateWorkspace ? (
-            <DropdownMenuItem render={<Link href={routes.onboarding} />}>
+            <DropdownMenuItem
+              render={<Link href={onboardingHref as '/onboarding'} />}
+            >
               Create workspace
             </DropdownMenuItem>
           ) : null}

@@ -17,6 +17,9 @@
     "./modules/attachments": {
       "default": "./src/modules/attachments.ts"
     },
+    "./modules/workspace": {
+      "default": "./src/modules/workspace.ts"
+    },
     "./shared/envelope": {
       "default": "./src/shared/envelope.ts"
     },

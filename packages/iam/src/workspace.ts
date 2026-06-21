@@ -58,17 +58,5 @@ export async function ensureActiveWorkspace(
     return { ok: false, reason: 'no_workspace' }
   }
 
-  const { error: setError } = await client.organization.setActive({
-    organizationId: first.id,
-  })
-
-  if (setError) {
-    return {
-      ok: false,
-      reason: 'error',
-      error: setError.message ?? 'Could not set active workspace',
-    }
-  }
-
   return { ok: true, workspaceId: first.id }
 }

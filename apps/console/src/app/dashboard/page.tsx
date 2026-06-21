@@ -8,14 +8,16 @@ import { Loader } from '@/components/loader'
 import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
+import { Dashboard } from '@/modules/dashboard/dashboard'
+import { FlatRouteGuard } from '@/modules/iam/flat-route-guard'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
-
-import { Dashboard } from './dashboard'
 
 export default function DashboardPage() {
   return (
     <ClientOnly fallback={<Loader />}>
-      <DashboardPageClient />
+      <FlatRouteGuard subPath="dashboard">
+        <DashboardPageClient />
+      </FlatRouteGuard>
     </ClientOnly>
   )
 }

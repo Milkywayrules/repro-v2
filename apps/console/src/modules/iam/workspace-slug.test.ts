@@ -10,4 +10,8 @@ describe('workspaceSlugFromName', () => {
   test('falls back when name has no slug characters', () => {
     expect(workspaceSlugFromName('!!!')).toBe('workspace')
   })
+
+  test('avoids reserved route slugs', () => {
+    expect(workspaceSlugFromName('Login')).toBe('login-ws')
+  })
 })

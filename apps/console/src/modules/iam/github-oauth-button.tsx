@@ -23,7 +23,7 @@ export function GitHubOAuthButton({
   captchaRequired: boolean
   captchaToken: string | null
   clearCaptcha: () => void
-  features: { github: boolean } | undefined
+  features: { github: boolean; workspace?: boolean } | undefined
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [oauthError, setOauthError] = useState<string | null>(null)
@@ -37,7 +37,9 @@ export function GitHubOAuthButton({
       await iamClient.signIn.social(
         {
           provider: 'github',
-          callbackURL: buildAuthCallbackUrl(nextPath),
+          callbackURL: buildAuthCallbackUrl(nextPath, {
+            workspace: features?.workspace,
+          }),
         },
         {
           ...captchaFetchOptions(captchaToken),

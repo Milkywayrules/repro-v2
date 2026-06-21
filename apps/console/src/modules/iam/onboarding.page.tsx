@@ -16,7 +16,7 @@ import z from 'zod'
 import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
-import { routes } from '@/lib/routes'
+import { routes, workspaceRoutes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 
 import { buildOnboardingPath, resolvePostAuthPath } from './auth-redirect'
@@ -52,10 +52,12 @@ export function OnboardingPage() {
 
     if ((organizations?.length ?? 0) >= WORKSPACE_LIMIT) {
       toast.info('You have reached your workspace limit.')
-      router.replace(resolvePostAuthPath(nextPath) as Route)
+      resolvePostAuthPath(nextPath, features).then(path => {
+        router.replace(path as Route)
+      })
     }
   }, [
-    features?.workspace,
+    features,
     featuresPending,
     nextPath,
     orgsPending,
@@ -72,7 +74,7 @@ export function OnboardingPage() {
       const name = value.name.trim()
       const slug = workspaceSlugFromName(name)
 
-      const { data, error } = await iamClient.organization.create({
+      const { error } = await iamClient.organization.create({
         name,
         slug,
       })
@@ -82,20 +84,13 @@ export function OnboardingPage() {
         return
       }
 
-      if (data?.id) {
-        const { error: setActiveError } =
-          await iamClient.organization.setActive({ organizationId: data.id })
-
-        if (setActiveError) {
-          setSubmitError(
-            'Workspace created but could not switch to it. Try again.',
-          )
-          return
-        }
+      toast.success('Workspace created')
+      if (features?.workspace) {
+        router.push(workspaceRoutes(slug).dashboard as Route)
+        return
       }
 
-      toast.success('Workspace created')
-      router.push(resolvePostAuthPath(nextPath) as Route)
+      router.push((await resolvePostAuthPath(nextPath, features)) as Route)
     },
     validators: {
       onSubmit: z.object({
@@ -144,6 +139,7 @@ export function OnboardingPage() {
           {field => {
             const errorId = `${field.name}-error`
             const hasError = field.state.meta.errors.length > 0
+            const previewSlug = workspaceSlugFromName(field.state.value)
 
             return (
               <div className="space-y-2">
@@ -158,6 +154,9 @@ export function OnboardingPage() {
                   placeholder="Acme Inc"
                   value={field.state.value}
                 />
+                <p className="text-muted-foreground text-sm">
+                  URL: {workspaceRoutes(previewSlug).dashboard}
+                </p>
                 {field.state.meta.errors.map(error => (
                   <p
                     className="text-destructive text-sm"

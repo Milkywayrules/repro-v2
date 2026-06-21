@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
-import { activeWorkspaceId } from '@repro-v2/iam/session'
 import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
@@ -13,10 +12,12 @@ import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
 import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
-import { routes } from '@/lib/routes'
+import { routes, workspaceRoutes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 
 import { resolvePostAuthPath } from './auth-redirect'
+import { resolveWorkspaceSlugById } from './list-workspaces'
+import { useIamFeatures } from './use-iam-features'
 
 interface InvitationDetails {
   email: string
@@ -25,6 +26,7 @@ interface InvitationDetails {
   inviterEmail: string
   organizationId: string
   organizationName: string
+  organizationSlug?: string
   status: string
 }
 
@@ -82,6 +84,10 @@ function parseInvitation(
     organizationId: data.organizationId,
     organizationName: data.organizationName,
     inviterEmail: data.inviterEmail,
+    organizationSlug:
+      typeof data.organizationSlug === 'string'
+        ? data.organizationSlug
+        : undefined,
     expiresAt,
   }
 }
@@ -185,42 +191,33 @@ function resolveAcceptErrorState(
   return null
 }
 
-function organizationIdFromAcceptResponse(
-  data: unknown,
-  fallbackOrganizationId: string,
-): string {
-  if (
-    data &&
-    typeof data === 'object' &&
-    'invitation' in data &&
-    data.invitation &&
-    typeof data.invitation === 'object' &&
-    'organizationId' in data.invitation &&
-    typeof data.invitation.organizationId === 'string'
-  ) {
-    return data.invitation.organizationId
-  }
-
-  return fallbackOrganizationId
-}
-
-async function setActiveOrganizationIfNeeded(
-  session: unknown,
+async function resolveInvitationDestination(
   organizationId: string,
-): Promise<boolean> {
-  if (activeWorkspaceId(session) === organizationId) {
-    return true
+  organizationSlug: string | undefined,
+  nextPath: string | null,
+  features: ReturnType<typeof useIamFeatures>['features'],
+): Promise<string> {
+  if (nextPath) {
+    return resolvePostAuthPath(nextPath, features)
   }
 
-  const { error: setActiveError } = await iamClient.organization.setActive({
-    organizationId,
-  })
+  if (!features?.workspace) {
+    return '/dashboard'
+  }
 
-  return !setActiveError
+  const slug =
+    organizationSlug ?? (await resolveWorkspaceSlugById(organizationId))
+
+  if (slug) {
+    return workspaceRoutes(slug).dashboard
+  }
+
+  return resolvePostAuthPath(null, features)
 }
 
 export function AcceptInvitationPage() {
   const router = useRouter()
+  const { features } = useIamFeatures()
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const [invitationId] = useQueryState(searchParams.invitationId, parseAsString)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
@@ -307,6 +304,19 @@ export function AcceptInvitationPage() {
     }
   }, [invitationId, session?.user, sessionPending])
 
+  async function navigateAfterJoin(
+    organizationId: string,
+    organizationSlug?: string,
+  ) {
+    const destination = await resolveInvitationDestination(
+      organizationId,
+      organizationSlug,
+      nextPath,
+      features,
+    )
+    router.push(destination as Route)
+  }
+
   async function handleAccept() {
     if (pageState.status !== 'ready' || !invitationId) {
       return
@@ -314,7 +324,7 @@ export function AcceptInvitationPage() {
 
     setIsAccepting(true)
 
-    const { data, error } = await iamClient.organization.acceptInvitation({
+    const { error } = await iamClient.organization.acceptInvitation({
       invitationId,
     })
 
@@ -332,41 +342,26 @@ export function AcceptInvitationPage() {
       return
     }
 
-    const organizationId = organizationIdFromAcceptResponse(
-      data,
-      pageState.invitation.organizationId,
-    )
-
-    const activated = await setActiveOrganizationIfNeeded(
-      session?.session,
-      organizationId,
-    )
-
-    if (!activated) {
-      setIsAccepting(false)
-      toast.error('Could not switch to workspace')
-      return
-    }
-
     toast.success('Invitation accepted')
-    router.push(resolvePostAuthPath(nextPath) as Route)
+    await navigateAfterJoin(
+      pageState.invitation.organizationId,
+      pageState.invitation.organizationSlug,
+    )
+    setIsAccepting(false)
   }
 
-  async function handleContinueToApp(organizationId: string) {
+  async function handleContinueToApp(
+    organizationId: string,
+    organizationSlug?: string,
+  ) {
     setIsContinuing(true)
+    await navigateAfterJoin(organizationId, organizationSlug)
+    setIsContinuing(false)
+  }
 
-    const activated = await setActiveOrganizationIfNeeded(
-      session?.session,
-      organizationId,
-    )
-
-    if (!activated) {
-      setIsContinuing(false)
-      toast.error('Could not switch to workspace')
-      return
-    }
-
-    router.push(resolvePostAuthPath(nextPath) as Route)
+  async function goToDefaultDashboard() {
+    const destination = await resolvePostAuthPath(null, features)
+    router.push(destination as Route)
   }
 
   if (sessionPending || !session?.user || pageState.status === 'loading') {
@@ -379,7 +374,9 @@ export function AcceptInvitationPage() {
         actions={
           <Button
             className="w-full"
-            onClick={() => router.push(routes.dashboard)}
+            onClick={() => {
+              goToDefaultDashboard().catch(() => undefined)
+            }}
             type="button"
             variant="outline"
           >
@@ -420,7 +417,9 @@ export function AcceptInvitationPage() {
         actions={
           <Button
             className="w-full"
-            onClick={() => router.push(routes.dashboard)}
+            onClick={() => {
+              goToDefaultDashboard().catch(() => undefined)
+            }}
             type="button"
             variant="outline"
           >
@@ -451,7 +450,9 @@ export function AcceptInvitationPage() {
         <InvitationSummary invitation={pageState.invitation} />
         <Button
           className="w-full"
-          onClick={() => router.push(routes.dashboard)}
+          onClick={() => {
+            goToDefaultDashboard().catch(() => undefined)
+          }}
           type="button"
           variant="outline"
         >
@@ -519,12 +520,13 @@ export function AcceptInvitationPage() {
           className="w-full"
           disabled={isContinuing}
           onClick={() => {
-            handleContinueToApp(pageState.invitation.organizationId).catch(
-              () => {
-                setIsContinuing(false)
-                toast.error('Could not continue to app')
-              },
-            )
+            handleContinueToApp(
+              pageState.invitation.organizationId,
+              pageState.invitation.organizationSlug,
+            ).catch(() => {
+              setIsContinuing(false)
+              toast.error('Could not continue to app')
+            })
           }}
           type="button"
         >

@@ -25,6 +25,7 @@ export {
 } from './attachments'
 export {
   attachmentKeys,
+  deviceSessionKeys,
   meKeys,
   taskKeys,
   taskListKeys,
