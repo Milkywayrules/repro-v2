@@ -22,29 +22,19 @@ import { SessionSwitcher } from '@/modules/iam/session-switcher'
 import { useIamFeatures } from '@/modules/iam/use-iam-features'
 import { WorkspaceSwitcher } from '@/modules/iam/workspace-switcher'
 
-export function UserMenu() {
+function AuthenticatedUserMenu({
+  session,
+}: {
+  session: NonNullable<ReturnType<typeof iamClient.useSession>['data']>
+}) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const mounted = useClientMounted()
-  const { data: session, isPending } = iamClient.useSession()
   const { features } = useIamFeatures()
   const { data: organizations } = iamClient.useListOrganizations()
 
   const orgCount = organizations?.length ?? 0
   const canCreateWorkspace =
     features?.workspace && orgCount > 0 && orgCount < WORKSPACE_LIMIT
-
-  if (!mounted || isPending) {
-    return <Skeleton className="h-9 w-24" />
-  }
-
-  if (!session) {
-    return (
-      <Link href="/login">
-        <Button variant="outline">Sign In</Button>
-      </Link>
-    )
-  }
 
   return (
     <DropdownMenu>
@@ -82,4 +72,23 @@ export function UserMenu() {
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+export function UserMenu() {
+  const mounted = useClientMounted()
+  const { data: session, isPending } = iamClient.useSession()
+
+  if (!mounted || isPending) {
+    return <Skeleton className="h-9 w-24" />
+  }
+
+  if (!session) {
+    return (
+      <Link href="/login">
+        <Button variant="outline">Sign In</Button>
+      </Link>
+    )
+  }
+
+  return <AuthenticatedUserMenu session={session} />
 }

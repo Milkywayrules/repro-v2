@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { env } from '@repro-v2/env/console'
@@ -77,24 +77,30 @@ function LoginRedirectError({
 
 function LoginAuthForms({
   authBlocked,
+  captchaError,
   captchaRequired,
   captchaToken,
   captchaMisconfigured,
   captchaResetKey,
   clearCaptcha,
   features,
+  onCaptchaError,
+  onCaptchaExpire,
   onCaptchaToken,
   showSignIn,
   onShowSignIn,
   onShowSignUp,
 }: {
   authBlocked: boolean
+  captchaError: string | null
   captchaRequired: boolean
   captchaToken: string | null
   captchaMisconfigured: boolean
   captchaResetKey: number
   clearCaptcha: () => void
   features: PublicIamFeatures
+  onCaptchaError: () => void
+  onCaptchaExpire: () => void
   onCaptchaToken: (token: string) => void
   showSignIn: boolean
   onShowSignIn: () => void
@@ -122,9 +128,21 @@ function LoginAuthForms({
       {captchaRequired ? (
         <TurnstileWidget
           key={captchaResetKey}
-          onExpire={clearCaptcha}
+          onError={onCaptchaError}
+          onExpire={onCaptchaExpire}
           onToken={onCaptchaToken}
         />
+      ) : null}
+
+      {captchaError ? (
+        <div className="space-y-2">
+          <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-destructive text-sm">
+            {captchaError}
+          </p>
+          <Button onClick={clearCaptcha} type="button" variant="outline">
+            Retry verification
+          </Button>
+        </div>
       ) : null}
 
       <GitHubOAuthButton
@@ -197,9 +215,12 @@ export function LoginPage() {
   const redirectAfterAuth = usePostAuthRedirect()
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const { features, isError, isPending: featuresPending } = useIamFeatures()
+  const sessionCheckedOnce = useRef(false)
+  const featuresCheckedOnce = useRef(false)
   const [showSignIn, setShowSignIn] = useState(true)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [captchaResetKey, setCaptchaResetKey] = useState(0)
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
   const [redirectState, setRedirectState] = useState<RedirectState | null>(null)
 
   const captchaEnabled = Boolean(features?.captcha)
@@ -210,7 +231,24 @@ export function LoginPage() {
 
   function clearCaptcha() {
     setCaptchaToken(null)
+    setCaptchaError(null)
     setCaptchaResetKey(key => key + 1)
+  }
+
+  function handleCaptchaExpire() {
+    setCaptchaToken(null)
+  }
+
+  function handleCaptchaError() {
+    setCaptchaToken(null)
+    setCaptchaError(
+      'CAPTCHA verification failed. For local dev with production Turnstile keys, add localhost under Hostname Management in the Cloudflare Turnstile widget (hostname only, no port). Or use Cloudflare test keys locally.',
+    )
+  }
+
+  function handleCaptchaToken(token: string) {
+    setCaptchaToken(token)
+    setCaptchaError(null)
   }
 
   function showSignInForm() {
@@ -220,6 +258,18 @@ export function LoginPage() {
   function showSignUpForm() {
     setShowSignIn(false)
   }
+
+  useEffect(() => {
+    if (!sessionPending) {
+      sessionCheckedOnce.current = true
+    }
+  }, [sessionPending])
+
+  useEffect(() => {
+    if (!featuresPending) {
+      featuresCheckedOnce.current = true
+    }
+  }, [featuresPending])
 
   useEffect(() => {
     if (sessionPending || !session?.user) {
@@ -279,7 +329,7 @@ export function LoginPage() {
       .catch(() => failRedirect(setRedirectState))
   }
 
-  if (sessionPending) {
+  if (sessionPending && !sessionCheckedOnce.current) {
     return <Loader />
   }
 
@@ -297,7 +347,7 @@ export function LoginPage() {
     return <Loader />
   }
 
-  if (featuresPending) {
+  if (featuresPending && !featuresCheckedOnce.current) {
     return (
       <div className="mx-auto mt-10 w-full max-w-md space-y-4 p-6">
         <Skeleton className="mx-auto h-9 w-48" />
@@ -323,13 +373,16 @@ export function LoginPage() {
   return (
     <LoginAuthForms
       authBlocked={authBlocked}
+      captchaError={captchaError}
       captchaMisconfigured={captchaMisconfigured}
       captchaRequired={captchaRequired}
       captchaResetKey={captchaResetKey}
       captchaToken={captchaToken}
       clearCaptcha={clearCaptcha}
       features={features}
-      onCaptchaToken={setCaptchaToken}
+      onCaptchaError={handleCaptchaError}
+      onCaptchaExpire={handleCaptchaExpire}
+      onCaptchaToken={handleCaptchaToken}
       onShowSignIn={showSignInForm}
       onShowSignUp={showSignUpForm}
       showSignIn={showSignIn}

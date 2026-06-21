@@ -74,6 +74,7 @@ export function iamFeaturesQueryOptions(client: ApiClient) {
       const response = await client.api.v1.platform['iam-features'].get()
       return unwrapTreatyResponse(response)
     },
+    refetchOnWindowFocus: false,
     staleTime: IAM_FEATURES_STALE_TIME_MS,
   })
 }

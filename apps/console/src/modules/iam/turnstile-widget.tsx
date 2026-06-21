@@ -56,15 +56,24 @@ function ensureTurnstileScript() {
 }
 
 export function TurnstileWidget({
+  onError,
   onExpire,
   onToken,
 }: {
+  onError?: () => void
   onExpire: () => void
   onToken: (token: string) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
+  const onErrorRef = useRef(onError)
+  const onExpireRef = useRef(onExpire)
+  const onTokenRef = useRef(onToken)
   const siteKey = env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
+  onErrorRef.current = onError
+  onExpireRef.current = onExpire
+  onTokenRef.current = onToken
 
   useEffect(() => {
     if (!(siteKey && containerRef.current)) {
@@ -83,9 +92,9 @@ export function TurnstileWidget({
 
       widgetIdRef.current = window.turnstile.render(container, {
         sitekey: siteKey,
-        callback: onToken,
-        'expired-callback': onExpire,
-        'error-callback': onExpire,
+        callback: token => onTokenRef.current(token),
+        'expired-callback': () => onExpireRef.current(),
+        'error-callback': () => onErrorRef.current?.() ?? onExpireRef.current(),
       })
     }
 
@@ -104,7 +113,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null
       }
     }
-  }, [onExpire, onToken])
+  }, [])
 
   if (!siteKey) {
     return null
