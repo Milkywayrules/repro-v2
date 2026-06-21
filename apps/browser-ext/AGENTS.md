@@ -43,7 +43,7 @@ Path alias: `@/` → `src/`. Entry: `App.tsx` → `PopupPage`.
 
 ## React Compiler
 
-**Not enabled** (WXT, not Next.js). Next apps use compiler — see root `AGENTS.md`. Here, `useMemo` / `useCallback` / `memo` are ok when a popup widget actually needs stable refs.
+**Enabled** via `reactCompilerPreset()` + `@rolldown/plugin-babel` in `wxt.config.ts` (`vite.plugins`). Same rules as Next apps — see root `AGENTS.md`. Do not add `useMemo` / `useCallback` / `memo` for re-render performance.
 
 ## Avoid
 

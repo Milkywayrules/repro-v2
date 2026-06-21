@@ -2,9 +2,9 @@
 import Link from 'next/link'
 
 import { ModeToggle } from './mode-toggle'
-import UserMenu from './user-menu'
+import { UserMenu } from './user-menu'
 
-export default function Header() {
+export function Header() {
   const links = [
     { to: '/', label: 'Home' },
     { to: '/dashboard', label: 'Dashboard' },

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Smoke checks for IAM (iam-features, sign-up), tasks, and browser-ext builds.
+ * Smoke checks for IAM (features, sign-up/sign-in, captcha, social), tasks, and browser-ext builds.
  */
 
 import dotenv from 'dotenv'
@@ -18,6 +18,9 @@ dotenv.config({ path: resolve(rootDir, 'apps/console/.env') })
 const apiUrl = process.env.IAM_BETTER_AUTH_URL ?? 'http://localhost:5000'
 const consoleOrigin = 'http://localhost:5001'
 
+/** Cloudflare Turnstile always-pass test token (visible widget). */
+const TURNSTILE_TEST_TOKEN = '1x00000000000000000000AA'
+
 const sleep = (ms: number) =>
   new Promise<void>(resolveSleep => {
     setTimeout(resolveSleep, ms)
@@ -25,6 +28,10 @@ const sleep = (ms: number) =>
 
 function fail(message: string) {
   throw new Error(message)
+}
+
+function logStep(message: string) {
+  process.stdout.write(`smoke: ${message}\n`)
 }
 
 async function fetchJson(
@@ -97,6 +104,20 @@ function mergeCookieHeader(
     .join('; ')
 }
 
+type IamFeatureFlags = Record<string, boolean>
+
+function authJsonHeaders(
+  sessionCookie: string,
+  extra?: Record<string, string>,
+): Record<string, string> {
+  return {
+    cookie: sessionCookie,
+    origin: consoleOrigin,
+    'content-type': 'application/json',
+    ...extra,
+  }
+}
+
 async function ensureActiveWorkspace(
   sessionCookie: string,
   workspaceEnabled: boolean,
@@ -146,6 +167,262 @@ async function ensureActiveWorkspace(
   }
 
   return mergeCookieHeader(sessionCookie, collectSetCookie(setActive.headers))
+}
+
+async function signUpEmail(input: {
+  email: string
+  password: string
+  name: string
+  captchaToken?: string
+}): Promise<{ status: number; body: unknown; sessionCookie: string }> {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    origin: consoleOrigin,
+  }
+
+  if (input.captchaToken) {
+    headers['x-captcha-response'] = input.captchaToken
+  }
+
+  const signUp = await fetchJson(`${apiUrl}/api/auth/sign-up/email`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email: input.email,
+      password: input.password,
+      name: input.name,
+    }),
+  })
+
+  const sessionCookie = cookieHeaderFromSetCookies(
+    collectSetCookie(signUp.headers),
+  )
+
+  return { status: signUp.status, body: signUp.body, sessionCookie }
+}
+
+async function signInEmail(input: {
+  email: string
+  password: string
+  captchaToken?: string
+}): Promise<{ status: number; body: unknown; sessionCookie: string }> {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    origin: consoleOrigin,
+  }
+
+  if (input.captchaToken) {
+    headers['x-captcha-response'] = input.captchaToken
+  }
+
+  const signIn = await fetchJson(`${apiUrl}/api/auth/sign-in/email`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email: input.email,
+      password: input.password,
+    }),
+  })
+
+  const sessionCookie = cookieHeaderFromSetCookies(
+    collectSetCookie(signIn.headers),
+  )
+
+  return { status: signIn.status, body: signIn.body, sessionCookie }
+}
+
+function getSession(sessionCookie: string) {
+  return fetchJson(`${apiUrl}/api/auth/get-session`, {
+    headers: { cookie: sessionCookie, origin: consoleOrigin },
+  })
+}
+
+function signOut(sessionCookie: string) {
+  return fetchJson(`${apiUrl}/api/auth/sign-out`, {
+    method: 'POST',
+    headers: authJsonHeaders(sessionCookie),
+    body: JSON.stringify({}),
+  })
+}
+
+async function smokeCaptchaEndpoints(features: IamFeatureFlags) {
+  if (!features.captcha) {
+    logStep('captcha disabled — skip captcha enforcement checks')
+    return
+  }
+
+  logStep('captcha enabled — checking auth endpoints reject missing token')
+
+  const probeEmail = `captcha-probe-${Date.now()}@example.com`
+  const probePassword = 'captcha-probe-password'
+
+  const signUpWithoutCaptcha = await signUpEmail({
+    email: probeEmail,
+    password: probePassword,
+    name: 'Captcha Probe',
+  })
+
+  if (signUpWithoutCaptcha.status === 200) {
+    fail(
+      'expected sign-up without captcha token to fail when captcha is enabled',
+    )
+  }
+
+  const signInWithoutCaptcha = await signInEmail({
+    email: probeEmail,
+    password: probePassword,
+  })
+
+  if (signInWithoutCaptcha.status === 200) {
+    fail(
+      'expected sign-in without captcha token to fail when captcha is enabled',
+    )
+  }
+
+  if (features.github) {
+    const socialWithoutCaptcha = await fetchJson(
+      `${apiUrl}/api/auth/sign-in/social`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: consoleOrigin,
+        },
+        body: JSON.stringify({ provider: 'github' }),
+      },
+    )
+
+    if (socialWithoutCaptcha.status === 200) {
+      fail(
+        'expected sign-in/social without captcha token to fail when captcha is enabled',
+      )
+    }
+  }
+
+  const signUpWithTestToken = await signUpEmail({
+    email: `captcha-ok-${Date.now()}@example.com`,
+    password: probePassword,
+    name: 'Captcha OK',
+    captchaToken: TURNSTILE_TEST_TOKEN,
+  })
+
+  if (signUpWithTestToken.status !== 200) {
+    fail(
+      `sign-up with Turnstile test token failed (${signUpWithTestToken.status}): ${JSON.stringify(signUpWithTestToken.body)} — use TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA for smoke`,
+    )
+  }
+
+  logStep('captcha enforcement ok')
+}
+
+async function smokeGithubSocial(features: IamFeatureFlags) {
+  if (!features.github) {
+    logStep('github disabled — skip social sign-in probe')
+    return
+  }
+
+  logStep('github enabled — probing sign-in/social (no OAuth completion)')
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    origin: consoleOrigin,
+  }
+
+  if (features.captcha) {
+    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  }
+
+  const social = await fetchJson(`${apiUrl}/api/auth/sign-in/social`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      provider: 'github',
+      callbackURL: `${consoleOrigin}/login`,
+    }),
+  })
+
+  // Without real GitHub OAuth credentials this may be 400/500; we only require it not succeed as anonymous session.
+  if (social.status === 200) {
+    const body = social.body as { url?: string; redirect?: boolean } | null
+    if (!body || (typeof body === 'object' && !('url' in body))) {
+      fail('unexpected 200 from sign-in/social without OAuth redirect payload')
+    }
+  }
+
+  logStep(`github social probe responded ${social.status}`)
+}
+
+async function smokeMagicLink(features: IamFeatureFlags) {
+  if (!features.magicLink) {
+    logStep('magic link disabled — skip')
+    return
+  }
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    origin: consoleOrigin,
+  }
+
+  if (features.captcha) {
+    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  }
+
+  const magicLink = await fetchJson(`${apiUrl}/api/auth/sign-in/magic-link`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email: `magic-${Date.now()}@example.com`,
+      callbackURL: `${consoleOrigin}/login`,
+    }),
+  })
+
+  if (magicLink.status !== 200) {
+    fail(
+      `magic-link request failed (${magicLink.status}): ${JSON.stringify(magicLink.body)}`,
+    )
+  }
+
+  logStep('magic-link request ok')
+}
+
+async function smokePasswordReset(features: IamFeatureFlags) {
+  if (!features.emailPassword) {
+    return
+  }
+
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    origin: consoleOrigin,
+  }
+
+  if (features.captcha) {
+    headers['x-captcha-response'] = TURNSTILE_TEST_TOKEN
+  }
+
+  const reset = await fetchJson(`${apiUrl}/api/auth/request-password-reset`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email: `reset-${Date.now()}@example.com`,
+      redirectTo: `${consoleOrigin}/login`,
+    }),
+  })
+
+  if (reset.status === 400) {
+    const body = reset.body as { code?: string }
+    if (body.code === 'RESET_PASSWORD_DISABLED') {
+      logStep('password reset not configured — skip')
+      return
+    }
+  }
+
+  if (reset.status !== 200) {
+    fail(
+      `request-password-reset failed (${reset.status}): ${JSON.stringify(reset.body)}`,
+    )
+  }
+
+  logStep('password-reset request ok')
 }
 
 async function waitForReady(maxAttempts = 30) {
@@ -231,6 +508,13 @@ try {
     fail('iam-features.emailPassword must be true for smoke sign-up')
   }
 
+  const features = iamFeaturesBody.data
+
+  await smokeCaptchaEndpoints(features)
+  await smokePasswordReset(features)
+  await smokeMagicLink(features)
+  await smokeGithubSocial(features)
+
   const taskListsUnauthed = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
     headers: { origin: consoleOrigin },
   })
@@ -245,33 +529,86 @@ try {
   const smokePassword = 'smoke-password-123'
   const smokeName = 'Smoke User'
 
-  const signUp = await fetchJson(`${apiUrl}/api/auth/sign-up/email`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      origin: consoleOrigin,
-    },
-    body: JSON.stringify({
-      email: smokeEmail,
-      password: smokePassword,
-      name: smokeName,
-    }),
+  const captchaToken = features.captcha ? TURNSTILE_TEST_TOKEN : undefined
+
+  const signUp = await signUpEmail({
+    email: smokeEmail,
+    password: smokePassword,
+    name: smokeName,
+    captchaToken,
   })
 
   if (signUp.status !== 200) {
     fail(`sign-up failed (${signUp.status}): ${JSON.stringify(signUp.body)}`)
   }
 
-  const signUpCookies = collectSetCookie(signUp.headers)
-  let sessionCookie = cookieHeaderFromSetCookies(signUpCookies)
+  let sessionCookie = signUp.sessionCookie
 
   if (!sessionCookie) {
     fail('sign-up did not return session cookie')
   }
 
+  const sessionAfterSignUp = await getSession(sessionCookie)
+  if (sessionAfterSignUp.status !== 200) {
+    fail(`get-session after sign-up failed (${sessionAfterSignUp.status})`)
+  }
+
+  const sessionUser = sessionAfterSignUp.body as { user?: { email?: string } }
+  if (sessionUser.user?.email !== smokeEmail) {
+    fail('get-session email mismatch after sign-up')
+  }
+
+  logStep('sign-up + get-session ok')
+
+  const wrongPassword = await signInEmail({
+    email: smokeEmail,
+    password: 'wrong-password',
+    captchaToken,
+  })
+
+  if (wrongPassword.status === 200) {
+    fail('expected sign-in with wrong password to fail')
+  }
+
+  logStep('sign-in wrong password rejected')
+
+  const signOutResult = await signOut(sessionCookie)
+  if (signOutResult.status !== 200) {
+    fail(
+      `sign-out failed (${signOutResult.status}): ${JSON.stringify(signOutResult.body)}`,
+    )
+  }
+
+  const sessionAfterSignOut = await getSession(sessionCookie)
+  if (
+    sessionAfterSignOut.status === 200 &&
+    (sessionAfterSignOut.body as { user?: unknown } | null)?.user
+  ) {
+    fail('session still active after sign-out')
+  }
+
+  logStep('sign-out ok')
+
+  const signIn = await signInEmail({
+    email: smokeEmail,
+    password: smokePassword,
+    captchaToken,
+  })
+
+  if (signIn.status !== 200) {
+    fail(`sign-in failed (${signIn.status}): ${JSON.stringify(signIn.body)}`)
+  }
+
+  sessionCookie = signIn.sessionCookie
+  if (!sessionCookie) {
+    fail('sign-in did not return session cookie')
+  }
+
+  logStep('sign-in ok')
+
   sessionCookie = await ensureActiveWorkspace(
     sessionCookie,
-    iamFeaturesBody.data.workspace,
+    features.workspace ?? false,
   )
 
   const taskLists = await fetchJson(`${apiUrl}/api/v1/task-lists`, {
@@ -355,7 +692,7 @@ try {
   }
 
   process.stdout.write(
-    `smoke: ok — iam-features, user ${smokeEmail}, ${listsBody.data.length} list(s), ${tasksBody.data.length} task(s), chrome+firefox builds\n`,
+    `smoke: ok — iam-features, auth flows, user ${smokeEmail}, ${listsBody.data.length} list(s), ${tasksBody.data.length} task(s), chrome+firefox builds\n`,
   )
 } catch (error) {
   process.stderr.write(

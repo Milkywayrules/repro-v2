@@ -4,12 +4,12 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { ClientOnly } from '@/components/client-only'
-import Loader from '@/components/loader'
+import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
 
-import Dashboard from './dashboard'
+import { Dashboard } from './dashboard'
 
 export default function DashboardPage() {
   return (

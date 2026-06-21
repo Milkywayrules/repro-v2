@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react'
 
-export default function Loader() {
+export function Loader() {
   return (
     <div
       aria-live="polite"

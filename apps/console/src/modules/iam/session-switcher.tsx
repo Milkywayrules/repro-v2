@@ -96,7 +96,7 @@ export function SessionSwitcher() {
       }
 
       await refetchSession()
-      queryClient.invalidateQueries()
+      queryClient.clear()
       await reloadSessions()
     } catch {
       setSwitchError('Could not switch session')

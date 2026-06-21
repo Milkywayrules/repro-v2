@@ -8,7 +8,7 @@ import { Button } from '@repro-v2/ui/components/button'
 import { Skeleton } from '@repro-v2/ui/components/skeleton'
 import { useQueryClient } from '@tanstack/react-query'
 
-import Loader from '@/components/loader'
+import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 

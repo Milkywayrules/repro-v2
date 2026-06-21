@@ -8,6 +8,7 @@ import {
   organization,
 } from 'better-auth/plugins'
 
+import { buildCaptchaEndpoints } from './captcha-endpoints'
 import type { IamEmailHandlers } from './email-hooks'
 
 const workspaceSchema = {
@@ -25,13 +26,7 @@ export function buildIamPlugins(
       captcha({
         provider: 'cloudflare-turnstile',
         secretKey: env.TURNSTILE_SECRET_KEY,
-        endpoints: [
-          '/sign-up/email',
-          '/sign-in/email',
-          '/sign-in/social',
-          '/request-password-reset',
-          ...(iamFeatures.magicLink ? (['/sign-in/magic-link'] as const) : []),
-        ],
+        endpoints: buildCaptchaEndpoints(iamFeatures),
       }),
     )
   }

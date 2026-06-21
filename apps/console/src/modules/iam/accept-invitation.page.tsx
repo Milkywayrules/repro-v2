@@ -7,7 +7,7 @@ import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 
-import Loader from '@/components/loader'
+import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'

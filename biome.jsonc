@@ -1274,7 +1274,12 @@
   /** @default null - Configuration overrides for specific files/patterns */
   "overrides": [
     {
-      "includes": ["apps/console/**", "apps/marketing/**", "apps/docs/**"],
+      "includes": [
+        "apps/console/**",
+        "apps/marketing/**",
+        "apps/docs/**",
+        "apps/browser-ext/**"
+      ],
       "linter": {
         "rules": {
           "style": {
@@ -1316,22 +1321,10 @@
     },
     {
       "includes": [
-        "apps/console/src/app/**/page.tsx",
-        "apps/console/src/app/layout.tsx",
-        "apps/console/src/app/dashboard/dashboard.tsx",
-        "apps/console/next.config.ts",
-        "apps/console/postcss.config.mjs",
-        "apps/console/src/components/header.tsx",
-        "apps/console/src/components/loader.tsx",
-        "apps/console/src/components/providers.tsx",
-        "apps/console/src/components/sign-in-form.tsx",
-        "apps/console/src/components/sign-up-form.tsx",
-        "apps/console/src/components/user-menu.tsx",
-        "apps/marketing/src/app/**/page.tsx",
-        "apps/marketing/src/app/layout.tsx",
-        "apps/marketing/next.config.ts",
-        "apps/marketing/postcss.config.mjs",
-        "apps/marketing/src/components/providers.tsx"
+        "apps/**/src/app/**/page.tsx",
+        "apps/**/src/app/**/layout.tsx",
+        "apps/**/next.config.ts",
+        "apps/**/postcss.config.mjs"
       ],
       "linter": {
         "rules": {

@@ -38,13 +38,11 @@ Skills under `.agents/skills/` are reference — load when the task matches.
 
 ---
 
-# React Compiler — Next.js apps (agents)
+# React Compiler (agents)
 
-**Enabled** in `apps/console`, `apps/marketing`, `apps/docs` — `reactCompiler: true` in each `next.config.ts` (build-time `babel-plugin-react-compiler`).
+**Enabled** in `apps/console`, `apps/marketing`, `apps/docs`, and `apps/browser-ext` — Next apps via `reactCompiler: true` in `next.config.ts`; browser-ext via `reactCompilerPreset()` in `wxt.config.ts`.
 
-**Not enabled** in `apps/browser-ext` (WXT). Manual `useMemo` / `useCallback` / `memo` there is still ok when needed.
-
-The compiler auto-memoizes component output and stable callbacks. **Do not add manual memoization for re-render performance** in the three Next apps above.
+**Do not add manual memoization for re-render performance** in these apps.
 
 ## Write this way
 
@@ -71,7 +69,7 @@ The compiler auto-memoizes component output and stable callbacks. **Do not add m
 
 Match existing console IAM/tasks modules. When adding client UI in console/marketing/docs, read those files before reaching for memo hooks.
 
-**Lint:** Biome `noRestrictedImports` warns on `useCallback` / `useMemo` / `memo` from `react` in console, marketing, and docs (`biome.jsonc` overrides). browser-ext is excluded.
+**Lint:** Biome `noRestrictedImports` warns on `useCallback` / `useMemo` / `memo` from `react` in console, marketing, docs, and browser-ext (`biome.jsonc` overrides).
 
 ---
 
@@ -173,7 +171,7 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 **React 19+:**
 
 - Use ref as a prop instead of `React.forwardRef`
-- Next.js apps (`console`, `marketing`, `docs`): **React Compiler on** — no `useMemo` / `useCallback` / `memo` for perf; see **React Compiler** section above
+- Next.js apps (`console`, `marketing`, `docs`) and `browser-ext`: **React Compiler on** — no `useMemo` / `useCallback` / `memo` for perf; see **React Compiler** section above
 
 **Solid/Svelte/Vue/Qwik:**
 

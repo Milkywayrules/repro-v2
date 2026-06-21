@@ -12,7 +12,7 @@ import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import z from 'zod'
 
-import Loader from '@/components/loader'
+import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'

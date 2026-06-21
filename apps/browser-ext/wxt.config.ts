@@ -1,5 +1,7 @@
 import 'dotenv/config'
 
+import babel from '@rolldown/plugin-babel'
+import { reactCompilerPreset } from '@vitejs/plugin-react'
 import { defineConfig } from 'wxt'
 import { z } from 'zod'
 
@@ -10,6 +12,9 @@ const apiHostPermission = `${new URL(apiUrl).origin}/*`
 export default defineConfig({
   srcDir: 'src',
   modules: ['@wxt-dev/module-react'],
+  vite: () => ({
+    plugins: [babel({ presets: [reactCompilerPreset()] })],
+  }),
   targetBrowsers: ['chrome', 'firefox'],
   zip: {
     name: 'browser-ext',

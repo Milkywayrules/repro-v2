@@ -18,7 +18,7 @@ import { useClientMounted } from '@/hooks/use-client-mounted'
 import { iamClient } from '@/lib/iam-client'
 import { SessionSwitcher } from '@/modules/iam/session-switcher'
 
-export default function UserMenu() {
+export function UserMenu() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const mounted = useClientMounted()
