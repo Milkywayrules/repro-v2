@@ -21,6 +21,7 @@ import { routes, workspaceRoutes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 
 import { buildOnboardingPath, resolvePostAuthPath } from './auth-redirect'
+import { countOwnedWorkspaces } from './list-workspaces'
 import { useIamFeatures } from './use-iam-features'
 import { workspaceSlugFromName } from './workspace-slug'
 
@@ -69,11 +70,13 @@ export function OnboardingPage() {
   }, [refetchOrganizations, session?.user?.id])
 
   useEffect(() => {
-    if (featuresPending || orgsPending || !features?.workspace) {
+    const userId = session?.user?.id
+    if (featuresPending || orgsPending || !features?.workspace || !userId) {
       return
     }
 
-    if ((organizations?.length ?? 0) >= WORKSPACE_LIMIT) {
+    const ownedCount = countOwnedWorkspaces(organizations, userId)
+    if (ownedCount >= WORKSPACE_LIMIT) {
       toast.info('You have reached your workspace limit.')
       resolvePostAuthPath(nextPath, features).then(path => {
         router.replace(path as Route)
@@ -84,8 +87,9 @@ export function OnboardingPage() {
     featuresPending,
     nextPath,
     orgsPending,
-    organizations?.length,
+    organizations,
     router,
+    session?.user?.id,
   ])
 
   const form = useForm({
@@ -114,7 +118,10 @@ export function OnboardingPage() {
       }
 
       toast.success('Workspace created')
-      router.push(workspaceRoutes(publicSlug).dashboard as Route)
+      const destination = nextPath
+        ? await resolvePostAuthPath(nextPath, features)
+        : '/dashboard'
+      router.push(destination as Route)
     },
     validators: {
       onSubmit: z.object({
@@ -133,8 +140,14 @@ export function OnboardingPage() {
     return <Loader />
   }
 
-  const orgCount = organizations?.length ?? 0
-  const isAdditionalWorkspace = orgCount > 0
+  const ownedCount = countOwnedWorkspaces(organizations, session.user.id)
+  const atOwnedLimit = ownedCount >= WORKSPACE_LIMIT
+
+  if (atOwnedLimit) {
+    return <Loader />
+  }
+
+  const isAdditionalWorkspace = ownedCount > 0
 
   return (
     <main className="mx-auto mt-10 w-full max-w-md space-y-6 p-6">
@@ -146,7 +159,7 @@ export function OnboardingPage() {
         </h1>
         <p className="text-muted-foreground text-sm">
           {isAdditionalWorkspace
-            ? `You can create ${WORKSPACE_LIMIT - orgCount} more workspace on this account.`
+            ? `You can create ${WORKSPACE_LIMIT - ownedCount} more workspace on this account.`
             : `You can create up to ${WORKSPACE_LIMIT} workspaces per account.`}
         </p>
       </div>

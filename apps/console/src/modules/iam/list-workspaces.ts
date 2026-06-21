@@ -15,6 +15,13 @@ interface OrganizationRecord {
   slug: unknown
 }
 
+export function countOwnedWorkspaces(
+  organizations: OrganizationRecord[] | null | undefined,
+  userId: string,
+): number {
+  return organizations?.filter(org => org.ownerUserId === userId).length ?? 0
+}
+
 export function mapOrganizationsToWorkspaces(
   organizations: OrganizationRecord[] | null | undefined,
 ): WorkspaceSummary[] {

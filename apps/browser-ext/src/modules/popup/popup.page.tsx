@@ -25,7 +25,7 @@ function findWorkspaceName(
     return
   }
 
-  return organizations?.find(org => {
+  const match = organizations?.find(org => {
     if (typeof org.slug !== 'string') {
       return false
     }
@@ -36,7 +36,10 @@ function findWorkspaceName(
     return (
       workspacePublicSlug(org.slug, org.metadata, ownerUserId) === workspaceSlug
     )
-  })?.name
+  })
+
+  const name = match?.name
+  return typeof name === 'string' ? name : undefined
 }
 
 export function PopupPage() {

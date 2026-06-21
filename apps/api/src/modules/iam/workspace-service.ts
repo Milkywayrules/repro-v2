@@ -6,11 +6,7 @@ import {
   workspaceStorageSlug,
 } from '@repro-v2/iam/workspace-storage-slug'
 
-import {
-  conflictError,
-  forbiddenError,
-  notFoundError,
-} from '@/libs/contract/errors'
+import { forbiddenError, notFoundError } from '@/libs/contract/errors'
 
 async function assertMembership(userId: string, workspaceId: string) {
   const [row] = await db
@@ -38,6 +34,7 @@ async function resolveWorkspaceIdForSlug(
       ownerUserId: workspace.ownerUserId,
       slug: workspace.slug,
       metadata: workspace.metadata,
+      createdAt: workspace.createdAt,
     })
     .from(member)
     .innerJoin(workspace, eq(member.workspace_id, workspace.id))
@@ -60,18 +57,39 @@ async function resolveWorkspaceIdForSlug(
     throw notFoundError()
   }
 
-  if (matchingRows.length > 1) {
-    throw conflictError(
-      'Ambiguous workspace slug: multiple memberships match this slug for the user',
-    )
-  }
-
-  const [row] = matchingRows
+  const row = pickWorkspaceRowForSlug(matchingRows, userId)
   if (!row) {
     throw notFoundError()
   }
 
   return row.workspaceId
+}
+
+interface WorkspaceSlugRow {
+  createdAt: Date
+  ownerUserId: string
+  workspaceId: string
+}
+
+function pickWorkspaceRowForSlug(
+  matchingRows: WorkspaceSlugRow[],
+  userId: string,
+): WorkspaceSlugRow | undefined {
+  const ownedRows = matchingRows.filter(row => row.ownerUserId === userId)
+  const candidates = ownedRows.length > 0 ? ownedRows : matchingRows
+
+  if (candidates.length === 1) {
+    return candidates[0]
+  }
+
+  return candidates.toSorted((left, right) => {
+    const createdAtDiff = left.createdAt.getTime() - right.createdAt.getTime()
+    if (createdAtDiff !== 0) {
+      return createdAtDiff
+    }
+
+    return left.workspaceId.localeCompare(right.workspaceId)
+  })[0]
 }
 
 export const workspaceService = {

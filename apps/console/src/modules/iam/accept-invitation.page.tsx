@@ -184,7 +184,7 @@ function resolveAcceptErrorState(
     }
   }
 
-  if (errorMessageIncludes(message, 'NOT_THE_RECIPIENT', 'recipient')) {
+  if (errorMessageIncludes(message, 'NOT_THE_RECIPIENT')) {
     return {
       status: 'wrong_email',
       invitation,

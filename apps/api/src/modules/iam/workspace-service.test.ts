@@ -57,7 +57,7 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
     spyOn(db, 'select').mockRestore()
   })
 
-  test('throws 409 when multiple memberships match the same slug', async () => {
+  test('prefers owned workspace when multiple memberships match the same slug', async () => {
     spyOn(db, 'select').mockImplementation(
       () =>
         ({
@@ -66,18 +66,20 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
               where: () =>
                 Promise.resolve([
                   {
-                    workspaceId: 'ws-1',
-                    role: 'owner',
-                    ownerUserId: userId,
-                    slug: `${userId}:duplicate-slug`,
-                    metadata: null,
-                  },
-                  {
-                    workspaceId: 'ws-2',
+                    workspaceId: 'ws-other',
                     role: 'member',
                     ownerUserId: 'other-user',
                     slug: 'other-user:duplicate-slug',
                     metadata: null,
+                    createdAt: new Date('2024-01-02T00:00:00.000Z'),
+                  },
+                  {
+                    workspaceId,
+                    role: 'owner',
+                    ownerUserId: userId,
+                    slug: `${userId}:duplicate-slug`,
+                    metadata: null,
+                    createdAt: new Date('2024-01-01T00:00:00.000Z'),
                   },
                 ]),
             }),
@@ -87,10 +89,42 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
 
     await expect(
       workspaceService.resolveWorkspaceIdForSlug(userId, 'duplicate-slug'),
-    ).rejects.toMatchObject({
-      code: http.codes.CONFLICT,
-      status: http.status.CONFLICT,
-    })
+    ).resolves.toBe(workspaceId)
+  })
+
+  test('picks earliest created workspace when multiple non-owned rows match the same slug', async () => {
+    spyOn(db, 'select').mockImplementation(
+      () =>
+        ({
+          from: () => ({
+            innerJoin: () => ({
+              where: () =>
+                Promise.resolve([
+                  {
+                    workspaceId: 'ws-later',
+                    role: 'member',
+                    ownerUserId: 'other-user-b',
+                    slug: 'other-user-b:duplicate-slug',
+                    metadata: null,
+                    createdAt: new Date('2024-02-01T00:00:00.000Z'),
+                  },
+                  {
+                    workspaceId: 'ws-earlier',
+                    role: 'member',
+                    ownerUserId: 'other-user-a',
+                    slug: 'other-user-a:duplicate-slug',
+                    metadata: null,
+                    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+                  },
+                ]),
+            }),
+          }),
+        }) as never,
+    )
+
+    await expect(
+      workspaceService.resolveWorkspaceIdForSlug(userId, 'duplicate-slug'),
+    ).resolves.toBe('ws-earlier')
   })
 
   test('resolves storage slug to workspace id', async () => {
@@ -107,6 +141,7 @@ describe('workspaceService.resolveWorkspaceIdForSlug', () => {
                     ownerUserId: userId,
                     slug: `${userId}:acme`,
                     metadata: JSON.stringify({ publicSlug: 'acme' }),
+                    createdAt: new Date('2024-01-01T00:00:00.000Z'),
                   },
                 ]),
             }),
