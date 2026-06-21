@@ -12,7 +12,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Bun** - Runtime environment
 - **Drizzle** - TypeScript-first ORM
 - **PostgreSQL** - Database engine
-- **IAM** - Better Auth via `@repro-v2/iam` (feature flags from `IAM_*` env; public flags at `/api/v1/platform/iam-features`)
+- **IAM** - Better Auth via `@repro-v2/iam` (feature flags from `IAM_*` env; public flags at `/api/v1/platform/iam-features`). Fork/setup notes: [docs/FORK-IAM.md](docs/FORK-IAM.md)
 - **Biome** - Linting and formatting
 - **Turborepo** - Optimized monorepo build system
 

@@ -19,9 +19,8 @@ import { searchParams } from '@/lib/search-params'
 
 import { resolvePostAuthPath } from './auth-redirect'
 import { useIamFeatures } from './use-iam-features'
+import { WORKSPACE_LIMIT } from './workspace-limit'
 import { workspaceSlugFromName } from './workspace-slug'
-
-const WORKSPACE_LIMIT = 2
 
 export function OnboardingPage() {
   const router = useRouter()
@@ -46,7 +45,7 @@ export function OnboardingPage() {
       return
     }
 
-    if ((organizations?.length ?? 0) > 0) {
+    if ((organizations?.length ?? 0) >= WORKSPACE_LIMIT) {
       router.replace(resolvePostAuthPath(nextPath) as Route)
     }
   }, [
@@ -66,7 +65,7 @@ export function OnboardingPage() {
       const name = value.name.trim()
       const slug = workspaceSlugFromName(name)
 
-      const { error } = await iamClient.organization.create({
+      const { data, error } = await iamClient.organization.create({
         name,
         slug,
       })
@@ -74,6 +73,10 @@ export function OnboardingPage() {
       if (error) {
         toast.error(error.message ?? 'Could not create workspace')
         return
+      }
+
+      if (data?.id) {
+        await iamClient.organization.setActive({ organizationId: data.id })
       }
 
       toast.success('Workspace created')
@@ -96,12 +99,21 @@ export function OnboardingPage() {
     return <Loader />
   }
 
+  const orgCount = organizations?.length ?? 0
+  const isAdditionalWorkspace = orgCount > 0
+
   return (
     <main className="mx-auto mt-10 w-full max-w-md space-y-6 p-6">
       <div className="space-y-2 text-center">
-        <h1 className="font-bold text-3xl">Create a workspace</h1>
+        <h1 className="font-bold text-3xl">
+          {isAdditionalWorkspace
+            ? 'Create another workspace'
+            : 'Create a workspace'}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          You can create up to {WORKSPACE_LIMIT} workspaces per account.
+          {isAdditionalWorkspace
+            ? `You can create ${WORKSPACE_LIMIT - orgCount} more workspace on this account.`
+            : `You can create up to ${WORKSPACE_LIMIT} workspaces per account.`}
         </p>
       </div>
 

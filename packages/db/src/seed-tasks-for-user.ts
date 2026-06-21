@@ -20,31 +20,31 @@ export async function seedDefaultTasksForUser(
     return false
   }
 
-  const [inbox] = await dbInstance
+  const [sampleList] = await dbInstance
     .insert(taskLists)
     .values({
-      name: 'Inbox',
+      name: 'Sample tasks (safe to delete)',
       userId,
       workspaceId,
       createdById: userId,
     })
     .returning({ id: taskLists.id })
 
-  if (!inbox) {
+  if (!sampleList) {
     throw new Error('Failed to seed task list')
   }
 
   await dbInstance.insert(tasks).values([
     {
-      listId: inbox.id,
+      listId: sampleList.id,
       workspaceId,
-      title: 'Review API contract',
+      title: 'Try checking this off — demo only',
       createdById: userId,
     },
     {
-      listId: inbox.id,
+      listId: sampleList.id,
       workspaceId,
-      title: 'Ship tasks reference',
+      title: 'Add your own task — this list is disposable',
       completed: true,
       createdById: userId,
     },

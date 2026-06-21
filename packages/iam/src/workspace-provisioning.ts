@@ -1,49 +1,34 @@
 import type { Db } from '@repro-v2/db'
-import { createId } from '@repro-v2/db/id'
-import { member, workspace } from '@repro-v2/db/schema/auth'
+import { eq } from '@repro-v2/db/drizzle'
+import { member } from '@repro-v2/db/schema/auth'
 import { seedDefaultTasksForUser } from '@repro-v2/db/seed-tasks-for-user'
 import { env, iamFeatures } from '@repro-v2/env/api'
 
-function defaultWorkspaceName(user: { email: string; name: string }): string {
-  const trimmedName = user.name.trim()
-  if (trimmedName.length > 0) {
-    return `${trimmedName}'s workspace`
-  }
-
-  const localPart = user.email.split('@')[0] ?? 'user'
-  return `${localPart}'s workspace`
-}
-
-function defaultWorkspaceSlug(userId: string): string {
-  return `ws-${userId.slice(0, 8)}`
-}
-
-export function createUserCreatedHook(db: Db) {
-  return async (user: { email: string; id: string; name: string }) => {
-    if (!iamFeatures.workspace) {
+/**
+ * Seeds disposable demo tasks when a user creates their first workspace.
+ * Runs only in development — never in production.
+ */
+export function createDemoSeedOnFirstWorkspaceHook(db: Db) {
+  return async ({
+    organization,
+    user,
+  }: {
+    organization: { id: string }
+    user: { id: string }
+  }) => {
+    if (!(iamFeatures.workspace && env.NODE_ENV === 'development')) {
       return
     }
 
-    const workspaceId = createId()
-    const createdAt = new Date()
+    const memberships = await db
+      .select({ id: member.id })
+      .from(member)
+      .where(eq(member.userId, user.id))
 
-    await db.insert(workspace).values({
-      id: workspaceId,
-      name: defaultWorkspaceName(user),
-      slug: defaultWorkspaceSlug(user.id),
-      createdAt,
-    })
-
-    await db.insert(member).values({
-      id: createId(),
-      organizationId: workspaceId,
-      userId: user.id,
-      role: 'owner',
-      createdAt,
-    })
-
-    if (env.NODE_ENV === 'development') {
-      await seedDefaultTasksForUser(db, user.id, workspaceId)
+    if (memberships.length !== 1) {
+      return
     }
+
+    await seedDefaultTasksForUser(db, user.id, organization.id)
   }
 }

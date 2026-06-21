@@ -10,13 +10,14 @@ import {
 
 import { buildCaptchaEndpoints } from './captcha-endpoints'
 import type { IamEmailHandlers } from './email-hooks'
+import { createDemoSeedOnFirstWorkspaceHook } from './workspace-provisioning'
 
 const workspaceSchema = {
   organization: { modelName: 'workspace' },
 } as const
 
 export function buildIamPlugins(
-  _db: Db,
+  db: Db,
   email: IamEmailHandlers | null,
 ): BetterAuthPlugin[] {
   const plugins: BetterAuthPlugin[] = []
@@ -56,6 +57,9 @@ export function buildIamPlugins(
         schema: workspaceSchema,
         sendInvitationEmail: email?.sendInvitationEmail,
         teams: { enabled: false },
+        organizationHooks: {
+          afterCreateOrganization: createDemoSeedOnFirstWorkspaceHook(db),
+        },
       }),
     )
   }

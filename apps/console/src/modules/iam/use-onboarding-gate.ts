@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import type { Route } from 'next'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-import { routes } from '@/lib/routes'
-
+import { buildOnboardingPath } from './auth-redirect'
 import { listWorkspaces } from './list-workspaces'
 import { useIamFeatures } from './use-iam-features'
 
@@ -25,8 +25,14 @@ const checkingState: OnboardingGateState = {
 
 export function useOnboardingGate(sessionUserId: string | undefined) {
   const router = useRouter()
+  const pathname = usePathname()
+  const urlSearchParams = useSearchParams()
   const { features, isPending: featuresPending } = useIamFeatures()
   const [state, setState] = useState<OnboardingGateState>(checkingState)
+
+  const currentPath = urlSearchParams.size
+    ? `${pathname}?${urlSearchParams.toString()}`
+    : pathname
 
   useEffect(() => {
     if (featuresPending) {
@@ -58,7 +64,7 @@ export function useOnboardingGate(sessionUserId: string | undefined) {
       }
 
       if (!listed.workspaces.length) {
-        router.replace(routes.onboarding)
+        router.replace(buildOnboardingPath(currentPath) as Route)
         return
       }
 
@@ -77,7 +83,7 @@ export function useOnboardingGate(sessionUserId: string | undefined) {
     return () => {
       cancelled = true
     }
-  }, [features?.workspace, featuresPending, router, sessionUserId])
+  }, [currentPath, features?.workspace, featuresPending, router, sessionUserId])
 
   return state
 }

@@ -6,7 +6,7 @@ import { seedDefaultTasksForUser } from './seed-tasks-for-user'
 const workspaceId = '00000000-0000-7000-8000-000000000099'
 
 describe('seedDefaultTasksForUser', () => {
-  test('inserts inbox and tasks when user has no lists', async () => {
+  test('seeds sample list and tasks when user has no lists in workspace', async () => {
     let insertCalls = 0
 
     const mockDb = {

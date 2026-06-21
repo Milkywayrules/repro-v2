@@ -142,10 +142,34 @@ async function ensureActiveWorkspace(
   }
 
   const organizations = list.body as Array<{ id: string }> | null
-  const firstOrg = organizations?.[0]
+  let firstOrg = organizations?.[0]
 
   if (!firstOrg) {
-    fail('sign-up did not provision a workspace')
+    const slug = `smoke-ws-${Date.now()}`
+    const create = await fetchJson(`${apiUrl}/api/auth/organization/create`, {
+      method: 'POST',
+      headers: {
+        ...authHeaders,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Smoke workspace',
+        slug,
+      }),
+    })
+
+    if (create.status !== 200) {
+      fail(
+        `organization/create failed (${create.status}): ${JSON.stringify(create.body)}`,
+      )
+    }
+
+    const created = create.body as { id?: string } | null
+    if (!created?.id) {
+      fail('organization/create did not return workspace id')
+    }
+
+    firstOrg = { id: created.id }
   }
 
   const setActive = await fetchJson(
@@ -629,16 +653,20 @@ try {
   }
 
   if (!listsBody.data || listsBody.data.length === 0) {
-    fail('expected dev sign-up to seed at least one task list')
+    fail(
+      'expected first workspace to seed at least one task list in development',
+    )
   }
 
-  const inbox = listsBody.data.find(list => list.name === 'Inbox')
-  if (!inbox) {
-    fail('expected Inbox list from dev seed')
+  const sampleList = listsBody.data.find(
+    list => list.name === 'Sample tasks (safe to delete)',
+  )
+  if (!sampleList) {
+    fail('expected sample task list from dev seed after onboarding')
   }
 
   const tasks = await fetchJson(
-    `${apiUrl}/api/v1/tasks?listId=${encodeURIComponent(inbox.id)}`,
+    `${apiUrl}/api/v1/tasks?listId=${encodeURIComponent(sampleList.id)}`,
     {
       headers: {
         cookie: sessionCookie,

@@ -16,13 +16,23 @@ import { useQueryClient } from '@tanstack/react-query'
 
 import { useClientMounted } from '@/hooks/use-client-mounted'
 import { iamClient } from '@/lib/iam-client'
+import { routes } from '@/lib/routes'
 import { SessionSwitcher } from '@/modules/iam/session-switcher'
+import { useIamFeatures } from '@/modules/iam/use-iam-features'
+import { WORKSPACE_LIMIT } from '@/modules/iam/workspace-limit'
+import { WorkspaceSwitcher } from '@/modules/iam/workspace-switcher'
 
 export function UserMenu() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const mounted = useClientMounted()
   const { data: session, isPending } = iamClient.useSession()
+  const { features } = useIamFeatures()
+  const { data: organizations } = iamClient.useListOrganizations()
+
+  const orgCount = organizations?.length ?? 0
+  const canCreateWorkspace =
+    features?.workspace && orgCount > 0 && orgCount < WORKSPACE_LIMIT
 
   if (!mounted || isPending) {
     return <Skeleton className="h-9 w-24" />
@@ -46,6 +56,12 @@ export function UserMenu() {
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+          <WorkspaceSwitcher />
+          {canCreateWorkspace ? (
+            <DropdownMenuItem render={<Link href={routes.onboarding} />}>
+              Create workspace
+            </DropdownMenuItem>
+          ) : null}
           <SessionSwitcher />
           <DropdownMenuItem
             onClick={() => {

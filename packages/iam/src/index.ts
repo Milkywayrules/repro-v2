@@ -14,7 +14,6 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { createIamEmailHandlers } from './email-hooks'
 import { buildIamPlugins } from './plugins'
 import { buildSocialProviders } from './social-providers'
-import { createUserCreatedHook } from './workspace-provisioning'
 
 const devExtensionTrustedOrigins = [
   'chrome-extension://*',
@@ -60,13 +59,6 @@ export function createIam(db: Db) {
         }
       : {}),
     socialProviders: buildSocialProviders(),
-    databaseHooks: {
-      user: {
-        create: {
-          after: createUserCreatedHook(db),
-        },
-      },
-    },
     secret: env.IAM_BETTER_AUTH_SECRET,
     baseURL: env.IAM_BETTER_AUTH_URL,
     advanced: {
