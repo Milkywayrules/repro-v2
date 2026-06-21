@@ -23,13 +23,13 @@ export async function seedWorkspaceForUser(
   userId: string,
 ) {
   const [existingMembership] = await dbInstance
-    .select({ organizationId: member.organizationId })
+    .select({ workspaceId: member.workspace_id })
     .from(member)
     .where(eq(member.userId, userId))
     .limit(1)
 
   if (existingMembership) {
-    return existingMembership.organizationId
+    return existingMembership.workspaceId
   }
 
   const workspaceId = createId()
@@ -44,7 +44,7 @@ export async function seedWorkspaceForUser(
 
   await dbInstance.insert(member).values({
     id: createId(),
-    organizationId: workspaceId,
+    workspace_id: workspaceId,
     userId,
     role: 'owner',
     createdAt,
@@ -65,21 +65,21 @@ export async function findWorkspaceForUser(
 ) {
   if (workspaceId) {
     const [membership] = await dbInstance
-      .select({ organizationId: member.organizationId })
+      .select({ workspaceId: member.workspace_id })
       .from(member)
       .where(
-        and(eq(member.userId, userId), eq(member.organizationId, workspaceId)),
+        and(eq(member.userId, userId), eq(member.workspace_id, workspaceId)),
       )
       .limit(1)
 
-    return membership?.organizationId ?? null
+    return membership?.workspaceId ?? null
   }
 
   const [membership] = await dbInstance
-    .select({ organizationId: member.organizationId })
+    .select({ workspaceId: member.workspace_id })
     .from(member)
     .where(eq(member.userId, userId))
     .limit(1)
 
-  return membership?.organizationId ?? null
+  return membership?.workspaceId ?? null
 }

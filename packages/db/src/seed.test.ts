@@ -28,9 +28,7 @@ function createMockDb(
 
             if (selectCalls === 1) {
               return Promise.resolve(
-                options.existingMembership
-                  ? [{ organizationId: workspaceId }]
-                  : [],
+                options.existingMembership ? [{ workspaceId }] : [],
               )
             }
 

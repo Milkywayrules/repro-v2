@@ -39,7 +39,7 @@ export const session = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    activeOrganizationId: text('active_workspace_id'),
+    active_workspace_id: text('active_workspace_id'),
   },
   table => [index('session_userId_idx').on(table.userId)],
 )
@@ -101,7 +101,7 @@ export const member = pgTable(
   'member',
   {
     id: text('id').primaryKey(),
-    organizationId: text('workspace_id')
+    workspace_id: text('workspace_id')
       .notNull()
       .references(() => workspace.id, { onDelete: 'cascade' }),
     userId: text('user_id')
@@ -111,7 +111,7 @@ export const member = pgTable(
     createdAt: timestamptz('created_at').notNull(),
   },
   table => [
-    index('member_workspace_id_idx').on(table.organizationId),
+    index('member_workspace_id_idx').on(table.workspace_id),
     index('member_userId_idx').on(table.userId),
   ],
 )
@@ -120,7 +120,7 @@ export const invitation = pgTable(
   'invitation',
   {
     id: text('id').primaryKey(),
-    organizationId: text('workspace_id')
+    workspace_id: text('workspace_id')
       .notNull()
       .references(() => workspace.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
@@ -133,7 +133,7 @@ export const invitation = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
   },
   table => [
-    index('invitation_workspace_id_idx').on(table.organizationId),
+    index('invitation_workspace_id_idx').on(table.workspace_id),
     index('invitation_email_idx').on(table.email),
   ],
 )
@@ -166,7 +166,7 @@ export const workspaceRelations = relations(workspace, ({ many }) => ({
 
 export const memberRelations = relations(member, ({ one }) => ({
   workspace: one(workspace, {
-    fields: [member.organizationId],
+    fields: [member.workspace_id],
     references: [workspace.id],
   }),
   user: one(user, {
@@ -177,7 +177,7 @@ export const memberRelations = relations(member, ({ one }) => ({
 
 export const invitationRelations = relations(invitation, ({ one }) => ({
   workspace: one(workspace, {
-    fields: [invitation.organizationId],
+    fields: [invitation.workspace_id],
     references: [workspace.id],
   }),
   user: one(user, {

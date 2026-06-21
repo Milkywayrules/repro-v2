@@ -8,9 +8,7 @@ async function assertMembership(userId: string, workspaceId: string) {
   const [row] = await db
     .select({ id: member.id })
     .from(member)
-    .where(
-      and(eq(member.userId, userId), eq(member.organizationId, workspaceId)),
-    )
+    .where(and(eq(member.userId, userId), eq(member.workspace_id, workspaceId)))
     .limit(1)
 
   if (!row) {
