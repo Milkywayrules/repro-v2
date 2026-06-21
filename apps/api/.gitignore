@@ -3,6 +3,7 @@ dist/
 dist-types/
 /build
 /out/
+*.bun-build
 
 # dev
 .yarn/

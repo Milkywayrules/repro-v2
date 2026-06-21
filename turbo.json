@@ -8,8 +8,7 @@
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "start:local": {
-      "dependsOn": ["^build"],
-      "persistent": true
+      "dependsOn": ["^build"]
     },
     "lint": {
       "dependsOn": ["^lint"]

@@ -1,5 +1,11 @@
 # SUBAGENT-DRIVEN LOOP
 
+Orchestrator orchestrating a lot of subagents to do tasks in wave-loop and internal-wave-loop.
+
+Orchestrator is assign by Supervisor (human or me). Supervisor is not involved on this, just receive the final report OR thrown from escalation.
+
+All of this are hard-rule. must follow. no room for negotiating or opinion from you.
+
 ## FYI
 
 read this if maybe you forget our overall context @AGENTS.md for your knowledge.
@@ -33,12 +39,13 @@ $post-wave: `bun run generate:openapi` & `bun run build` & `bun run start` & cle
 ### escalation protocol
 
 - if subagent is unavailable or failed to dispatch. try another cheaper model, last resort is use Auto model.
+- if something urgent, dangerous, or need human, you can STOP AND THROW/INTERACT WITH HUMAN as the Supervisor for decision.
 
 ### WAVES
 
 #### wave 1 - implementation rule
 
-start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR):
+start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR. YOU ALWAYS explicit and comprehensive):
 
 - run $automated-verify (make sure we start from a fresh-clean state. if baseline verify fails on untouched code → note + ask user (picker); dont fix unrelated debt unless in scope).
 - initial implementer.
@@ -52,7 +59,7 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
 
 #### wave 2 - after wave 1 defined as done and no gate unresolved
 
-start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR):
+start subagents protocol flow with (always use subagents Auto model, you are only ORCHESTRATOR. YOU ALWAYS explicit and comprehensive):
 
 - LOOP (UNTIL NO FINDINGS from the auditers + $automated-verify pass):
   - run $automated-verify.
@@ -61,8 +68,9 @@ start subagents protocol flow with (always use subagents Auto model, you are onl
     - security-review subagent audit (if unavailable, use a generic subagent for security review audit). Be extremely thorough. No security vulnerabilities can slip through.
     - API contract + openapi drift audit.
     - boundary + monorepo architecture audit.
+    - misleading UX, flows, interactions audit.
     - edge cases + errors audit.
-    - try-really-hard-to-breaking-the-app audit.
+    - try-really-hard-to-breaking-the-app-by-run-the-actual-dev-server audit.
     - code quality + this monorepo code conduct / coding principles audit (different from what $automated-verify doing).
   - audit implementer.
   - run $automated-verify.
@@ -86,6 +94,7 @@ if something is needed an answer, ask me using our QnA protocols (using picker, 
 
 ## after everything
 
-- log on chat timestamp. start time + end time + duration time.
-- log on chat total subagents spawned/dispatched ONLY for this session (not the whole chat).
+- log on chat:
+  - timestamp. start time + end time + duration time.
+  - total subagents spawned/dispatched ONLY for this session (not the whole chat).
 - tells what to do next and what is your opinion after everything is done.

@@ -1,6 +1,6 @@
 # Personal behavior & Coding principles (MUST FOLLOW)
 
-- the goal is to make production-level industry-standard batle-proven apps for a busy traffic product.
+- the goal is to make production-level industry-standard batle-proven apps that scales for a busy traffic product.
 - dont overengineering.
 - YAGNI, DRY, KISS.
 - composition over inheritance.
