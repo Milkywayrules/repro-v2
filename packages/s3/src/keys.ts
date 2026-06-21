@@ -4,12 +4,24 @@ import { extensionForContentType } from './constants'
 
 const TRAILING_SLASH = /\/$/
 
-export function avatarObjectKey(userId: string, contentType: string): string {
+function isSafeStorageKey(key: string): boolean {
+  return !(key.includes('..') || key.startsWith('/') || key.includes('\\'))
+}
+
+function extensionForObjectKey(
+  contentType: string,
+  kind: 'avatar' | 'attachment',
+) {
   const ext = extensionForContentType(contentType)
   if (!ext) {
-    throw new Error('Unsupported content type for avatar key')
+    throw new Error(`Unsupported content type for ${kind} key`)
   }
 
+  return ext
+}
+
+export function avatarObjectKey(userId: string, contentType: string): string {
+  const ext = extensionForObjectKey(contentType, 'avatar')
   return `avatars/${userId}/${uuidv7()}.${ext}`
 }
 
@@ -18,16 +30,12 @@ export function attachmentObjectKey(
   taskId: string,
   contentType: string,
 ): string {
-  const ext = extensionForContentType(contentType)
-  if (!ext) {
-    throw new Error('Unsupported content type for attachment key')
-  }
-
+  const ext = extensionForObjectKey(contentType, 'attachment')
   return `attachments/${workspaceId}/${taskId}/${uuidv7()}.${ext}`
 }
 
 export function isAvatarKeyForUser(key: string, userId: string): boolean {
-  return key.startsWith(`avatars/${userId}/`)
+  return isSafeStorageKey(key) && key.startsWith(`avatars/${userId}/`)
 }
 
 export function isAttachmentKeyForTask(
@@ -35,7 +43,10 @@ export function isAttachmentKeyForTask(
   workspaceId: string,
   taskId: string,
 ): boolean {
-  return key.startsWith(`attachments/${workspaceId}/${taskId}/`)
+  return (
+    isSafeStorageKey(key) &&
+    key.startsWith(`attachments/${workspaceId}/${taskId}/`)
+  )
 }
 
 export function publicObjectUrl(baseUrl: string, key: string): string {

@@ -9,8 +9,10 @@ import {
   isAllowedContentType,
   isAttachmentKeyForTask,
   isWithinSizeLimit,
+  normalizeMimeType,
   presignGet,
   presignPut,
+  presignPutExpiresAt,
 } from '@repro-v2/s3'
 
 import { http } from '@/libs/contract'
@@ -83,9 +85,10 @@ async function presignUpload(
     env.S3_BUCKET_PRIVATE,
     key,
     input.contentType,
+    { contentLength: input.sizeBytes },
   )
 
-  return { uploadUrl, key }
+  return { uploadUrl, key, expiresAt: presignPutExpiresAt() }
 }
 
 async function completeUpload(
@@ -126,7 +129,10 @@ async function completeUpload(
     throw validationError('Uploaded object size does not match')
   }
 
-  if (!head.contentType || head.contentType !== input.contentType) {
+  if (
+    !head.contentType ||
+    normalizeMimeType(head.contentType) !== input.contentType
+  ) {
     throw validationError('Uploaded object content type does not match')
   }
 

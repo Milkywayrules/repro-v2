@@ -21,4 +21,10 @@ export {
   isAvatarKeyForUser,
   publicObjectUrl,
 } from './keys'
-export { presignGet, presignPut } from './presign'
+export { normalizeMimeType } from './mime'
+export {
+  DEFAULT_PUT_EXPIRES_SECONDS,
+  presignGet,
+  presignPut,
+  presignPutExpiresAt,
+} from './presign'

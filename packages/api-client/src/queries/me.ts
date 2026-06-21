@@ -1,14 +1,8 @@
-import type { AllowedContentType } from '@repro-v2/s3'
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
+import type { UploadMeta } from './attachments'
 import { unwrapTreatyResponse } from './treaty'
-
-interface UploadMeta {
-  contentType: AllowedContentType
-  filename: string
-  sizeBytes: number
-}
 
 export async function presignAvatar(client: ApiClient, body: UploadMeta) {
   const response = await client.api.v1.me.avatar.presign.post(body)

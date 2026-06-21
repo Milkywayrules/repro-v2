@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 import {
   attachmentKeys,
@@ -27,12 +27,19 @@ interface TaskAttachmentsPanelProps {
 export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const queryClient = useQueryClient()
   const attachmentInputRef = useRef<HTMLInputElement>(null)
+  const [hasSelectedFile, setHasSelectedFile] = useState(false)
 
   const attachmentsQuery = useQuery({
     ...taskAttachmentsQueryOptions(apiClient, taskId),
     enabled: Boolean(taskId),
   })
   const attachments = attachmentsQuery.data?.data ?? []
+
+  async function refreshAttachments() {
+    await queryClient.invalidateQueries({
+      queryKey: attachmentKeys.list(taskId),
+    })
+  }
 
   const uploadAttachmentMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -54,9 +61,8 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       })
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: attachmentKeys.list(taskId),
-      })
+      await refreshAttachments()
+      setHasSelectedFile(false)
       if (attachmentInputRef.current) {
         attachmentInputRef.current.value = ''
       }
@@ -66,11 +72,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId: string) =>
       deleteTaskAttachment(apiClient, taskId, attachmentId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: attachmentKeys.list(taskId),
-      })
-    },
+    onSuccess: refreshAttachments,
   })
 
   const downloadAttachmentMutation = useMutation({
@@ -93,6 +95,12 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
   const attachmentsError = attachmentsQuery.isError
     ? formatTreatyError(attachmentsQuery.error, 'Failed to load attachments')
     : null
+
+  function handleAttachmentFileChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    setHasSelectedFile(Boolean(event.target.files?.[0]))
+  }
 
   function handleUploadAttachment() {
     const file = attachmentInputRef.current?.files?.[0]
@@ -155,11 +163,12 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       <div className="flex gap-2">
         <Input
           accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain"
+          onChange={handleAttachmentFileChange}
           ref={attachmentInputRef}
           type="file"
         />
         <Button
-          disabled={uploadAttachmentMutation.isPending}
+          disabled={!hasSelectedFile || uploadAttachmentMutation.isPending}
           onClick={handleUploadAttachment}
           type="button"
         >

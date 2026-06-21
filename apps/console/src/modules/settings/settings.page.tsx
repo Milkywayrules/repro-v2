@@ -27,6 +27,7 @@ export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [hasSelectedFile, setHasSelectedFile] = useState(false)
 
   useEffect(() => {
     if (sessionPending) {
@@ -59,6 +60,7 @@ export function SettingsPage() {
     onSuccess: async () => {
       await iamClient.getSession({ query: { disableCookieCache: true } })
       setPreviewUrl(null)
+      setHasSelectedFile(false)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -69,9 +71,11 @@ export function SettingsPage() {
     const file = event.target.files?.[0]
     if (!file) {
       setPreviewUrl(null)
+      setHasSelectedFile(false)
       return
     }
 
+    setHasSelectedFile(true)
     setPreviewUrl(URL.createObjectURL(file))
   }
 
@@ -140,7 +144,7 @@ export function SettingsPage() {
         </div>
 
         <Button
-          disabled={uploadMutation.isPending}
+          disabled={!hasSelectedFile || uploadMutation.isPending}
           onClick={handleUpload}
           type="button"
         >

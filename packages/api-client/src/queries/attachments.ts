@@ -5,7 +5,7 @@ import type { ApiClient } from '../index'
 import { attachmentKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
 
-interface UploadMeta {
+export interface UploadMeta {
   contentType: AllowedContentType
   filename: string
   sizeBytes: number

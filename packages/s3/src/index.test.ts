@@ -61,6 +61,15 @@ describe('s3 keys', () => {
     ).toBe(false)
   })
 
+  test('rejects unsafe storage keys', () => {
+    expect(isAvatarKeyForUser('../avatars/u1/file.png', 'u1')).toBe(false)
+    expect(isAvatarKeyForUser('/avatars/u1/file.png', 'u1')).toBe(false)
+    expect(isAvatarKeyForUser('avatars\\u1\\file.png', 'u1')).toBe(false)
+    expect(
+      isAttachmentKeyForTask('attachments/ws/../other/file.pdf', 'ws', 't'),
+    ).toBe(false)
+  })
+
   test('builds public URL without trailing slash on base', () => {
     expect(publicObjectUrl('https://cdn.example.com', 'avatars/u/a.png')).toBe(
       'https://cdn.example.com/avatars/u/a.png',

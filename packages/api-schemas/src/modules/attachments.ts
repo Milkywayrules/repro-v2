@@ -44,4 +44,5 @@ export const attachmentDownloadResponse = z.object({
 export const attachmentPresignResponse = z.object({
   uploadUrl: z.string().url(),
   key: z.string(),
+  expiresAt: z.string().datetime(),
 })

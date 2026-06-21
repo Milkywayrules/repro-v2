@@ -9,7 +9,9 @@ import {
   isAllowedContentType,
   isAvatarKeyForUser,
   isWithinSizeLimit,
+  normalizeMimeType,
   presignPut,
+  presignPutExpiresAt,
   publicObjectUrl,
 } from '@repro-v2/s3'
 
@@ -44,10 +46,11 @@ async function presignAvatar(
     env.S3_BUCKET_PUBLIC,
     key,
     input.contentType,
+    { contentLength: input.sizeBytes },
   )
   const publicUrl = publicObjectUrl(env.S3_PUBLIC_BASE_URL, key)
 
-  return { uploadUrl, key, publicUrl }
+  return { uploadUrl, key, publicUrl, expiresAt: presignPutExpiresAt() }
 }
 
 async function completeAvatar(userId: string, key: string) {
@@ -68,7 +71,12 @@ async function completeAvatar(userId: string, key: string) {
     throw validationError('Uploaded object exceeds maximum size')
   }
 
-  if (!(head.contentType && isAllowedContentType(head.contentType))) {
+  if (
+    !(
+      head.contentType &&
+      isAllowedContentType(normalizeMimeType(head.contentType))
+    )
+  ) {
     throw validationError('Uploaded object has unsupported content type')
   }
 

@@ -74,6 +74,7 @@ describe('me avatar routes', () => {
       uploadUrl: 'https://s3.example/upload',
       key: `avatars/${mockUser.id}/file.png`,
       publicUrl: 'https://cdn.example.test/avatars/file.png',
+      expiresAt: '2026-01-01T00:05:00.000Z',
     })
 
     const response = await createApp().handle(

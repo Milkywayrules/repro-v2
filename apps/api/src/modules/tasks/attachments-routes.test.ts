@@ -108,6 +108,7 @@ describe('task attachment routes', () => {
     spyOn(attachmentsService, 'presignUpload').mockResolvedValue({
       uploadUrl: 'https://s3.example/upload',
       key: mockAttachmentRow.storageKey,
+      expiresAt: '2026-01-01T00:05:00.000Z',
     })
 
     const response = await createApp().handle(
