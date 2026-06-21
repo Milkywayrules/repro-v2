@@ -15,6 +15,21 @@ import { createDemoSeedOnFirstWorkspaceHook } from './workspace-provisioning'
 
 const workspaceSchema = {
   organization: { modelName: 'workspace' },
+  member: {
+    fields: {
+      organizationId: 'workspace_id',
+    },
+  },
+  invitation: {
+    fields: {
+      organizationId: 'workspace_id',
+    },
+  },
+  session: {
+    fields: {
+      activeOrganizationId: 'active_workspace_id',
+    },
+  },
 } as const
 
 export function buildIamPlugins(
