@@ -10,6 +10,7 @@ import {
 } from '@repro-v2/ui/components/dropdown-menu'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { iamClient } from '@/lib/iam-client'
 
 import { useIamFeatures } from './use-iam-features'
@@ -66,13 +67,11 @@ export function WorkspaceSwitcher() {
       <DropdownMenuSeparator />
       <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
       {switchError ? (
-        <DropdownMenuLabel
-          aria-live="assertive"
-          className="font-normal text-destructive text-sm"
-          role="alert"
-        >
-          {switchError}
-        </DropdownMenuLabel>
+        <div className="px-2 py-1">
+          <InlineErrorCallout className="px-2 py-1.5 text-left text-xs">
+            {switchError}
+          </InlineErrorCallout>
+        </div>
       ) : null}
       {orgList.map(org => {
         const isActive = org.id === activeOrganizationId

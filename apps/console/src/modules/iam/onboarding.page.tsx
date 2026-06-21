@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
@@ -13,6 +13,7 @@ import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import z from 'zod'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
@@ -24,6 +25,7 @@ import { workspaceSlugFromName } from './workspace-slug'
 
 export function OnboardingPage() {
   const router = useRouter()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
   const { data: session, isPending: sessionPending } = iamClient.useSession()
   const { data: organizations, isPending: orgsPending } =
@@ -66,6 +68,7 @@ export function OnboardingPage() {
       name: '',
     },
     onSubmit: async ({ value }) => {
+      setSubmitError(null)
       const name = value.name.trim()
       const slug = workspaceSlugFromName(name)
 
@@ -75,7 +78,7 @@ export function OnboardingPage() {
       })
 
       if (error) {
-        toast.error(error.message ?? 'Could not create workspace')
+        setSubmitError(error.message ?? 'Could not create workspace')
         return
       }
 
@@ -84,7 +87,9 @@ export function OnboardingPage() {
           await iamClient.organization.setActive({ organizationId: data.id })
 
         if (setActiveError) {
-          toast.error('Could not switch to workspace')
+          setSubmitError(
+            'Workspace created but could not switch to it. Try again.',
+          )
           return
         }
       }
@@ -167,6 +172,10 @@ export function OnboardingPage() {
             )
           }}
         </form.Field>
+
+        {submitError ? (
+          <InlineErrorCallout>{submitError}</InlineErrorCallout>
+        ) : null}
 
         <form.Subscribe
           selector={state => ({

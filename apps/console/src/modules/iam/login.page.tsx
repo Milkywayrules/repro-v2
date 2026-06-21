@@ -8,7 +8,9 @@ import { Button } from '@repro-v2/ui/components/button'
 import { Skeleton } from '@repro-v2/ui/components/skeleton'
 import { useQueryClient } from '@tanstack/react-query'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
+import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 
@@ -48,31 +50,6 @@ function failRedirect(setRedirectState: (state: RedirectState) => void) {
     status: 'error',
     message: 'Could not continue',
   })
-}
-
-function LoginRedirectError({
-  message,
-  onRetry,
-  onSignOut,
-}: {
-  message: string
-  onRetry: () => void
-  onSignOut: () => void
-}) {
-  return (
-    <div className="mx-auto mt-10 w-full max-w-md space-y-4 p-6 text-center">
-      <h1 className="font-bold text-3xl">Could not continue</h1>
-      <p className="text-destructive text-sm">{message}</p>
-      <div className="flex flex-col gap-2">
-        <Button onClick={onRetry} type="button">
-          Try again
-        </Button>
-        <Button onClick={onSignOut} type="button" variant="outline">
-          Sign out
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 function LoginAuthForms({
@@ -118,11 +95,11 @@ function LoginAuthForms({
       </h1>
 
       {captchaMisconfigured ? (
-        <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-destructive text-sm">
+        <InlineErrorCallout>
           CAPTCHA is enabled but{' '}
           <code className="text-xs">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> is not
           configured. Sign-in is temporarily unavailable.
-        </p>
+        </InlineErrorCallout>
       ) : null}
 
       {captchaRequired ? (
@@ -136,9 +113,7 @@ function LoginAuthForms({
 
       {captchaError ? (
         <div className="space-y-2">
-          <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-destructive text-sm">
-            {captchaError}
-          </p>
+          <InlineErrorCallout>{captchaError}</InlineErrorCallout>
           <Button onClick={clearCaptcha} type="button" variant="outline">
             Retry verification
           </Button>
@@ -214,7 +189,12 @@ export function LoginPage() {
   const queryClient = useQueryClient()
   const redirectAfterAuth = usePostAuthRedirect()
   const { data: session, isPending: sessionPending } = iamClient.useSession()
-  const { features, isError, isPending: featuresPending } = useIamFeatures()
+  const {
+    features,
+    isError,
+    isPending: featuresPending,
+    refetch: refetchFeatures,
+  } = useIamFeatures()
   const sessionCheckedOnce = useRef(false)
   const featuresCheckedOnce = useRef(false)
   const [showSignIn, setShowSignIn] = useState(true)
@@ -336,10 +316,19 @@ export function LoginPage() {
   if (session?.user) {
     if (redirectState?.status === 'error') {
       return (
-        <LoginRedirectError
+        <PageErrorState
+          actions={
+            <>
+              <Button onClick={handleRetry} type="button">
+                Try again
+              </Button>
+              <Button onClick={handleSignOut} type="button" variant="outline">
+                Sign out
+              </Button>
+            </>
+          }
           message={redirectState.message}
-          onRetry={handleRetry}
-          onSignOut={handleSignOut}
+          title="Could not continue"
         />
       )
     }
@@ -360,13 +349,26 @@ export function LoginPage() {
 
   if (isError || !features || !hasAnyAuthMethod(features)) {
     return (
-      <div className="mx-auto mt-10 w-full max-w-md p-6 text-center">
-        <h1 className="mb-2 font-bold text-3xl">Sign in unavailable</h1>
-        <p className="text-muted-foreground text-sm">
-          No sign-in methods are enabled right now. Try again later or contact
-          support.
-        </p>
-      </div>
+      <PageErrorState
+        actions={
+          isError ? (
+            <Button
+              onClick={() => {
+                refetchFeatures()
+              }}
+              type="button"
+            >
+              Try again
+            </Button>
+          ) : undefined
+        }
+        message={
+          isError
+            ? 'Could not load sign-in options. Check your connection and try again.'
+            : 'No sign-in methods are enabled right now. Try again later or contact support.'
+        }
+        title="Sign in unavailable"
+      />
     )
   }
 

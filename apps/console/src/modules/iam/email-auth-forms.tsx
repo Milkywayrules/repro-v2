@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
@@ -7,6 +9,7 @@ import { useForm } from '@tanstack/react-form'
 import { toast } from 'sonner'
 import z from 'zod'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { iamClient } from '@/lib/iam-client'
 
 import { captchaFetchOptions } from './captcha-fetch-options'
@@ -58,6 +61,7 @@ export function EmailSignInForm({
   onSwitchToSignUp: () => void
 }) {
   const redirectAfterAuth = usePostAuthRedirect()
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm({
     defaultValues: {
@@ -65,6 +69,7 @@ export function EmailSignInForm({
       password: '',
     },
     onSubmit: async ({ value }) => {
+      setSubmitError(null)
       await iamClient.signIn.email(
         {
           email: value.email,
@@ -81,7 +86,11 @@ export function EmailSignInForm({
           },
           onError: error => {
             clearCaptcha()
-            toast.error(error.error.message || error.error.statusText)
+            setSubmitError(
+              error.error.message ||
+                error.error.statusText ||
+                'Sign in failed. Check your email and password.',
+            )
           },
         },
       )
@@ -164,6 +173,10 @@ export function EmailSignInForm({
           }}
         </form.Field>
 
+        {submitError ? (
+          <InlineErrorCallout>{submitError}</InlineErrorCallout>
+        ) : null}
+
         <form.Subscribe
           selector={state => ({
             canSubmit: state.canSubmit,
@@ -212,6 +225,7 @@ export function EmailSignUpForm({
   onSwitchToSignIn: () => void
 }) {
   const redirectAfterAuth = usePostAuthRedirect()
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm({
     defaultValues: {
@@ -220,6 +234,7 @@ export function EmailSignUpForm({
       password: '',
     },
     onSubmit: async ({ value }) => {
+      setSubmitError(null)
       await iamClient.signUp.email(
         {
           email: value.email,
@@ -237,7 +252,11 @@ export function EmailSignUpForm({
           },
           onError: error => {
             clearCaptcha()
-            toast.error(error.error.message || error.error.statusText)
+            setSubmitError(
+              error.error.message ||
+                error.error.statusText ||
+                'Could not create account. Try again.',
+            )
           },
         },
       )
@@ -347,6 +366,10 @@ export function EmailSignUpForm({
             )
           }}
         </form.Field>
+
+        {submitError ? (
+          <InlineErrorCallout>{submitError}</InlineErrorCallout>
+        ) : null}
 
         <form.Subscribe
           selector={state => ({

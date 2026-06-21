@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import { ClientOnly } from '@/components/client-only'
 import { Loader } from '@/components/loader'
+import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
@@ -38,9 +39,7 @@ function DashboardPageClient() {
 
   if (onboardingError) {
     return (
-      <div className="mx-auto mt-10 w-full max-w-md p-6 text-center">
-        <p className="text-destructive text-sm">{onboardingError}</p>
-      </div>
+      <PageErrorState message={onboardingError} title="Could not continue" />
     )
   }
 

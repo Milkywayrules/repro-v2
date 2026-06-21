@@ -11,6 +11,7 @@ import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 import z from 'zod'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
@@ -32,6 +33,7 @@ export function MagicLinkForm({
   features: { magicLink: boolean } | undefined
 }) {
   const [sent, setSent] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
 
   const form = useForm({
@@ -39,6 +41,7 @@ export function MagicLinkForm({
       email: '',
     },
     onSubmit: async ({ value }) => {
+      setSubmitError(null)
       await iamClient.signIn.magicLink(
         {
           email: value.email,
@@ -53,7 +56,11 @@ export function MagicLinkForm({
           },
           onError: error => {
             clearCaptcha()
-            toast.error(error.error.message || error.error.statusText)
+            setSubmitError(
+              error.error.message ||
+                error.error.statusText ||
+                'Could not send sign-in link. Try again.',
+            )
           },
         },
       )
@@ -124,6 +131,10 @@ export function MagicLinkForm({
           )
         }}
       </form.Field>
+
+      {submitError ? (
+        <InlineErrorCallout>{submitError}</InlineErrorCallout>
+      ) : null}
 
       <form.Subscribe
         selector={state => ({

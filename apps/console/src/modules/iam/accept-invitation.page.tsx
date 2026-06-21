@@ -9,7 +9,9 @@ import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
 import { Loader } from '@/components/loader'
+import { PageErrorState } from '@/components/page-error-state'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
@@ -373,72 +375,63 @@ export function AcceptInvitationPage() {
 
   if (pageState.status === 'missing_id') {
     return (
-      <main
-        aria-labelledby="invitation-heading"
-        className="mx-auto mt-10 w-full max-w-md space-y-4 p-6 text-center"
-      >
-        <h1 className="font-bold text-3xl" id="invitation-heading">
-          Workspace invitation
-        </h1>
-        <p className="text-destructive text-sm" role="alert">
-          This invitation link is invalid or incomplete.
-        </p>
-        <Button
-          className="w-full"
-          onClick={() => router.push(routes.dashboard)}
-          type="button"
-          variant="outline"
-        >
-          Go to dashboard
-        </Button>
-      </main>
+      <PageErrorState
+        actions={
+          <Button
+            className="w-full"
+            onClick={() => router.push(routes.dashboard)}
+            type="button"
+            variant="outline"
+          >
+            Go to dashboard
+          </Button>
+        }
+        as="main"
+        headingId="invitation-heading"
+        message="This invitation link is invalid or incomplete."
+        title="Workspace invitation"
+      />
     )
   }
 
   if (pageState.status === 'load_error') {
     return (
-      <main
-        aria-labelledby="invitation-heading"
-        className="mx-auto mt-10 w-full max-w-md space-y-4 p-6 text-center"
-      >
-        <h1 className="font-bold text-3xl" id="invitation-heading">
-          Workspace invitation
-        </h1>
-        <p className="text-destructive text-sm" role="alert">
-          Could not load invitation. Try again in a moment.
-        </p>
-        <Button
-          className="w-full"
-          onClick={() => router.refresh()}
-          type="button"
-        >
-          Try again
-        </Button>
-      </main>
+      <PageErrorState
+        actions={
+          <Button
+            className="w-full"
+            onClick={() => router.refresh()}
+            type="button"
+          >
+            Try again
+          </Button>
+        }
+        as="main"
+        headingId="invitation-heading"
+        message="Could not load invitation. Try again in a moment."
+        title="Workspace invitation"
+      />
     )
   }
 
   if (pageState.status === 'invalid') {
     return (
-      <main
-        aria-labelledby="invitation-heading"
-        className="mx-auto mt-10 w-full max-w-md space-y-4 p-6 text-center"
-      >
-        <h1 className="font-bold text-3xl" id="invitation-heading">
-          Workspace invitation
-        </h1>
-        <p className="text-destructive text-sm" role="alert">
-          {pageState.message}
-        </p>
-        <Button
-          className="w-full"
-          onClick={() => router.push(routes.dashboard)}
-          type="button"
-          variant="outline"
-        >
-          Go to dashboard
-        </Button>
-      </main>
+      <PageErrorState
+        actions={
+          <Button
+            className="w-full"
+            onClick={() => router.push(routes.dashboard)}
+            type="button"
+            variant="outline"
+          >
+            Go to dashboard
+          </Button>
+        }
+        as="main"
+        headingId="invitation-heading"
+        message={pageState.message}
+        title="Workspace invitation"
+      />
     )
   }
 
@@ -477,10 +470,10 @@ export function AcceptInvitationPage() {
         <h1 className="font-bold text-3xl" id="invitation-heading">
           Wrong account
         </h1>
-        <p className="text-destructive text-sm" role="alert">
+        <InlineErrorCallout>
           This invitation was sent to {pageState.invitation.email}. You are
           signed in as {session.user.email}.
-        </p>
+        </InlineErrorCallout>
         <InvitationSummary invitation={pageState.invitation} />
         <Button
           className="w-full"

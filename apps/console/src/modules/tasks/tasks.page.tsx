@@ -22,6 +22,8 @@ import { Label } from '@repro-v2/ui/components/label'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useQueryState } from 'nuqs'
 
+import { InlineErrorCallout } from '@/components/inline-error-callout'
+import { PageErrorState } from '@/components/page-error-state'
 import { apiClient } from '@/lib/api-client'
 import { iamClient } from '@/lib/iam-client'
 import { parseAsListId } from '@/lib/list-id-parser'
@@ -183,6 +185,13 @@ export function TasksPage() {
     deleteTaskMutation.mutate({ id: taskId, listId })
   }
 
+  function resetMutationErrors() {
+    createListMutation.reset()
+    createTaskMutation.reset()
+    patchTaskMutation.reset()
+    deleteTaskMutation.reset()
+  }
+
   if (sessionPending || !session?.user || onboardingChecking) {
     return <p className="p-4">Loading…</p>
   }
@@ -190,7 +199,11 @@ export function TasksPage() {
   if (onboardingError) {
     return (
       <main className="mx-auto w-full max-w-3xl p-4">
-        <p className="text-destructive text-sm">{onboardingError}</p>
+        <PageErrorState
+          className="mt-0 p-0"
+          message={onboardingError}
+          title="Could not continue"
+        />
       </main>
     )
   }
@@ -199,7 +212,14 @@ export function TasksPage() {
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4">
       <h1 className="font-semibold text-2xl">Tasks</h1>
 
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {error ? (
+        <div className="space-y-2">
+          <InlineErrorCallout>{error}</InlineErrorCallout>
+          <Button onClick={resetMutationErrors} type="button" variant="outline">
+            Try again
+          </Button>
+        </div>
+      ) : null}
 
       <section className="flex flex-col gap-2">
         <h2 className="font-medium text-lg">Lists</h2>
@@ -207,7 +227,18 @@ export function TasksPage() {
           <p className="text-muted-foreground text-sm">Loading lists…</p>
         ) : null}
         {listsError ? (
-          <p className="text-destructive text-sm">{listsError}</p>
+          <div className="space-y-2">
+            <InlineErrorCallout>{listsError}</InlineErrorCallout>
+            <Button
+              onClick={() => {
+                listsQuery.refetch()
+              }}
+              type="button"
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </div>
         ) : null}
         <div className="flex flex-wrap gap-2">
           {lists.map(list => (
@@ -248,7 +279,18 @@ export function TasksPage() {
           <p className="text-muted-foreground text-sm">Loading tasks…</p>
         ) : null}
         {tasksError ? (
-          <p className="text-destructive text-sm">{tasksError}</p>
+          <div className="space-y-2">
+            <InlineErrorCallout>{tasksError}</InlineErrorCallout>
+            <Button
+              onClick={() => {
+                tasksQuery.refetch()
+              }}
+              type="button"
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </div>
         ) : null}
         <ul className="flex flex-col gap-2">
           {tasks.map(task => (
