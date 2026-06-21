@@ -84,6 +84,7 @@ export function WorkspaceSwitcher() {
 
         return (
           <DropdownMenuItem
+            aria-current={isActive ? 'true' : undefined}
             disabled={isActive || isSwitching}
             key={org.id}
             onClick={() => {

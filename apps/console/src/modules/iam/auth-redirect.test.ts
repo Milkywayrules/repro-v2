@@ -24,6 +24,13 @@ describe('isSafeInternalPath', () => {
     expect(isSafeInternalPath('dashboard')).toBe(false)
     expect(isSafeInternalPath('')).toBe(false)
   })
+
+  test('rejects backslash and encoded open-redirect patterns', () => {
+    expect(isSafeInternalPath('/path\\evil')).toBe(false)
+    expect(isSafeInternalPath('/%2F%2Fevil.com')).toBe(false)
+    expect(isSafeInternalPath('/%2f%2fevil.com')).toBe(false)
+    expect(isSafeInternalPath('/%5Cevil')).toBe(false)
+  })
 })
 
 describe('resolvePostAuthPath', () => {
@@ -34,6 +41,7 @@ describe('resolvePostAuthPath', () => {
   test('rejects open redirects', () => {
     expect(resolvePostAuthPath('//evil.com')).toBe(routes.dashboard)
     expect(resolvePostAuthPath('https://evil.com')).toBe(routes.dashboard)
+    expect(resolvePostAuthPath('/%2F%2Fevil.com')).toBe(routes.dashboard)
   })
 
   test('falls back to dashboard', () => {

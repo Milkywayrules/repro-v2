@@ -4,7 +4,20 @@ import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 
 export function isSafeInternalPath(path: string): boolean {
-  return path.startsWith('/') && !path.startsWith('//')
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    return false
+  }
+
+  if (path.includes('\\')) {
+    return false
+  }
+
+  const lower = path.toLowerCase()
+  if (lower.includes('%2f%2f') || lower.includes('%5c')) {
+    return false
+  }
+
+  return true
 }
 
 export function resolvePostAuthPath(

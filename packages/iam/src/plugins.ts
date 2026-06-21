@@ -10,6 +10,7 @@ import {
 
 import { buildCaptchaEndpoints } from './captcha-endpoints'
 import type { IamEmailHandlers } from './email-hooks'
+import { WORKSPACE_LIMIT } from './workspace-limit'
 import { createDemoSeedOnFirstWorkspaceHook } from './workspace-provisioning'
 
 const workspaceSchema = {
@@ -53,7 +54,7 @@ export function buildIamPlugins(
   if (iamFeatures.workspace) {
     plugins.push(
       organization({
-        organizationLimit: 2,
+        organizationLimit: WORKSPACE_LIMIT,
         schema: workspaceSchema,
         sendInvitationEmail: email?.sendInvitationEmail,
         teams: { enabled: false },

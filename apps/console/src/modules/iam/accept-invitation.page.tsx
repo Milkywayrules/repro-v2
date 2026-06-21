@@ -33,7 +33,7 @@ type PageState =
   | { status: 'invalid'; message: string }
   | { status: 'wrong_email'; invitation: InvitationDetails }
   | { status: 'already_member'; invitation: InvitationDetails }
-  | { status: 'load_error'; message: string }
+  | { status: 'load_error' }
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
@@ -214,6 +214,23 @@ function activeOrganizationIdFromSession(session: unknown): string | null {
   return null
 }
 
+async function setActiveOrganizationIfNeeded(
+  session: unknown,
+  organizationId: string,
+): Promise<boolean> {
+  const activeOrganizationId = activeOrganizationIdFromSession(session)
+
+  if (activeOrganizationId === organizationId) {
+    return true
+  }
+
+  const { error: setActiveError } = await iamClient.organization.setActive({
+    organizationId,
+  })
+
+  return !setActiveError
+}
+
 export function AcceptInvitationPage() {
   const router = useRouter()
   const { data: session, isPending: sessionPending } = iamClient.useSession()
@@ -221,6 +238,7 @@ export function AcceptInvitationPage() {
   const [nextPath] = useQueryState(searchParams.next, parseAsString)
   const [pageState, setPageState] = useState<PageState>({ status: 'loading' })
   const [isAccepting, setIsAccepting] = useState(false)
+  const [isContinuing, setIsContinuing] = useState(false)
 
   useEffect(() => {
     if (sessionPending) {
@@ -274,10 +292,7 @@ export function AcceptInvitationPage() {
           return
         }
 
-        setPageState({
-          status: 'load_error',
-          message,
-        })
+        setPageState({ status: 'load_error' })
         return
       }
 
@@ -295,10 +310,7 @@ export function AcceptInvitationPage() {
 
     loadInvitation().catch(() => {
       if (!cancelled) {
-        setPageState({
-          status: 'load_error',
-          message: 'Could not load invitation',
-        })
+        setPageState({ status: 'load_error' })
       }
     })
 
@@ -337,15 +349,35 @@ export function AcceptInvitationPage() {
       pageState.invitation.organizationId,
     )
 
-    const activeOrganizationId = activeOrganizationIdFromSession(
+    const activated = await setActiveOrganizationIfNeeded(
       session?.session,
+      organizationId,
     )
 
-    if (activeOrganizationId !== organizationId) {
-      await iamClient.organization.setActive({ organizationId })
+    if (!activated) {
+      setIsAccepting(false)
+      toast.error('Could not switch to workspace')
+      return
     }
 
     toast.success('Invitation accepted')
+    router.push(resolvePostAuthPath(nextPath) as Route)
+  }
+
+  async function handleContinueToApp(organizationId: string) {
+    setIsContinuing(true)
+
+    const activated = await setActiveOrganizationIfNeeded(
+      session?.session,
+      organizationId,
+    )
+
+    if (!activated) {
+      setIsContinuing(false)
+      toast.error('Could not switch to workspace')
+      return
+    }
+
     router.push(resolvePostAuthPath(nextPath) as Route)
   }
 
@@ -387,7 +419,7 @@ export function AcceptInvitationPage() {
           Workspace invitation
         </h1>
         <p className="text-destructive text-sm" role="alert">
-          {pageState.message}
+          Could not load invitation. Try again in a moment.
         </p>
         <Button
           className="w-full"
@@ -504,11 +536,20 @@ export function AcceptInvitationPage() {
         </p>
         <InvitationSummary invitation={pageState.invitation} />
         <Button
+          aria-busy={isContinuing}
           className="w-full"
-          onClick={() => router.push(resolvePostAuthPath(nextPath) as Route)}
+          disabled={isContinuing}
+          onClick={() => {
+            handleContinueToApp(pageState.invitation.organizationId).catch(
+              () => {
+                setIsContinuing(false)
+                toast.error('Could not continue to app')
+              },
+            )
+          }}
           type="button"
         >
-          Continue to app
+          {isContinuing ? 'Continuing…' : 'Continue to app'}
         </Button>
       </main>
     )

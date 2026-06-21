@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
+import { WORKSPACE_LIMIT } from '@repro-v2/iam/workspace-limit'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
 import { Label } from '@repro-v2/ui/components/label'
@@ -17,9 +18,8 @@ import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { searchParams } from '@/lib/search-params'
 
-import { resolvePostAuthPath } from './auth-redirect'
+import { buildOnboardingPath, resolvePostAuthPath } from './auth-redirect'
 import { useIamFeatures } from './use-iam-features'
-import { WORKSPACE_LIMIT } from './workspace-limit'
 import { workspaceSlugFromName } from './workspace-slug'
 
 export function OnboardingPage() {
@@ -36,9 +36,12 @@ export function OnboardingPage() {
     }
 
     if (!session?.user) {
-      router.replace(routes.login)
+      const returnTo = buildOnboardingPath(nextPath)
+      router.replace(
+        `${routes.login}?${searchParams.next}=${encodeURIComponent(returnTo)}`,
+      )
     }
-  }, [router, session?.user, sessionPending])
+  }, [nextPath, router, session?.user, sessionPending])
 
   useEffect(() => {
     if (featuresPending || orgsPending || !features?.workspace) {
@@ -46,6 +49,7 @@ export function OnboardingPage() {
     }
 
     if ((organizations?.length ?? 0) >= WORKSPACE_LIMIT) {
+      toast.info('You have reached your workspace limit.')
       router.replace(resolvePostAuthPath(nextPath) as Route)
     }
   }, [
@@ -76,7 +80,13 @@ export function OnboardingPage() {
       }
 
       if (data?.id) {
-        await iamClient.organization.setActive({ organizationId: data.id })
+        const { error: setActiveError } =
+          await iamClient.organization.setActive({ organizationId: data.id })
+
+        if (setActiveError) {
+          toast.error('Could not switch to workspace')
+          return
+        }
       }
 
       toast.success('Workspace created')
@@ -166,6 +176,7 @@ export function OnboardingPage() {
         >
           {({ canSubmit, isSubmitting }) => (
             <Button
+              aria-busy={isSubmitting}
               className="w-full"
               disabled={!canSubmit || isSubmitting}
               type="submit"

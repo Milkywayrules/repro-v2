@@ -13,6 +13,9 @@
     },
     "./workspace": {
       "default": "./src/workspace.ts"
+    },
+    "./workspace-limit": {
+      "default": "./src/workspace-limit.ts"
     }
   },
   "scripts": {

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import { WORKSPACE_LIMIT } from '@repro-v2/iam/workspace-limit'
 import { Button } from '@repro-v2/ui/components/button'
 import {
   DropdownMenu,
@@ -19,7 +20,6 @@ import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { SessionSwitcher } from '@/modules/iam/session-switcher'
 import { useIamFeatures } from '@/modules/iam/use-iam-features'
-import { WORKSPACE_LIMIT } from '@/modules/iam/workspace-limit'
 import { WorkspaceSwitcher } from '@/modules/iam/workspace-switcher'
 
 export function UserMenu() {
