@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Route } from 'next'
 import { useRouter } from 'next/navigation'
 
+import { workspacePublicSlug } from '@repro-v2/iam/workspace-storage-slug'
 import { Button } from '@repro-v2/ui/components/button'
 import { parseAsString, useQueryState } from 'nuqs'
 import { toast } from 'sonner'
@@ -205,8 +206,10 @@ async function resolveInvitationDestination(
     return '/dashboard'
   }
 
+  const slugById = await resolveWorkspaceSlugById(organizationId)
   const slug =
-    organizationSlug ?? (await resolveWorkspaceSlugById(organizationId))
+    slugById ??
+    (organizationSlug ? workspacePublicSlug(organizationSlug, undefined) : null)
 
   if (slug) {
     return workspaceRoutes(slug).dashboard

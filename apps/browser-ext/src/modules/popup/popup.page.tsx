@@ -1,3 +1,5 @@
+import { workspacePublicSlug } from '@repro-v2/iam/workspace-storage-slug'
+
 import { consoleHomeUrl, consoleLoginUrl } from '@/lib/console-login-url'
 import { iamClient } from '@/lib/iam-client'
 import { useIamFeatures } from '@/lib/use-iam-features'
@@ -16,9 +18,26 @@ export function PopupPage() {
     workspaceSlug,
   } = useWorkspaceSlug(session?.user?.id)
 
-  const workspaceName = organizations?.find(
-    org => org.slug === workspaceSlug,
-  )?.name
+  const workspaceName = organizations?.find(org => {
+    if (typeof org.slug !== 'string' || !workspaceSlug) {
+      return false
+    }
+
+    const orgRecord = org as {
+      slug: string
+      metadata?: unknown
+      ownerUserId?: unknown
+    }
+    const ownerUserId =
+      typeof orgRecord.ownerUserId === 'string'
+        ? orgRecord.ownerUserId
+        : session?.user?.id
+
+    return (
+      workspacePublicSlug(orgRecord.slug, orgRecord.metadata, ownerUserId) ===
+      workspaceSlug
+    )
+  })?.name
 
   return (
     <main className="popup">
