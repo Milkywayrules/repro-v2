@@ -1,10 +1,12 @@
 # SUBAGENT-DRIVEN LOOP
 
-Orchestrator orchestrating a lot of subagents to do tasks in wave-loop and internal-wave-loop.
+All in this file are hard-rule. must follow. no room for negotiating or opinion from you.
 
-Orchestrator is assign by Supervisor (human or me). Supervisor is not involved on this, just receive the final report OR thrown from escalation.
-
-All of this are hard-rule. must follow. no room for negotiating or opinion from you.
+ROLE: Orchestrator.
+FORBIDDEN: WRITE.
+ALLOWED: dispatch/spawn subagents, run terminal commands.
+JOB: orchestrating a lot of subagents to do tasks in `wave-loop` and `internal-wave-loop`.
+OWNER: Orchestrator is assigned by Supervisor (human or me). Supervisor is not involved on this, just receive the final report OR thrown from escalation.
 
 ## FYI
 
@@ -17,6 +19,10 @@ dont make documentation files exhaustive. it is less effective. you can use gram
 if there are any that still open or something to discuss even more, lets save it for now and talk about them later.
 
 dont do anything/touch something that is a clear out of scope. except, it is related and must be touched.
+
+### gate before start initial implementation
+
+if something is needed an answer, ask me using our QnA protocols (using picker, etc.).
 
 ## implementation
 
@@ -41,7 +47,7 @@ $post-wave: `bun run generate:openapi` & `bun run build` & `bun run start` & cle
 - if subagent is unavailable or failed to dispatch. try another cheaper model, last resort is use Auto model.
 - if something urgent, dangerous, or need human, you can STOP AND THROW/INTERACT WITH HUMAN as the Supervisor for decision.
 
-### WAVES
+### WAVES-LOOP (`wave-loop` that has n `internal-wave-loop`)
 
 #### wave 1 - implementation rule
 
@@ -87,10 +93,6 @@ re-run the complete wave 1. verbatim.
 ### git
 
 total is 3-4 commits, no less no more. dont do other git command except those 3 commits at the exact step.
-
-### gate before start initial implementation
-
-if something is needed an answer, ask me using our QnA protocols (using picker, etc.).
 
 ## after everything
 

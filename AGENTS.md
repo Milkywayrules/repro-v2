@@ -1,3 +1,10 @@
+# REPO STATE
+
+- as a base-template-repo for future projects.
+- full auto ai implementation with human as supervisor only.
+- on heavy development stage, so its ok to break anything, no need for backwards-compat.
+- wiring is to teach as a guide for the future template-user.
+
 # Personal behavior & Coding principles (MUST FOLLOW)
 
 - the goal is to make production-level industry-standard batle-proven apps that scales for a busy traffic product.
