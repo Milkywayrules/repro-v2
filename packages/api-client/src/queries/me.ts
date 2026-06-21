@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
-import type { UploadMeta } from './attachments'
+import type { UploadMeta } from '../upload-limits'
 import { unwrapTreatyResponse } from './treaty'
 
 export async function presignAvatar(client: ApiClient, body: UploadMeta) {

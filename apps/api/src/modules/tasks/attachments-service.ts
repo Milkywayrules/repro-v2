@@ -30,6 +30,16 @@ function validationError(message: string) {
   })
 }
 
+function assertAllowedUpload(contentType: string, sizeBytes: number) {
+  if (!isAllowedContentType(contentType)) {
+    throw validationError('Unsupported content type')
+  }
+
+  if (!isWithinSizeLimit(sizeBytes)) {
+    throw validationError('File exceeds maximum size')
+  }
+}
+
 function toResponse(row: typeof taskAttachments.$inferSelect) {
   return {
     id: row.id,
@@ -70,14 +80,7 @@ async function presignUpload(
   input: { filename: string; contentType: string; sizeBytes: number },
 ) {
   await tasksService.getForUser(userId, workspaceId, taskId)
-
-  if (!isAllowedContentType(input.contentType)) {
-    throw validationError('Unsupported content type')
-  }
-
-  if (!isWithinSizeLimit(input.sizeBytes)) {
-    throw validationError('File exceeds maximum size')
-  }
+  assertAllowedUpload(input.contentType, input.sizeBytes)
 
   const key = attachmentObjectKey(workspaceId, taskId, input.contentType)
   const uploadUrl = await presignPut(
@@ -108,13 +111,7 @@ async function completeUpload(
     throw validationError('Invalid storage key')
   }
 
-  if (!isAllowedContentType(input.contentType)) {
-    throw validationError('Unsupported content type')
-  }
-
-  if (!isWithinSizeLimit(input.sizeBytes)) {
-    throw validationError('File exceeds maximum size')
-  }
+  assertAllowedUpload(input.contentType, input.sizeBytes)
 
   const head = await headObject(s3Client, env.S3_BUCKET_PRIVATE, input.key)
 

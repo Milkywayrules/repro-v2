@@ -31,31 +31,32 @@ function treatyStatus(error: unknown): number | undefined {
   return
 }
 
-export function isTreatyUnauthorized(error: unknown): boolean {
-  const status = treatyStatus(error)
-  if (status === httpStatus.UNAUTHORIZED) {
-    return true
-  }
-
-  const payload = treatyPayload(error)
-  if (
-    isErrorEnvelope(payload) &&
-    payload.error.code === errorCodes.UNAUTHORIZED
-  ) {
-    return true
-  }
-
-  return isErrorEnvelope(error) && error.error.code === errorCodes.UNAUTHORIZED
-}
-
-export function formatTreatyError(error: unknown, fallback: string): string {
+function errorEnvelopeFrom(error: unknown): ErrorEnvelope | null {
   const payload = treatyPayload(error)
   if (isErrorEnvelope(payload)) {
-    return messageFromEnvelope(payload) ?? fallback
+    return payload
   }
 
   if (isErrorEnvelope(error)) {
-    return messageFromEnvelope(error) ?? fallback
+    return error
+  }
+
+  return null
+}
+
+export function isTreatyUnauthorized(error: unknown): boolean {
+  if (treatyStatus(error) === httpStatus.UNAUTHORIZED) {
+    return true
+  }
+
+  const envelope = errorEnvelopeFrom(error)
+  return envelope?.error.code === errorCodes.UNAUTHORIZED
+}
+
+export function formatTreatyError(error: unknown, fallback: string): string {
+  const envelope = errorEnvelopeFrom(error)
+  if (envelope) {
+    return messageFromEnvelope(envelope) ?? fallback
   }
 
   if (error instanceof Error && error.message.trim().length > 0) {

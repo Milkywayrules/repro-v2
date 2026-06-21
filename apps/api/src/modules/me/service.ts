@@ -28,17 +28,21 @@ function validationError(message: string) {
   })
 }
 
+function assertAllowedUpload(contentType: string, sizeBytes: number) {
+  if (!isAllowedContentType(contentType)) {
+    throw validationError('Unsupported content type')
+  }
+
+  if (!isWithinSizeLimit(sizeBytes)) {
+    throw validationError('File exceeds maximum size')
+  }
+}
+
 async function presignAvatar(
   userId: string,
   input: { filename: string; contentType: string; sizeBytes: number },
 ) {
-  if (!isAllowedContentType(input.contentType)) {
-    throw validationError('Unsupported content type')
-  }
-
-  if (!isWithinSizeLimit(input.sizeBytes)) {
-    throw validationError('File exceeds maximum size')
-  }
+  assertAllowedUpload(input.contentType, input.sizeBytes)
 
   const key = avatarObjectKey(userId, input.contentType)
   const uploadUrl = await presignPut(
@@ -72,12 +76,12 @@ async function completeAvatar(userId: string, key: string, sizeBytes: number) {
     throw validationError('Uploaded object size does not match')
   }
 
-  if (
-    !(
-      head.contentType &&
-      isAllowedContentType(normalizeMimeType(head.contentType))
-    )
-  ) {
+  if (!head.contentType) {
+    throw validationError('Uploaded object has unsupported content type')
+  }
+
+  const uploadedType = normalizeMimeType(head.contentType)
+  if (!isAllowedContentType(uploadedType)) {
     throw validationError('Uploaded object has unsupported content type')
   }
 

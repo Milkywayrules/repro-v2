@@ -2,10 +2,12 @@
 export { formatTreatyError, isTreatyUnauthorized } from '../treaty-error'
 export {
   type AllowedContentType,
+  inspectUploadFile,
   isAllowedContentType,
   MAX_OBJECT_BYTES,
+  type UploadMeta,
+  validateUploadFile,
 } from '../upload-limits'
-export type { UploadMeta } from './attachments'
 export {
   completeTaskAttachment,
   deleteTaskAttachment,

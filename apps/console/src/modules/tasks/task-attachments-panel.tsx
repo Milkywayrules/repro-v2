@@ -8,11 +8,11 @@ import {
   deleteTaskAttachment,
   downloadTaskAttachment,
   formatTreatyError,
-  isAllowedContentType,
-  MAX_OBJECT_BYTES,
+  inspectUploadFile,
   presignTaskAttachment,
   taskAttachmentsQueryOptions,
   uploadFileToPresignedUrl,
+  validateUploadFile,
 } from '@repro-v2/api-client/queries'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
@@ -74,29 +74,20 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
 
   const uploadAttachmentMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (file.size === 0) {
-        throw new Error('File is empty')
+      const inspected = inspectUploadFile(file)
+      if ('error' in inspected) {
+        throw new Error(inspected.error)
       }
 
-      if (file.size > MAX_OBJECT_BYTES) {
-        throw new Error('File exceeds maximum size')
-      }
-
-      if (!isAllowedContentType(file.type)) {
-        throw new Error('Unsupported file type')
-      }
-
-      const presign = await presignTaskAttachment(apiClient, taskId, {
-        filename: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-      })
+      const presign = await presignTaskAttachment(
+        apiClient,
+        taskId,
+        inspected.meta,
+      )
       await uploadFileToPresignedUrl(presign.data.uploadUrl, file)
       return await completeTaskAttachment(apiClient, taskId, {
         key: presign.data.key,
-        filename: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
+        ...inspected.meta,
       })
     },
     onSuccess: async () => {
@@ -159,23 +150,7 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
     }
 
     setHasSelectedFile(true)
-
-    if (file.size === 0) {
-      setValidationError('File is empty')
-      return
-    }
-
-    if (file.size > MAX_OBJECT_BYTES) {
-      setValidationError('File exceeds maximum size')
-      return
-    }
-
-    if (!isAllowedContentType(file.type)) {
-      setValidationError('Unsupported file type')
-      return
-    }
-
-    setValidationError(null)
+    setValidationError(validateUploadFile(file))
   }
 
   function handleUploadAttachment() {
@@ -185,18 +160,9 @@ export function TaskAttachmentsPanel({ taskId }: TaskAttachmentsPanelProps) {
       return
     }
 
-    if (file.size === 0) {
-      setValidationError('File is empty')
-      return
-    }
-
-    if (file.size > MAX_OBJECT_BYTES) {
-      setValidationError('File exceeds maximum size')
-      return
-    }
-
-    if (!isAllowedContentType(file.type)) {
-      setValidationError('Unsupported file type')
+    const fileError = validateUploadFile(file)
+    if (fileError) {
+      setValidationError(fileError)
       return
     }
 

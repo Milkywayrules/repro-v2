@@ -1,15 +1,11 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import type { ApiClient } from '../index'
-import type { AllowedContentType } from '../upload-limits'
+import type { UploadMeta } from '../upload-limits'
 import { attachmentKeys } from './keys'
 import { unwrapTreatyResponse } from './treaty'
 
-export interface UploadMeta {
-  contentType: AllowedContentType
-  filename: string
-  sizeBytes: number
-}
+export type { UploadMeta } from '../upload-limits'
 
 export function taskAttachmentsQueryOptions(client: ApiClient, taskId: string) {
   return queryOptions({

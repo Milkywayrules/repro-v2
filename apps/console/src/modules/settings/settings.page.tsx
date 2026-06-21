@@ -6,10 +6,10 @@ import { useRouter } from 'next/navigation'
 import {
   completeAvatar,
   formatTreatyError,
-  isAllowedContentType,
-  MAX_OBJECT_BYTES,
+  inspectUploadFile,
   presignAvatar,
   uploadFileToPresignedUrl,
+  validateUploadFile,
 } from '@repro-v2/api-client/queries'
 import { Button } from '@repro-v2/ui/components/button'
 import { Input } from '@repro-v2/ui/components/input'
@@ -22,22 +22,6 @@ import { apiClient } from '@/lib/api-client'
 import { iamClient } from '@/lib/iam-client'
 import { routes } from '@/lib/routes'
 import { useOnboardingGate } from '@/modules/iam/use-onboarding-gate'
-
-function validateAvatarFile(file: File): string | null {
-  if (file.size === 0) {
-    return 'File is empty'
-  }
-
-  if (file.size > MAX_OBJECT_BYTES) {
-    return 'File exceeds maximum size'
-  }
-
-  if (!isAllowedContentType(file.type)) {
-    return 'Unsupported file type'
-  }
-
-  return null
-}
 
 export function SettingsPage() {
   const router = useRouter()
@@ -62,25 +46,16 @@ export function SettingsPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      const fileError = validateAvatarFile(file)
-      if (fileError) {
-        throw new Error(fileError)
+      const inspected = inspectUploadFile(file)
+      if ('error' in inspected) {
+        throw new Error(inspected.error)
       }
 
-      if (!isAllowedContentType(file.type)) {
-        throw new Error('Unsupported file type')
-      }
-
-      const presign = await presignAvatar(apiClient, {
-        filename: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-      })
-
+      const presign = await presignAvatar(apiClient, inspected.meta)
       await uploadFileToPresignedUrl(presign.data.uploadUrl, file)
       return await completeAvatar(apiClient, {
         key: presign.data.key,
-        sizeBytes: file.size,
+        sizeBytes: inspected.meta.sizeBytes,
       })
     },
     onSuccess: async () => {
@@ -107,7 +82,7 @@ export function SettingsPage() {
 
     setHasSelectedFile(true)
     setPreviewUrl(URL.createObjectURL(file))
-    setValidationError(validateAvatarFile(file))
+    setValidationError(validateUploadFile(file))
   }
 
   function handleUpload() {
@@ -117,7 +92,7 @@ export function SettingsPage() {
       return
     }
 
-    const fileError = validateAvatarFile(file)
+    const fileError = validateUploadFile(file)
     if (fileError) {
       setValidationError(fileError)
       return
